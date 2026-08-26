@@ -1080,7 +1080,12 @@ window.saveAdmin = function(){
 /* ---------- تحديث بطاقة مخزن واحد ---------- */
 function renderStation(w, data){
   const cfg = adminSettings[w.id];
-  data.tempStatus = computeTempStatus(w.id, data.average, cfg);
+  // نحسب المعدل محلياً من قراءتي الحساسين الفعليتين (مو من حقل average اللي يرسله الجهاز)
+  // حتى تكون حالة الحرارة متطابقة دائماً مع الأرقام المعروضة على الشاشة
+  const s1v = (data.sensor1!==undefined && data.sensor1!==null && !isNaN(data.sensor1)) ? data.sensor1 : null;
+  const s2v = (data.sensor2!==undefined && data.sensor2!==null && !isNaN(data.sensor2)) ? data.sensor2 : null;
+  const avgTemp = (s1v!==null && s2v!==null) ? (s1v+s2v)/2 : (s1v!==null ? s1v : (s2v!==null ? s2v : data.average));
+  data.tempStatus = computeTempStatus(w.id, avgTemp, cfg);
   data.humStatus = computeHumStatus(w.id, data.humidity, cfg);
 
   // تلوين كل متحسس أخضر/أحمر حسب رينج المخزن الخاص فيه (من الإدارة) + تنبيه صوتي وبوب-اب عند التجاوز
