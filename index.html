@@ -160,6 +160,9 @@
 
   .station-foot{ display:flex; align-items:center; justify-content:space-between; gap:8px; border-top:1px dashed var(--card-border); padding-top:10px; margin-top:4px; font-size:11px; color:var(--text-2); }
   .station-foot .live{ display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .station-foot .foot-right{ display:flex; align-items:center; gap:8px; }
+  .fw-badge{ font-family:'Consolas','Courier New',monospace; font-size:10.5px; color:var(--text-2); background:rgba(255,255,255,.04); border:1px solid var(--card-border); border-radius:6px; padding:2px 7px; white-space:nowrap; }
+  .fw-badge:empty{ display:none; }
   .log-btn{ background: rgba(227,168,60,0.1); border:1px solid rgba(227,168,60,0.4); color:var(--wheat-2); font-size:11px; padding:5px 12px; border-radius:8px; cursor:pointer; font-weight:700; white-space:nowrap; }
   .log-btn:hover{ background: rgba(227,168,60,0.22); }
 
@@ -634,7 +637,7 @@ const I18N = {
     labelActive:'المنظومات النشطة', labelLastUpdate:'آخر تحديث', labelAlerts:'تنبيهات نشطة (اضغط للتفاصيل)',
     secWarehousesTitle:'مراقبة حرارة ورطوبة المخازن',
     zoneTemp:'🌡️ الحرارة', zoneHum:'💧 الرطوبة', sensor1Label:'حساس 1', sensor2Label:'حساس 2', humidityLabel:'الرطوبة',
-    diffLabel:'الفرق بين حساسي الحرارة', statusLabel:'حالة الحرارة', humStatusLabel:'حالة الرطوبة', liveData:'بيانات حية', logBtn:'📋 السجل',
+    diffLabel:'الفرق بين حساسي الحرارة', statusLabel:'حالة الحرارة', humStatusLabel:'حالة الرطوبة', liveData:'بيانات حية', logBtn:'📋 السجل', fwLabel:'نسخة البرنامج المنصّبة بالجهاز (Firmware)',
     rangeLabel:'🎯 الرينج المسموح', toWord:'إلى',
     dialLabelTemp:'Temp. °C', dialLabelHum:'Humidity %',
     chipNormal:'● طبيعي', chipAlert:'⚠ تنبيه', statusNormal:'طبيعي', statusRising:'▲ مرتفعة', statusFalling:'▼ منخفضة',
@@ -671,7 +674,7 @@ const I18N = {
     labelActive:'Active Systems', labelLastUpdate:'Last Update', labelAlerts:'Active Alerts (click for details)',
     secWarehousesTitle:'Warehouse Temp & Humidity Monitoring',
     zoneTemp:'🌡️ Temperature', zoneHum:'💧 Humidity', sensor1Label:'Sensor 1', sensor2Label:'Sensor 2', humidityLabel:'Humidity',
-    diffLabel:'Temp Sensor Diff', statusLabel:'Temp Status', humStatusLabel:'Humidity Status', liveData:'Live Data', logBtn:'📋 Log',
+    diffLabel:'Temp Sensor Diff', statusLabel:'Temp Status', humStatusLabel:'Humidity Status', liveData:'Live Data', logBtn:'📋 Log', fwLabel:'Firmware version installed on device',
     rangeLabel:'🎯 Allowed Range', toWord:'to',
     dialLabelTemp:'Temp. °C', dialLabelHum:'Humidity %',
     chipNormal:'● Normal', chipAlert:'⚠ Alert', statusNormal:'Normal', statusRising:'▲ High', statusFalling:'▼ Low',
@@ -962,7 +965,7 @@ function buildStationCards(){
       </div>
       </div>
       <div class="station-foot"><span class="live"><span class="dot" style="color:var(--ok)"></span> ${t('liveData')}</span>
-        <button class="log-btn" onclick="openLog('${w.id}')">${t('logBtn')}</button><span id="ts-${w.id}">--</span></div>`;
+        <span class="foot-right"><span class="fw-badge" id="fw-${w.id}" title="${t('fwLabel')}"></span><button class="log-btn" onclick="openLog('${w.id}')">${t('logBtn')}</button><span id="ts-${w.id}">--</span></span></div>`;
     grid.appendChild(el);
     buildGauge('gaugewrap-s1-'+w.id, TEMP_ZONES, TEMP_MIN, TEMP_MAX, {unit:'°', bezelTint:'warm', needleColor:'#ff5a36', dialLabel:t('dialLabelTemp')});
     buildGauge('gaugewrap-s2-'+w.id, TEMP_ZONES, TEMP_MIN, TEMP_MAX, {unit:'°', bezelTint:'warm', needleColor:'#ff5a36', dialLabel:t('dialLabelTemp')});
@@ -1136,6 +1139,8 @@ function renderStation(w, data){
   humStatusEl.textContent = t('status'+cap(data.humStatus));
 
   document.getElementById('ts-'+w.id).textContent = secondsAgo(data.timestamp) + 's';
+  const fwEl = document.getElementById('fw-'+w.id);
+  if(fwEl) fwEl.textContent = data.fw ? ('FW ' + data.fw) : '';
 
   const chip = document.getElementById('chip-'+w.id);
   chip.className = 'status-chip ' + (alertFlag?'alert':'normal');
