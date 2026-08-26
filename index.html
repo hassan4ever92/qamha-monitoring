@@ -100,14 +100,6 @@
   .sum-card.danger .val{ color:var(--danger); }
   .sum-card .glow{ position:absolute; width:80px; height:80px; border-radius:50%; background:currentColor; filter: blur(40px); opacity:.25; top:-20px; left:-20px; }
 
-  .avg-strip{ background: var(--card); border:1px solid var(--card-border); border-radius:16px; padding:16px 20px; margin-bottom:22px; }
-  .avg-strip-title{ font-size:13px; font-weight:800; color:var(--text-1); margin-bottom:12px; }
-  .avg-chips{ display:flex; gap:16px; flex-wrap:wrap; }
-  .avg-chip{ flex:1; min-width:170px; background: rgba(255,255,255,0.03); border:1px solid var(--card-border); border-radius:14px; padding:16px; text-align:center; }
-  .avg-chip .name{ font-size:12px; color:var(--text-1); font-weight:700; margin-bottom:8px; }
-  .avg-chip .val{ font-size:32px; font-weight:900; font-family:'Consolas','Courier New',monospace; transition: color .5s; }
-  .avg-chip .trend{ font-size:12px; font-weight:700; margin-top:6px; }
-
   .sys-title{ font-size:15px; font-weight:800; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
   .sys-section{ margin-bottom:24px; }
 
@@ -287,12 +279,6 @@
   body.fs-mode .sum-card{ padding:8px 12px; }
   body.fs-mode .sum-card .label{ font-size:9px; margin-bottom:3px; }
   body.fs-mode .sum-card .val{ font-size:15px; }
-  body.fs-mode .avg-strip{ flex:0 0 auto; margin-bottom:8px; padding:8px 14px; }
-  body.fs-mode .avg-strip-title{ font-size:10px; margin-bottom:6px; }
-  body.fs-mode .avg-chip{ padding:8px; }
-  body.fs-mode .avg-chip .name{ font-size:9px; margin-bottom:2px; }
-  body.fs-mode .avg-chip .val{ font-size:19px; }
-  body.fs-mode .avg-chip .trend{ font-size:9px; margin-top:2px; }
 
   .fs-fire-gas-col{ display:contents; }
   body.fs-mode .fs-row{ display:flex; flex-direction:row; gap:12px; flex:1 1 auto; min-height:0; }
@@ -440,11 +426,6 @@
     <div class="sum-card danger alerts-clickable" id="sumAlertCard" onclick="openAlertsModal()"><div class="glow" style="color:var(--danger)"></div>
       <div class="label" data-i18n="labelAlerts">تنبيهات نشطة (اضغط للتفاصيل)</div><div class="val" id="sumAlerts">0</div>
     </div>
-  </div>
-
-  <div class="avg-strip" id="avgStrip">
-    <div class="avg-strip-title" data-i18n="avgStripTitle">🌾 معدل الحرارة لكل مخزن</div>
-    <div class="avg-chips" id="avgChips"></div>
   </div>
 
   <div class="fs-row" id="fsRow">
@@ -651,12 +632,12 @@ const alertSinceMem = {};
 const I18N = {
   ar:{ title:'Qamha Scada System', navOverview:'🏭 نظرة عامة', navWarehouses:'🌡️ حرارة المخازن', navFire:'🔥 إنذار الحريق', navGas:'🛢️ تسرب الغاز',
     labelActive:'المنظومات النشطة', labelLastUpdate:'آخر تحديث', labelAlerts:'تنبيهات نشطة (اضغط للتفاصيل)',
-    avgStripTitle:'🌾 معدل الحرارة لكل مخزن', secWarehousesTitle:'مراقبة حرارة ورطوبة المخازن',
+    secWarehousesTitle:'مراقبة حرارة ورطوبة المخازن',
     zoneTemp:'🌡️ الحرارة', zoneHum:'💧 الرطوبة', sensor1Label:'حساس 1', sensor2Label:'حساس 2', humidityLabel:'الرطوبة',
     diffLabel:'الفرق بين حساسي الحرارة', statusLabel:'حالة الحرارة', humStatusLabel:'حالة الرطوبة', liveData:'بيانات حية', logBtn:'📋 السجل',
     rangeLabel:'🎯 الرينج المسموح', toWord:'إلى',
     dialLabelTemp:'Temp. °C', dialLabelHum:'Humidity %',
-    chipNormal:'● طبيعي', chipAlert:'⚠ تنبيه', statusNormal:'طبيعي', statusRising:'▲ صاعدة', statusFalling:'▼ نازلة',
+    chipNormal:'● طبيعي', chipAlert:'⚠ تنبيه', statusNormal:'طبيعي', statusRising:'▲ مرتفعة', statusFalling:'▼ منخفضة',
     logTitlePrefix:'سجل الأحداث — ', alertsOnlyLabel:'عرض التنبيهات فقط', exportLabel:'⬇ تصدير Excel',
     colDate:'التاريخ والوقت', colS1:'حساس 1', colS2:'حساس 2', colAvg:'المعدل', colDiff:'الفرق', colStatus:'الحالة',
     noDataLabel:'لا توجد بيانات مسجلة بعد', alertModalTitle:'تفاصيل التنبيهات النشطة', noActiveAlerts:'لا توجد تنبيهات نشطة حالياً',
@@ -688,12 +669,12 @@ const I18N = {
     companyOwnership:'جميع حقوق هذا البرنامج مملوكة لشركة روابط الإبداع', optDark:'🌙 داكن', optLight:'☀️ فاتح', warehouseWord:'مخزن' },
   en:{ title:'Qamha Scada System', navOverview:'🏭 Overview', navWarehouses:'🌡️ Warehouse Temps', navFire:'🔥 Fire Alarm', navGas:'🛢️ Gas Leak',
     labelActive:'Active Systems', labelLastUpdate:'Last Update', labelAlerts:'Active Alerts (click for details)',
-    avgStripTitle:'🌾 Average Temp per Warehouse', secWarehousesTitle:'Warehouse Temp & Humidity Monitoring',
+    secWarehousesTitle:'Warehouse Temp & Humidity Monitoring',
     zoneTemp:'🌡️ Temperature', zoneHum:'💧 Humidity', sensor1Label:'Sensor 1', sensor2Label:'Sensor 2', humidityLabel:'Humidity',
     diffLabel:'Temp Sensor Diff', statusLabel:'Temp Status', humStatusLabel:'Humidity Status', liveData:'Live Data', logBtn:'📋 Log',
     rangeLabel:'🎯 Allowed Range', toWord:'to',
     dialLabelTemp:'Temp. °C', dialLabelHum:'Humidity %',
-    chipNormal:'● Normal', chipAlert:'⚠ Alert', statusNormal:'Normal', statusRising:'▲ Rising', statusFalling:'▼ Falling',
+    chipNormal:'● Normal', chipAlert:'⚠ Alert', statusNormal:'Normal', statusRising:'▲ High', statusFalling:'▼ Low',
     logTitlePrefix:'Event Log — ', alertsOnlyLabel:'Alerts only', exportLabel:'⬇ Export Excel',
     colDate:'Date & Time', colS1:'Sensor 1', colS2:'Sensor 2', colAvg:'Average', colDiff:'Diff', colStatus:'Status',
     noDataLabel:'No data logged yet', alertModalTitle:'Active Alert Details', noActiveAlerts:'No active alerts',
@@ -1155,27 +1136,8 @@ function renderStation(w, data){
   if(currentLogWarehouse===w.id) window.renderLogTable();
 
   lastGlobalUpdate = Date.now();
-  renderAvgStrip();
 }
 function secondsAgo(ts){ if(!ts) return 0; return Math.max(0, Math.round((Date.now()-ts)/1000)); }
-
-function renderAvgStrip(){
-  const container = document.getElementById('avgChips'); if(!container) return;
-  container.innerHTML = WAREHOUSES.map((w,i)=>{
-    const d = state[w.id]; if(!d) return '';
-    const cfg = adminSettings[w.id] || DEFAULT_RANGE;
-    const outOfRange = (d.average!==undefined && d.average!==null && !isNaN(d.average)) && (d.average < cfg.tempMin || d.average > cfg.tempMax);
-    let color, pulse = '';
-    if(outOfRange){
-      color = 'var(--danger-bright)';
-      pulse = 'animation:thresholdPulse 1s infinite;';
-    } else {
-      color = 'var(--ok)';
-    }
-    const arrow = d.tempStatus==='rising' ? '▲' : (d.tempStatus==='falling' ? '▼' : '–');
-    return `<div class="avg-chip"><div class="name">${whName(i)}</div><div class="val" style="color:${color};text-shadow:0 0 14px ${color};${pulse}">${num(d.average)}°</div><div class="trend" style="color:${color};${pulse}">${arrow} ${t('status'+cap(d.tempStatus))}</div></div>`;
-  }).join('');
-}
 
 function renderSummary(){
   const vals = Object.values(state);
@@ -1203,24 +1165,23 @@ function selectView(view){
   document.querySelectorAll('.tab').forEach(t2=>t2.classList.toggle('active', t2.dataset.view===view));
   document.body.setAttribute('data-fsview', view);
   const summaryStrip = document.getElementById('summaryStrip');
-  const avgStrip = document.getElementById('avgStrip');
   const whSection = document.getElementById('section-warehouses');
   const fireGasCol = document.getElementById('fsFireGasCol');
   const fireSection = document.getElementById('section-fire');
   const gasSection = document.getElementById('section-gas');
   if(view==='overview'){
-    summaryStrip.style.display=''; avgStrip.style.display='';
+    summaryStrip.style.display='';
     whSection.style.display=''; fireGasCol.style.display='';
     fireSection.style.display=''; gasSection.style.display='';
   } else if(view==='warehouses'){
-    summaryStrip.style.display='none'; avgStrip.style.display='none';
+    summaryStrip.style.display='none';
     whSection.style.display=''; fireGasCol.style.display='none';
   } else if(view==='fire'){
-    summaryStrip.style.display='none'; avgStrip.style.display='none';
+    summaryStrip.style.display='none';
     whSection.style.display='none'; fireGasCol.style.display='';
     fireSection.style.display=''; gasSection.style.display='none';
   } else if(view==='gas'){
-    summaryStrip.style.display='none'; avgStrip.style.display='none';
+    summaryStrip.style.display='none';
     whSection.style.display='none'; fireGasCol.style.display='';
     fireSection.style.display='none'; gasSection.style.display='';
   }
@@ -1375,7 +1336,7 @@ function rebuildDynamic(){
   buildFireZones(); renderFireZones();
   buildGasZones(); renderGasZones();
   renderFireMapMain();
-  renderSummary(); renderAvgStrip();
+  renderSummary();
 }
 
 /* ==========================================================
