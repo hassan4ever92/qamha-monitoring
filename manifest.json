@@ -1,0 +1,17 @@
+{
+  "name": "Qamha Scada System",
+  "short_name": "Qamha Scada",
+  "description": "منصة مراقبة حرارة ورطوبة المخازن ومنظومات الحريق والغاز - معمل قمحة",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#060a12",
+  "theme_color": "#0a1220",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    { "src": "icon.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

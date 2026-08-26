@@ -1,0 +1,1929 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qamha Scada System</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a1220">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Qamha Scada">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root{
+    --bg-0:#060a12; --bg-1:#0a1220; --bg-2:#0f1a2c; --card:#101c30; --card-border:#1c2c46;
+    --text-0:#eaf2ff; --text-1:#9db2d4; --text-2:#5c7099;
+    --accent:#00e5ff; --accent-2:#7c5cff; --ok:#2ee6a6; --warn:#ffb020; --danger:#ff3b5c; --danger-dark:#8b0000; --danger-bright:#ff1414;
+    --wheat:#e3a83c; --wheat-2:#ffcf6b;
+    --grid-line: rgba(0,229,255,0.06);
+    --wheat-glow: 0 0 22px rgba(227,168,60,0.4);
+  }
+  body.light-theme{
+    --bg-0:#eef2f9; --bg-1:#ffffff; --bg-2:#ffffff; --card:#ffffff; --card-border:#dbe3ef;
+    --text-0:#16233b; --text-1:#48597a; --text-2:#8695ae;
+    --grid-line: rgba(0,120,150,0.05);
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    font-family:'Segoe UI',Tahoma,Arial,sans-serif;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(124,92,255,0.10), transparent 40%),
+      radial-gradient(circle at 85% 0%, rgba(0,229,255,0.08), transparent 45%),
+      radial-gradient(circle at 50% 115%, rgba(227,168,60,0.08), transparent 50%),
+      var(--bg-0);
+    color: var(--text-0); min-height:100vh; overflow-x:hidden; position:relative; transition: background .3s, color .3s;
+  }
+  body::before{
+    content:''; position:fixed; inset:0;
+    background-image: linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 42px 42px; mask-image: radial-gradient(ellipse at center, black 0%, transparent 75%);
+    pointer-events:none; z-index:0; animation: gridDrift 40s linear infinite;
+  }
+  @keyframes gridDrift{ 0%{background-position:0 0,0 0} 100%{background-position:200px 200px,200px 200px} }
+  .wrap{ position:relative; z-index:1; max-width:1440px; margin:0 auto; padding:22px 26px 40px; }
+
+  /* ===== Header ===== */
+  header{
+    padding:18px 22px; background: linear-gradient(180deg, rgba(16,28,48,0.9), rgba(16,28,48,0.55));
+    border:1px solid var(--card-border); border-radius:16px; backdrop-filter: blur(10px);
+    margin-bottom:20px; position:relative; overflow:hidden;
+  }
+  body.light-theme header{ background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(240,244,250,0.85)); }
+  header::before{
+    content:'🌾'; position:absolute; left:-14px; top:-40px; font-size:130px;
+    opacity:.05; pointer-events:none; transform:rotate(-18deg); z-index:0;
+  }
+  .brand-center{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; position:relative; z-index:1; }
+  .brand-center .title-row{ display:flex; align-items:center; justify-content:center; gap:16px; }
+  .brand-center .we{ font-size:30px; filter: drop-shadow(var(--wheat-glow)); }
+  .brand-center h1{
+    font-size:32px; font-weight:900; letter-spacing:3px; text-transform:uppercase;
+    font-family:'Segoe UI', Tahoma, Arial, sans-serif;
+    background: linear-gradient(135deg, var(--wheat) 5%, var(--wheat-2) 45%, var(--accent) 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    text-shadow: 0 0 34px rgba(227,168,60,0.28);
+  }
+  .brand-underline{ width:200px; max-width:60vw; height:3px; border-radius:3px;
+    background: linear-gradient(90deg, transparent, var(--wheat), var(--accent), transparent);
+    box-shadow: 0 0 14px rgba(227,168,60,.55); }
+  .header-toolbar{ display:flex; align-items:center; justify-content:space-between; margin-top:16px; flex-wrap:wrap; gap:12px; position:relative; z-index:1; }
+  .toolbar-group{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .clock{ text-align:left; }
+  .clock .time{ font-size:18px; font-weight:700; color:var(--accent); font-family:'Consolas','Courier New',monospace; font-variant-numeric: tabular-nums; }
+  .clock .date{ font-size:11px; color:var(--text-2); }
+  .conn-badge{ display:flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px; background:rgba(46,230,166,0.08); border:1px solid rgba(46,230,166,0.35); font-size:12px; color:var(--ok); font-weight:600; }
+  .conn-badge.offline{ background:rgba(255,59,92,0.08); border-color:rgba(255,59,92,0.4); color:var(--danger); }
+  .dot{ width:8px; height:8px; border-radius:50%; background:currentColor; box-shadow:0 0 8px currentColor; animation: blink 1.6s ease-in-out infinite; }
+  @keyframes blink{ 0%,100%{opacity:1} 50%{opacity:.35} }
+  .mini-select{ background: rgba(255,255,255,0.05); border:1px solid var(--card-border); color:var(--text-0); font-size:12px; padding:7px 10px; border-radius:10px; cursor:pointer; }
+  .icon-btn{ background: rgba(227,168,60,0.1); border:1px solid rgba(227,168,60,0.4); color:var(--wheat-2); width:36px; height:36px; border-radius:10px; cursor:pointer; font-size:16px; }
+  .icon-btn:hover{ background: rgba(227,168,60,0.22); }
+  .alerts-clickable{ cursor:pointer; transition: transform .2s; }
+  .alerts-clickable:hover{ transform: translateY(-2px); }
+
+  /* ===== Nav Tabs ===== */
+  nav{ display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+  .tab{ padding:10px 18px; border-radius:12px; background: rgba(255,255,255,0.03); border:1px solid var(--card-border); color:var(--text-1); font-size:13px; font-weight:600; cursor:pointer; transition: all .25s; }
+  .tab:hover{ color: var(--text-0); border-color: var(--wheat); }
+  .tab.active{ color:#241a05; background: linear-gradient(135deg, var(--wheat), var(--wheat-2)); box-shadow: var(--wheat-glow); border-color: transparent; }
+
+  /* ===== Summary Strip ===== */
+  .summary{ display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; margin-bottom:16px; }
+  .sum-card{ background: var(--card); border:1px solid var(--card-border); border-radius:14px; padding:16px 18px; position:relative; overflow:hidden; }
+  .sum-card .label{ font-size:12px; color:var(--text-2); margin-bottom:6px; }
+  .sum-card .val{ font-size:24px; font-weight:800; }
+  .sum-card.ok .val{ color:var(--ok); }
+  .sum-card.danger .val{ color:var(--danger); }
+  .sum-card .glow{ position:absolute; width:80px; height:80px; border-radius:50%; background:currentColor; filter: blur(40px); opacity:.25; top:-20px; left:-20px; }
+
+  .avg-strip{ background: var(--card); border:1px solid var(--card-border); border-radius:16px; padding:16px 20px; margin-bottom:22px; }
+  .avg-strip-title{ font-size:13px; font-weight:800; color:var(--text-1); margin-bottom:12px; }
+  .avg-chips{ display:flex; gap:16px; flex-wrap:wrap; }
+  .avg-chip{ flex:1; min-width:170px; background: rgba(255,255,255,0.03); border:1px solid var(--card-border); border-radius:14px; padding:16px; text-align:center; }
+  .avg-chip .name{ font-size:12px; color:var(--text-1); font-weight:700; margin-bottom:8px; }
+  .avg-chip .val{ font-size:32px; font-weight:900; font-family:'Consolas','Courier New',monospace; transition: color .5s; }
+  .avg-chip .trend{ font-size:12px; font-weight:700; margin-top:6px; }
+
+  .sys-title{ font-size:15px; font-weight:800; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .sys-section{ margin-bottom:24px; }
+
+  /* ===== Warehouse Grid ===== */
+  .grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(370px, 1fr)); gap:20px; }
+  .station{ background: linear-gradient(180deg, rgba(16,28,48,0.9), rgba(10,18,32,0.9)); border:1px solid var(--card-border); border-radius:18px; padding:20px; position:relative; transition: border-color .3s, box-shadow .3s, transform .3s; animation: fadeUp .5s ease both; }
+  body.light-theme .station{ background: linear-gradient(180deg, #ffffff, #f7f9fc); }
+  .station:hover{ transform: translateY(-3px); }
+  .station.alert{ border-color: rgba(255,59,92,0.6); box-shadow: 0 0 0 1px rgba(255,59,92,0.3), 0 0 30px rgba(255,59,92,0.18); animation: fadeUp .5s ease both, alertPulse 1.8s ease-in-out infinite; }
+  @keyframes alertPulse{ 0%,100%{box-shadow:0 0 0 1px rgba(255,59,92,0.3),0 0 30px rgba(255,59,92,0.18)} 50%{box-shadow:0 0 0 1px rgba(255,59,92,0.6),0 0 46px rgba(255,59,92,0.35)} }
+  @keyframes fadeUp{ from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+  .station-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .station-head h3{ font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px; }
+  .station-head h3 .ic{ color: var(--wheat); }
+  .status-chip{ font-size:11px; font-weight:700; padding:5px 12px; border-radius:999px; }
+  .status-chip.normal{ background: rgba(46,230,166,0.1); color:var(--ok); border:1px solid rgba(46,230,166,0.35); }
+  .status-chip.alert{ background: rgba(255,20,20,0.14); color:var(--danger-bright); border:1px solid rgba(255,20,20,0.45); font-weight:800; }
+
+  .range-badge{ display:inline-flex; align-items:center; gap:7px; background: linear-gradient(135deg, rgba(255,193,7,0.08), rgba(255,193,7,0.02)); border:1px solid rgba(255,193,7,0.28); border-radius:999px; padding:5px 14px; font-size:11.5px; font-weight:700; color:var(--text-1); margin-bottom:12px; }
+  .range-badge .rb-title{ color:var(--wheat); }
+  .range-badge .rb-val{ color:var(--text-0); font-family:'Consolas','Courier New',monospace; font-weight:800; letter-spacing:.3px; }
+
+  .zone-section{ margin-bottom:12px; }
+  .zone-title{ font-size:11px; font-weight:800; color:var(--text-1); letter-spacing:.5px; display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .zone-title::after{ content:''; flex:1; height:1px; background: linear-gradient(90deg, var(--card-border), transparent); }
+  .gauges{ display:flex; justify-content:space-around; margin:4px 0 6px; gap:6px; }
+  .gauge-box{ text-align:center; }
+  .gauge-wrap{ position:relative; width:162px; height:162px; margin:0 auto 4px; filter: drop-shadow(0 10px 16px rgba(0,0,0,0.5)); }
+  .gauge-wrap svg{ width:100%; height:100%; overflow:visible; }
+  .gauge-needle{ transition: transform 1.1s cubic-bezier(.2,.8,.2,1); transform-origin:100px 100px; filter: drop-shadow(0 0 5px currentColor); }
+  .gauge-value-arc{ transition: stroke-dashoffset 1.1s cubic-bezier(.2,.8,.2,1), stroke .6s; filter: drop-shadow(0 0 5px currentColor); }
+  .gauge-tick-major{ stroke: var(--text-1); }
+  .gauge-tick-minor{ stroke: var(--text-2); }
+  .gauge-tick-label{ font-family:'Consolas','Courier New',monospace; fill: var(--text-2); }
+  .gauge-digital-panel{
+    display:inline-block; background: linear-gradient(180deg,#f6f7f9,#e4e6eb); border:1px solid #c8cbd3;
+    border-radius:8px; padding:2px 12px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.15), 0 1px 0 rgba(255,255,255,0.6);
+    margin-top:2px;
+  }
+  .gauge-digital{ font-family:'Consolas','Courier New',monospace; font-size:32px; font-weight:900; letter-spacing:.5px; transition: color .5s; text-shadow:0 1px 0 rgba(255,255,255,.5); }
+  .gauge-unit{ font-size:10px; color:var(--text-2); letter-spacing:1px; margin-top:3px; }
+  .gauge-label{ font-size:12px; color:var(--text-1); font-weight:700; letter-spacing:.4px; margin-top:3px; }
+  .gauge-wrap.na .gauge-digital{ color: var(--text-2); font-size:18px; }
+  .gauge-digital.g-ok{ color: var(--ok); }
+  .gauge-digital.g-alert{ color: var(--danger-bright); animation: thresholdPulse 1s infinite; }
+  @keyframes thresholdPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.55; } }
+
+  .readings{ display:grid; gap:8px; margin-top:8px; }
+  .readings.cols2{ grid-template-columns:1fr 1fr; }
+  .readings.cols1{ grid-template-columns:1fr; }
+  .read-item{ background: rgba(255,255,255,0.03); border:1px solid var(--card-border); border-radius:10px; padding:10px 12px; }
+  .read-item .rl{ font-size:11px; color:var(--text-2); margin-bottom:3px; }
+  .read-item .rv{ font-size:15px; font-weight:700; font-variant-numeric: tabular-nums; }
+  .read-item.diff.high .rv{ color: var(--danger); }
+  .rv.status-normal{ color:var(--ok); }
+  .rv.status-rising{ color:var(--danger-bright); font-weight:900; animation: thresholdPulse 1s infinite; }
+  .rv.status-falling{ color:var(--danger-bright); font-weight:900; animation: thresholdPulse 1s infinite; }
+
+  .station-foot{ display:flex; align-items:center; justify-content:space-between; gap:8px; border-top:1px dashed var(--card-border); padding-top:10px; margin-top:4px; font-size:11px; color:var(--text-2); }
+  .station-foot .live{ display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .log-btn{ background: rgba(227,168,60,0.1); border:1px solid rgba(227,168,60,0.4); color:var(--wheat-2); font-size:11px; padding:5px 12px; border-radius:8px; cursor:pointer; font-weight:700; white-space:nowrap; }
+  .log-btn:hover{ background: rgba(227,168,60,0.22); }
+
+  /* ===== Fire / Gas Panels ===== */
+  .panel-card{ background: linear-gradient(180deg, rgba(16,28,48,0.9), rgba(10,18,32,0.9)); border:1px solid var(--card-border); border-radius:18px; padding:20px; }
+  body.light-theme .panel-card{ background: linear-gradient(180deg, #ffffff, #f7f9fc); }
+  .panel-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px; }
+  .panel-title{ font-size:17px; font-weight:800; display:flex; align-items:center; gap:8px; }
+  .master-status{ padding:8px 16px; border-radius:999px; font-size:12px; font-weight:800; border:1px solid; }
+  .master-status.ok{ color:var(--ok); border-color:rgba(46,230,166,.4); background:rgba(46,230,166,.08); }
+  .master-status.warn{ color:var(--warn); border-color:rgba(255,176,32,.4); background:rgba(255,176,32,.1); }
+  .master-status.danger{ color:var(--danger); border-color:rgba(255,59,92,.5); background:rgba(255,59,92,.12); animation: masterFlash 1s infinite; }
+  .master-status.danger.silenced{ animation:none; }
+  @keyframes masterFlash{ 0%,100%{opacity:1} 50%{opacity:.55} }
+  .panel-toolbar{ display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+  .ctrl-btn{ background: rgba(255,255,255,0.04); border:1px solid var(--card-border); color:var(--text-1); font-size:12px; font-weight:700; padding:8px 14px; border-radius:10px; cursor:pointer; transition:.2s; }
+  .ctrl-btn:hover{ color:var(--text-0); border-color:var(--wheat); }
+  .zones-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap:12px; }
+  .zone-tile{ background: rgba(255,255,255,0.03); border:1px solid var(--card-border); border-radius:12px; padding:12px 10px; text-align:center; transition:.3s; }
+  .zone-tile .zn{ font-size:10px; color:var(--text-2); margin-bottom:6px; font-weight:700; }
+  .zone-tile .zicon{ font-size:22px; margin-bottom:4px; display:block; }
+  .zone-tile .zstatus{ font-size:10px; font-weight:800; }
+  .zone-tile .zval{ font-family:monospace; font-size:12px; font-weight:800; margin-top:3px; color:var(--text-1); }
+  .zone-tile.normal, .zone-tile.safe{ border-color: rgba(46,230,166,.3); }
+  .zone-tile.normal .zstatus, .zone-tile.safe .zstatus{ color:var(--ok); }
+  .zone-tile.fault{ border-color: rgba(255,176,32,.4); }
+  .zone-tile.fault .zstatus{ color:var(--warn); }
+  .zone-tile.warning{ border-color: rgba(255,176,32,.5); background: rgba(255,176,32,.07); }
+  .zone-tile.warning .zstatus{ color:var(--warn); }
+  .zone-tile.disabled{ opacity:.4; }
+  .zone-tile.disabled .zstatus{ color:var(--text-2); }
+  .zone-tile.alarm, .zone-tile.danger{ border-color: rgba(255,59,92,.8); background: rgba(255,59,92,.1); animation: zoneAlarm .9s ease-in-out infinite; }
+  .zone-tile.alarm .zstatus, .zone-tile.danger .zstatus{ color:var(--danger); font-weight:900; }
+  .zone-tile.alarm .zicon, .zone-tile.danger .zicon{ animation: zoneShake .4s ease-in-out infinite; }
+  @keyframes zoneAlarm{ 0%,100%{box-shadow:0 0 8px rgba(255,59,92,.3)} 50%{box-shadow:0 0 22px rgba(255,59,92,.7)} }
+  @keyframes zoneShake{ 0%,100%{transform:rotate(-6deg)} 50%{transform:rotate(6deg)} }
+
+  /* ===== Modals ===== */
+  .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(4,8,16,0.75); backdrop-filter: blur(4px); z-index:200; align-items:center; justify-content:center; padding:20px; }
+  .modal-overlay.show{ display:flex; }
+  .modal-box{ width:100%; max-width:700px; max-height:84vh; background: var(--bg-2); border:1px solid var(--card-border); border-radius:16px; padding:20px; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.55); animation: fadeUp .3s ease; overflow-y:auto; }
+  .modal-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .modal-head h3{ font-size:16px; }
+  .modal-close{ background:none; border:1px solid var(--card-border); color:var(--text-1); font-size:14px; cursor:pointer; width:28px; height:28px; border-radius:8px; }
+  .modal-close:hover{ color:var(--text-0); border-color:var(--danger); }
+  .modal-controls{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px; }
+  .chk{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-1); cursor:pointer; }
+  .export-btn{ background: linear-gradient(135deg, var(--wheat), var(--wheat-2)); border:none; color:#241a05; font-size:12px; font-weight:800; padding:8px 14px; border-radius:10px; cursor:pointer; }
+  .modal-table-wrap{ overflow-y:auto; border:1px solid var(--card-border); border-radius:10px; }
+  .log-table{ width:100%; border-collapse:collapse; font-size:12px; }
+  .log-table th{ position:sticky; top:0; background: var(--bg-1); padding:8px; text-align:center; color:var(--text-1); border-bottom:1px solid var(--card-border); }
+  .log-table td{ padding:7px 8px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.04); font-variant-numeric:tabular-nums; }
+  .log-table tr.alert-row td{ color: var(--danger); }
+  .log-empty{ text-align:center; padding:30px; color:var(--text-2); font-size:12px; display:none; }
+
+  /* ===== خريطة الموقع (Site Map) ===== */
+  .map-toolbar{ display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; align-items:center; }
+  .map-file-label{ background: rgba(255,255,255,0.04); border:1px solid var(--card-border); color:var(--text-1); font-size:12px; font-weight:700; padding:8px 14px; border-radius:10px; cursor:pointer; }
+  .map-file-label:hover{ color:var(--text-0); border-color:var(--wheat); }
+  .ctrl-btn.active{ background: linear-gradient(135deg, var(--wheat), var(--wheat-2)); color:#241a05; border-color:transparent; }
+  .map-note{ font-size:11px; color:var(--text-2); margin-bottom:10px; line-height:1.8; }
+  .map-container{ position:relative; width:100%; border:1px solid var(--card-border); border-radius:12px; overflow:hidden; background: repeating-conic-gradient(#0d1626 0% 25%, #0a1220 0% 50%) 50%/16px 16px; min-height:160px; }
+  .map-container img{ width:100%; display:block; user-select:none; -webkit-user-drag:none; }
+  .map-container.pick-mode{ cursor:crosshair; }
+  .map-empty{ padding:40px 20px; text-align:center; color:var(--text-2); font-size:12px; }
+  .map-pin{ position:absolute; transform:translate(-50%,-50%); width:26px; height:26px; border-radius:50%; background:#eef0f3; border:2px solid #9aa1ad; box-shadow:0 2px 6px rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:5; font-size:12px; }
+  .map-pin .pin-icon{ line-height:1; pointer-events:none; }
+  .map-pin .pin-num{ position:absolute; bottom:-6px; right:-6px; background:#2a2f3a; color:#fff; font-size:7px; font-weight:800; border-radius:8px; padding:1px 3px; line-height:1.3; min-width:10px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,.5); }
+  .map-pin.alarm{ animation: zoneAlarm .9s ease-in-out infinite; border-color: var(--danger); background:#3a1418; color:#fff; z-index:8; }
+  .map-pin.fault{ border-color:var(--warn); background:#3a2c10; color:#fff; }
+  .map-pin.disabled{ opacity:.45; }
+  .map-pin.normal{ border-color: var(--ok); }
+  .map-pin.admin-pin{ cursor:grab; }
+  .map-pin.alarm::before, .map-pin.alarm::after{
+    content:''; position:absolute; inset:0; border-radius:50%; border:3px solid var(--danger);
+    animation: pinRipple 1.6s ease-out infinite; pointer-events:none;
+  }
+  .map-pin.alarm::after{ animation-delay:.55s; }
+  @keyframes pinRipple{ 0%{ transform:scale(1); opacity:.9; } 100%{ transform:scale(3.4); opacity:0; } }
+  .map-pin .pin-del{ position:absolute; top:-9px; left:-9px; width:16px; height:16px; border-radius:50%; background:var(--danger); color:#fff; font-size:10px; display:flex; align-items:center; justify-content:center; line-height:1; }
+  .map-popup{ position:absolute; background: var(--bg-2); border:1px solid var(--card-border); border-radius:10px; padding:10px 14px; font-size:11px; box-shadow:0 10px 26px rgba(0,0,0,.55); z-index:30; min-width:140px; transform:translate(-50%,-115%); }
+  .map-popup .mp-close{ position:absolute; top:5px; left:6px; cursor:pointer; color:var(--text-2); font-size:11px; }
+  .map-popup .mp-title{ font-weight:800; margin-bottom:4px; }
+  .zone-pick-popup{ position:absolute; background: var(--bg-2); border:1px solid var(--card-border); border-radius:10px; padding:10px; z-index:30; transform:translate(-50%,-110%); display:flex; gap:6px; align-items:center; box-shadow:0 10px 26px rgba(0,0,0,.55); }
+  .zone-pick-popup select{ background: rgba(255,255,255,0.06); border:1px solid var(--card-border); color:var(--text-0); border-radius:6px; padding:5px; font-size:11px; }
+  .map-input-label{ font-size:11px; color:var(--text-1); display:flex; align-items:center; gap:6px; }
+  .map-input-label input{ width:52px; background:rgba(255,255,255,.05); border:1px solid var(--card-border); color:var(--text-0); border-radius:6px; padding:5px; font-size:11px; }
+  .map-pins-list{ margin-top:12px; display:flex; flex-wrap:wrap; gap:6px; }
+  .map-pin-chip{ background: rgba(255,255,255,0.04); border:1px solid var(--card-border); border-radius:8px; padding:4px 8px; font-size:11px; display:flex; align-items:center; gap:6px; }
+  .map-pin-chip button{ background:none; border:none; color:var(--danger); cursor:pointer; font-size:12px; }
+
+  footer{ text-align:center; color:var(--text-2); font-size:11px; margin-top:26px; }
+  .brand-footer{ margin-top:14px; padding-top:14px; border-top:1px solid var(--card-border); display:flex; flex-direction:column; align-items:center; gap:5px; }
+  .brand-logo{ font-size:15px; font-weight:900; background: linear-gradient(135deg, var(--wheat), var(--accent)); -webkit-background-clip:text; background-clip:text; color:transparent; letter-spacing:.6px; }
+  .brand-owner{ font-size:10px; color:var(--text-2); }
+
+  @media (max-width: 700px){ .summary{ grid-template-columns: 1fr; } }
+
+  /* ==========================================================
+     وضع ملء الشاشة (Fullscreen) - شاشة واحدة بدون سكرول
+     ========================================================== */
+  html.fs-mode, body.fs-mode{ height:100%; overflow:hidden; }
+  body.fs-mode .wrap{ height:100vh; max-width:100%; padding:10px 18px; display:flex; flex-direction:column; overflow:hidden; }
+  body.fs-mode header{ padding:8px 16px; margin-bottom:8px; flex:0 0 auto; }
+  body.fs-mode .brand-center{ gap:5px; }
+  body.fs-mode .brand-center h1{ font-size:19px; }
+  body.fs-mode .brand-center .we{ font-size:16px; }
+  body.fs-mode .brand-underline{ width:90px; height:2px; }
+  body.fs-mode .header-toolbar{ margin-top:6px; }
+  body.fs-mode .clock .time{ font-size:13px; }
+  body.fs-mode .clock .date{ font-size:9px; }
+  body.fs-mode .conn-badge{ font-size:10px; padding:5px 10px; }
+  body.fs-mode .icon-btn, body.fs-mode .mini-select{ width:auto; height:auto; font-size:10px; padding:5px 8px; }
+  body.fs-mode nav{ display:none; }
+  body.fs-mode footer{ display:none; }
+  body.fs-mode .summary{ flex:0 0 auto; margin-bottom:8px; gap:8px; }
+  body.fs-mode .sum-card{ padding:8px 12px; }
+  body.fs-mode .sum-card .label{ font-size:9px; margin-bottom:3px; }
+  body.fs-mode .sum-card .val{ font-size:15px; }
+  body.fs-mode .avg-strip{ flex:0 0 auto; margin-bottom:8px; padding:8px 14px; }
+  body.fs-mode .avg-strip-title{ font-size:10px; margin-bottom:6px; }
+  body.fs-mode .avg-chip{ padding:8px; }
+  body.fs-mode .avg-chip .name{ font-size:9px; margin-bottom:2px; }
+  body.fs-mode .avg-chip .val{ font-size:19px; }
+  body.fs-mode .avg-chip .trend{ font-size:9px; margin-top:2px; }
+
+  .fs-fire-gas-col{ display:contents; }
+  body.fs-mode .fs-row{ display:flex; flex-direction:row; gap:12px; flex:1 1 auto; min-height:0; }
+  body.fs-mode .fs-fire-gas-col{ display:flex; flex-direction:column; flex:1; min-height:0; min-width:0; gap:8px; }
+  body.fs-mode .sys-section{ flex:1; min-width:0; margin-bottom:0; overflow:hidden; display:flex; flex-direction:column; }
+  body.fs-mode .sys-title{ font-size:10px; margin-bottom:6px; flex:0 0 auto; }
+
+  body.fs-mode .grid{ display:grid; grid-template-columns:1fr; grid-auto-rows:minmax(0,1fr); gap:8px; height:100%; min-height:0; overflow-y:auto; }
+  body.fs-mode[data-fsview="warehouses"] .grid{ display:flex; flex-wrap:wrap; align-content:flex-start; align-items:stretch; gap:18px; overflow-y:auto; }
+  body.fs-mode[data-fsview="warehouses"] .station{ flex:1 1 560px; max-width:680px; padding:18px 22px; overflow:visible; height:auto; box-sizing:border-box; border:1.5px solid var(--card-border); border-radius:16px; display:block; }
+  body.fs-mode[data-fsview="warehouses"] .station-head{ margin-bottom:10px; }
+  body.fs-mode[data-fsview="warehouses"] .station-head h3{ font-size:17px; }
+  body.fs-mode[data-fsview="warehouses"] .status-chip{ font-size:12px; padding:5px 12px; }
+  body.fs-mode[data-fsview="warehouses"] .range-badge{ font-size:12px; padding:5px 14px; margin-bottom:14px; gap:7px; }
+  /* الحرارة والرطوبة بصف أفقي وحد (3 متحسسات) مع خط فاصل خفيف بينهن ما يوصل لحافة البوكس */
+  body.fs-mode[data-fsview="warehouses"] .gauge-row{ display:flex; flex-direction:row; align-items:flex-start; gap:0; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-row .zone-section{ flex:0 0 auto; margin-bottom:0; min-width:0; position:relative; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-row .zone-section + .zone-section{ padding-inline-start:22px; margin-inline-start:22px; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-row .zone-section + .zone-section::before{
+    content:''; position:absolute; inset-inline-start:0; top:8px; bottom:8px; width:1px;
+    background: var(--card-border);
+  }
+  body.fs-mode[data-fsview="warehouses"] .zone-title{ display:flex; font-size:12px; margin-bottom:8px; }
+  body.fs-mode[data-fsview="warehouses"] .gauges{ gap:12px; justify-content:flex-start; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-wrap{ width:104px; height:104px; margin-bottom:4px; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-digital-panel{ padding:2px 8px; margin-top:0; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-digital{ font-size:22px; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-unit{ font-size:10px; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-label{ font-size:10.5px; line-height:1.3; }
+  body.fs-mode[data-fsview="warehouses"] .readings{ gap:10px; margin:12px 0 0; }
+  body.fs-mode[data-fsview="warehouses"] .read-item{ padding:9px 12px; }
+  body.fs-mode[data-fsview="warehouses"] .read-item .rl{ font-size:10.5px; margin-bottom:3px; }
+  body.fs-mode[data-fsview="warehouses"] .read-item .rv{ font-size:14px; }
+  body.fs-mode[data-fsview="warehouses"] .station-foot{ padding-top:12px; margin-top:14px; font-size:10.5px; }
+  body.fs-mode[data-fsview="warehouses"] .log-btn{ font-size:10.5px; padding:4px 11px; }
+  body.fs-mode .station{ padding:8px 10px; display:flex; flex-direction:column; justify-content:flex-start; overflow:hidden; min-height:0; }
+  body.fs-mode .station-head{ margin-bottom:5px; flex:0 0 auto; }
+  body.fs-mode .station-head h3{ font-size:12px; }
+  body.fs-mode .status-chip{ font-size:9px; padding:3px 8px; }
+  body.fs-mode .range-badge{ font-size:8px; padding:3px 8px; margin-bottom:5px; gap:4px; }
+  body.fs-mode .gauge-row{ display:flex; flex-direction:row; gap:10px; flex:0 0 auto; }
+  body.fs-mode .gauge-row .zone-section{ flex:1; margin-bottom:0; min-width:0; }
+  body.fs-mode .zone-title{ display:none; }
+  body.fs-mode .gauges{ margin:0; gap:6px; justify-content:space-evenly; }
+  body.fs-mode .gauge-wrap{ width:78px; height:78px; margin-bottom:2px; }
+  body.fs-mode .gauge-digital-panel{ padding:1px 6px; margin-top:-3px; }
+  body.fs-mode .gauge-digital{ font-size:17px; }
+  body.fs-mode .gauge-unit{ font-size:7px; margin-top:1px; }
+  body.fs-mode .gauge-label{ font-size:8px; margin-top:1px; letter-spacing:0; line-height:1.25; }
+  body.fs-mode .readings{ gap:6px; margin:6px 0 0; flex:0 0 auto; }
+  body.fs-mode .read-item{ padding:4px 6px; }
+  body.fs-mode .read-item .rl{ font-size:8px; margin-bottom:1px; }
+  body.fs-mode .read-item .rv{ font-size:10px; }
+  body.fs-mode .station-foot{ padding-top:4px; margin-top:4px; font-size:8px; flex:0 0 auto; }
+  body.fs-mode .log-btn{ font-size:8px; padding:2px 7px; }
+
+  body.fs-mode .panel-card{ padding:8px; height:100%; display:flex; flex-direction:column; overflow:hidden; }
+  body.fs-mode .panel-header{ margin-bottom:4px; }
+  body.fs-mode .panel-title{ font-size:10px; }
+  body.fs-mode .master-status{ font-size:8px; padding:3px 8px; }
+  body.fs-mode .panel-toolbar{ margin-bottom:6px; gap:4px; }
+  body.fs-mode .ctrl-btn{ font-size:7px; padding:3px 6px; }
+  body.fs-mode .zones-grid{ grid-template-columns: repeat(4,1fr); grid-template-rows: repeat(2,1fr); gap:3px; flex:1 1 0; min-height:0; }
+  body.fs-mode .zone-tile{ padding:3px 2px; }
+  body.fs-mode .zone-tile .zn{ font-size:6px; margin-bottom:1px; }
+  body.fs-mode .zone-tile .zicon{ font-size:11px; margin-bottom:1px; }
+  body.fs-mode .zone-tile .zstatus{ font-size:6px; }
+  body.fs-mode .zone-tile .zval{ font-size:6px; margin-top:1px; }
+  body.fs-mode #section-fire .zones-grid{ display:none; }
+  body.fs-mode .fire-map-block{ display:flex; flex-direction:column; flex:1 1 0; min-height:0; margin-top:6px; }
+  body.fs-mode .fire-map-block > .zone-title{ display:none; }
+  body.fs-mode .fire-map-block .map-container{ flex:1; min-height:0; }
+  body.fs-mode .fire-map-block .map-container img{ width:100%; height:100%; object-fit:contain; display:block; }
+  body.fs-mode .fire-map-block .map-pin{ width:22px; height:22px; font-size:9px; border-width:2px; }
+  body.fs-mode .fire-map-block .map-pin .pin-num{ font-size:7px; }
+  body.fs-mode .fire-map-block .map-empty{ padding:10px; font-size:9px; }
+  body.fs-mode .panel-card{ gap:0; }
+
+  /* عرض موسّع وواضح لقسم الحريق أو الغاز لما يكون هو القسم الوحيد بوضع ملء الشاشة */
+  body.fs-mode[data-fsview="fire"] .panel-card, body.fs-mode[data-fsview="gas"] .panel-card{ padding:18px; }
+  body.fs-mode[data-fsview="fire"] .panel-title, body.fs-mode[data-fsview="gas"] .panel-title{ font-size:17px; }
+  body.fs-mode[data-fsview="fire"] .master-status, body.fs-mode[data-fsview="gas"] .master-status{ font-size:12px; padding:5px 14px; }
+  body.fs-mode[data-fsview="fire"] .panel-toolbar, body.fs-mode[data-fsview="gas"] .panel-toolbar{ margin-bottom:12px; gap:10px; }
+  body.fs-mode[data-fsview="fire"] .ctrl-btn, body.fs-mode[data-fsview="gas"] .ctrl-btn{ font-size:12px; padding:7px 14px; }
+  body.fs-mode[data-fsview="gas"] .zones-grid{ grid-template-columns: repeat(4,1fr); grid-template-rows: repeat(2,1fr); gap:14px; }
+  body.fs-mode[data-fsview="gas"] .zone-tile{ padding:12px 8px; }
+  body.fs-mode[data-fsview="gas"] .zone-tile .zn{ font-size:12px; margin-bottom:5px; }
+  body.fs-mode[data-fsview="gas"] .zone-tile .zicon{ font-size:24px; margin-bottom:5px; }
+  body.fs-mode[data-fsview="gas"] .zone-tile .zstatus{ font-size:12px; }
+  body.fs-mode[data-fsview="gas"] .zone-tile .zval{ font-size:12px; margin-top:5px; }
+  body.fs-mode[data-fsview="fire"] .fire-map-block .map-pin{ width:34px; height:34px; font-size:15px; border-width:3px; }
+  body.fs-mode[data-fsview="fire"] .fire-map-block .map-pin .pin-num{ font-size:12px; }
+  body.fs-mode[data-fsview="fire"] .fire-map-block .map-empty{ padding:20px; font-size:14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand-center">
+      <div class="title-row">
+        <span class="we">🌾</span>
+        <h1 data-i18n="title">Qamha Scada System</h1>
+        <span class="we">🌾</span>
+      </div>
+      <div class="brand-underline"></div>
+    </div>
+    <div class="header-toolbar">
+      <div class="toolbar-group">
+        <div class="clock"><div class="time" id="clockTime">--:--:--</div><div class="date" id="clockDate">--/--/----</div></div>
+        <div class="conn-badge" id="connBadge"><span class="dot"></span><span id="connText">Demo</span></div>
+      </div>
+      <div class="toolbar-group">
+        <button class="icon-btn" id="thresholdSilenceBtn" onclick="silenceThresholdAlert()" title="Silence" style="display:none;color:var(--danger);">🔇</button>
+        <button class="icon-btn" id="notifyBtn" onclick="enableNotifications()" title="Enable Notifications">🔕</button>
+        <button class="icon-btn" id="installBtn" onclick="installApp()" title="Install App" style="display:none;">📲</button>
+        <button class="icon-btn" id="fullscreenBtn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
+        <button class="icon-btn" id="adminBtn" onclick="requestAdminAccess()" title="Admin">⚙️</button>
+        <select class="mini-select" id="themeSelect" onchange="setTheme(this.value)">
+          <option value="dark" data-i18n="optDark">🌙 داكن</option>
+          <option value="light" data-i18n="optLight">☀️ فاتح</option>
+        </select>
+        <select class="mini-select" id="langSelect" onchange="setLang(this.value)">
+          <option value="ar">العربية</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <nav>
+    <div class="tab active" data-view="overview"><span data-i18n="navOverview">🏭 نظرة عامة</span></div>
+    <div class="tab" data-view="warehouses"><span data-i18n="navWarehouses">🌡️ حرارة المخازن</span></div>
+    <div class="tab" data-view="fire"><span data-i18n="navFire">🔥 إنذار الحريق</span></div>
+    <div class="tab" data-view="gas"><span data-i18n="navGas">🛢️ تسرب الغاز</span></div>
+  </nav>
+
+  <div class="summary" id="summaryStrip">
+    <div class="sum-card ok"><div class="glow" style="color:var(--ok)"></div>
+      <div class="label" data-i18n="labelActive">المنظومات النشطة</div><div class="val" id="sumActive">3 / 3</div>
+    </div>
+    <div class="sum-card"><div class="glow" style="color:var(--accent)"></div>
+      <div class="label" data-i18n="labelLastUpdate">آخر تحديث</div><div class="val" id="sumUpdate" style="font-size:18px;">--</div>
+    </div>
+    <div class="sum-card danger alerts-clickable" id="sumAlertCard" onclick="openAlertsModal()"><div class="glow" style="color:var(--danger)"></div>
+      <div class="label" data-i18n="labelAlerts">تنبيهات نشطة (اضغط للتفاصيل)</div><div class="val" id="sumAlerts">0</div>
+    </div>
+  </div>
+
+  <div class="avg-strip" id="avgStrip">
+    <div class="avg-strip-title" data-i18n="avgStripTitle">🌾 معدل الحرارة لكل مخزن</div>
+    <div class="avg-chips" id="avgChips"></div>
+  </div>
+
+  <div class="fs-row" id="fsRow">
+  <div class="sys-section" data-sys="warehouses" id="section-warehouses">
+    <div class="sys-title">🏬 <span data-i18n="secWarehousesTitle">مراقبة حرارة ورطوبة المخازن</span></div>
+    <div class="grid" id="stationsGrid"></div>
+  </div>
+
+  <div class="fs-fire-gas-col" id="fsFireGasCol">
+  <div class="sys-section" data-sys="fire" id="section-fire">
+    <div class="panel-card">
+      <div class="panel-header">
+        <div class="panel-title">🔥 <span data-i18n="fireTitle">منظومة إنذار الحريق 1</span></div>
+        <div class="master-status ok" id="fireMasterStatus">--</div>
+      </div>
+      <div class="panel-toolbar">
+        <button class="ctrl-btn" onclick="fireSilence()">🔇 <span data-i18n="btnSilence">كتم</span></button>
+        <button class="ctrl-btn" onclick="fireReset()">🔁 <span data-i18n="btnReset">إعادة تعيين</span></button>
+        <button class="ctrl-btn" onclick="fireTest()">🧪 <span data-i18n="btnTest">اختبار</span></button>
+      </div>
+      <div class="zones-grid" id="fireZonesGrid"></div>
+      <div class="fire-map-block" style="margin-top:18px;">
+        <div class="zone-title">🗺️ <span data-i18n="fireMapSectionTitle">خريطة الموقع</span></div>
+        <div class="map-container" id="fireMapMainContainer">
+          <div class="map-empty" id="fireMapMainEmpty" data-i18n="fireMapEmptyMain">لا توجد خريطة مرفوعة بعد — أضفها من ⚙️ الإدارة</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sys-section" data-sys="gas" id="section-gas">
+    <div class="panel-card">
+      <div class="panel-header">
+        <div class="panel-title">🛢️ <span data-i18n="gasTitle">منظومة مراقبة تسرب الغاز</span></div>
+        <div class="master-status ok" id="gasMasterStatus">--</div>
+      </div>
+      <div class="panel-toolbar">
+        <button class="ctrl-btn" onclick="gasSilence()">🔇 <span data-i18n="btnSilence">كتم</span></button>
+        <button class="ctrl-btn" onclick="gasReset()">🔁 <span data-i18n="btnReset">إعادة تعيين</span></button>
+        <button class="ctrl-btn" onclick="gasTest()">🧪 <span data-i18n="btnTest">اختبار</span></button>
+      </div>
+      <div class="zones-grid" id="gasZonesGrid"></div>
+    </div>
+  </div>
+  </div>
+  </div>
+
+  <footer>
+    <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز — تعمل حالياً ببيانات تجريبية</div>
+    <div class="brand-footer">
+      <div class="brand-logo">🔗 روابط الإبداع</div>
+      <div class="brand-owner" data-i18n="companyOwnership">جميع حقوق هذا البرنامج مملوكة لشركة روابط الإبداع</div>
+    </div>
+  </footer>
+</div>
+
+<!-- ===== Log Modal ===== -->
+<div class="modal-overlay" id="logModal">
+  <div class="modal-box">
+    <div class="modal-head"><h3 id="logModalTitle">سجل الأحداث</h3><button class="modal-close" onclick="closeLog()">✕</button></div>
+    <div class="modal-controls">
+      <label class="chk"><input type="checkbox" id="alertsOnlyChk" onchange="renderLogTable()"> <span data-i18n="alertsOnlyLabel">عرض التنبيهات فقط</span></label>
+      <button class="export-btn" onclick="exportLogExcel()" data-i18n="exportLabel">⬇ تصدير Excel</button>
+    </div>
+    <div class="modal-table-wrap">
+      <table class="log-table">
+        <thead><tr><th data-i18n="colDate">التاريخ والوقت</th><th data-i18n="colS1">حساس 1</th><th data-i18n="colS2">حساس 2</th><th data-i18n="colAvg">المعدل</th><th data-i18n="colDiff">الفرق</th><th data-i18n="colStatus">الحالة</th></tr></thead>
+        <tbody id="logTableBody"></tbody>
+      </table>
+      <div class="log-empty" id="logEmpty" data-i18n="noDataLabel">لا توجد بيانات مسجلة بعد</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Alert Details Modal ===== -->
+<div class="modal-overlay" id="alertModal">
+  <div class="modal-box">
+    <div class="modal-head"><h3 data-i18n="alertModalTitle">تفاصيل التنبيهات النشطة</h3><button class="modal-close" onclick="closeAlertModal()">✕</button></div>
+    <div class="modal-table-wrap">
+      <table class="log-table">
+        <thead><tr><th data-i18n="colWarehouse">المخزن</th><th data-i18n="colS1">حساس 1</th><th data-i18n="colS2">حساس 2</th><th data-i18n="colDiff">الفرق</th><th data-i18n="colSince">منذ (ثانية)</th></tr></thead>
+        <tbody id="alertTableBody"></tbody>
+      </table>
+      <div class="log-empty" id="alertEmpty" data-i18n="noActiveAlerts">لا توجد تنبيهات نشطة حالياً</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Admin Auth Modal ===== -->
+<div class="modal-overlay" id="adminAuthModal">
+  <div class="modal-box" style="max-width:360px;">
+    <div class="modal-head"><h3 data-i18n="adminAuthTitle">🔒 دخول الإدارة</h3><button class="modal-close" onclick="closeAdminAuth()">✕</button></div>
+    <p style="font-size:12px;color:var(--text-1);margin-bottom:12px;" data-i18n="adminAuthIntro">أدخل كلمة المرور للوصول إلى إعدادات النظام</p>
+    <input type="password" id="adminPassInput" placeholder="••••••••" style="width:100%;padding:10px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid var(--card-border);color:var(--text-0);margin-bottom:10px;box-sizing:border-box;" onkeydown="if(event.key==='Enter') checkAdminPassword()">
+    <div id="adminAuthError" style="color:var(--danger);font-size:11px;margin-bottom:10px;display:none;" data-i18n="adminAuthError">كلمة المرور غير صحيحة</div>
+    <button class="export-btn" style="width:100%;" onclick="checkAdminPassword()" data-i18n="adminAuthSubmit">دخول</button>
+  </div>
+</div>
+
+<!-- ===== Admin Modal ===== -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal-box">
+    <div class="modal-head"><h3 data-i18n="adminTitle">⚙️ إعدادات النظام (الرينج المسموح)</h3><button class="modal-close" onclick="closeAdmin()">✕</button></div>
+    <div id="adminForm"></div>
+    <button class="export-btn" style="margin-top:10px;width:100%;" onclick="saveAdmin()" data-i18n="adminSave">💾 حفظ الإعدادات</button>
+    <button class="ctrl-btn" style="margin-top:10px;width:100%;" onclick="openFireMapAdmin()">🗺️ <span data-i18n="fireMapAdminBtn">إدارة خريطة منظومة الحريق</span></button>
+  </div>
+</div>
+
+<!-- ===== Temperature Threshold Alert Popup (Trilingual) ===== -->
+<div class="modal-overlay" id="tempAlertModal">
+  <div class="modal-box" style="max-width:480px;border:2px solid var(--danger);box-shadow:0 0 40px rgba(255,59,92,.5);">
+    <div class="modal-head"><h3 style="color:var(--danger);">⚠️</h3><button class="modal-close" onclick="closeTempAlertPopup()">✕</button></div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div id="tempAlertMsgAr" dir="rtl" style="font-size:15px;font-weight:700;color:var(--text-0);line-height:1.7;"></div>
+      <div id="tempAlertMsgEn" dir="ltr" style="font-size:14px;font-weight:600;color:var(--text-1);line-height:1.6;"></div>
+      <div id="tempAlertMsgKu" dir="rtl" style="font-size:14px;font-weight:600;color:var(--text-1);line-height:1.6;"></div>
+    </div>
+    <button class="export-btn" style="margin-top:14px;width:100%;" onclick="closeTempAlertPopup()">OK</button>
+  </div>
+</div>
+
+<!-- ===== Generic Info Modal (تثبيت التطبيق / الإشعارات) ===== -->
+<div class="modal-overlay" id="infoModal">
+  <div class="modal-box" style="max-width:460px;">
+    <div class="modal-head"><h3 id="infoModalTitle" style="color:var(--wheat);">ℹ️</h3><button class="modal-close" onclick="closeInfoModal()">✕</button></div>
+    <div id="infoModalBody" style="font-size:14px;color:var(--text-1);line-height:1.8;white-space:pre-line;"></div>
+    <button class="export-btn" style="margin-top:14px;width:100%;" onclick="closeInfoModal()">OK</button>
+  </div>
+</div>
+
+<!-- ===== Fire Map Admin Modal ===== -->
+<div class="modal-overlay" id="fireMapAdminModal">
+  <div class="modal-box" style="max-width:820px;">
+    <div class="modal-head"><h3 data-i18n="fireMapAdminTitle">🗺️ خريطة منظومة الحريق</h3><button class="modal-close" onclick="closeFireMapAdmin()">✕</button></div>
+    <div class="map-note" data-i18n="fireMapNote">ارفع صورة أو ملف PDF لمخطط الموقع، وحدد مكان كل متحسس بالضغط على الخريطة. ملفات الأوتوكاد (DWG/DXF) غير مدعومة مباشرة — صدّرها كـ PDF أو صورة من برنامج الأوتوكاد أولاً.</div>
+    <div class="map-toolbar">
+      <label class="map-file-label" for="fireMapFile" data-i18n="fireMapUpload">⬆ رفع خريطة (صورة / PDF)</label>
+      <input type="file" id="fireMapFile" accept="image/*,application/pdf" style="display:none;" onchange="handleFireMapFile(event)">
+      <button class="ctrl-btn" id="pickModeBtn" onclick="toggleAddPinMode()">➕ <span data-i18n="fireMapAddPin">إضافة متحسس</span></button>
+      <button class="ctrl-btn" onclick="tidyPinsByZone()">🧹 <span data-i18n="fireMapTidy">ترتيب حسب الزون</span></button>
+      <button class="ctrl-btn" onclick="clearFireMap()">🗑️ <span data-i18n="fireMapClear">مسح الخريطة</span></button>
+    </div>
+    <div class="map-toolbar" id="addPinConfig" style="display:none;">
+      <label class="map-input-label"><span data-i18n="fireMapCount">العدد</span>: <input type="number" id="addPinCount" min="1" max="18" value="1"></label>
+      <label class="map-input-label"><span data-i18n="fireMapTargetZone">الزون المستهدف</span>: <input type="number" id="addPinStartZone" min="1" max="8" value="1"></label>
+      <label class="map-input-label"><span data-i18n="fireMapSensorType">نوع المتحسس</span>: <select id="addPinType"></select></label>
+      <button class="log-btn" onclick="confirmBulkAdd()" data-i18n="fireMapAddNow">➕ إضافة الآن</button>
+      <button class="log-btn" onclick="cancelBulkAddPins()">✕</button>
+    </div>
+    <div class="map-toolbar">
+      <label class="map-input-label"><span data-i18n="fireMapMatrixZone">الزون</span>: <input type="number" id="matrixZone" min="1" max="8" value="1"></label>
+      <label class="map-input-label"><span data-i18n="fireMapRows">صفوف</span>: <input type="number" id="matrixRows" min="1" max="10" value="4"></label>
+      <label class="map-input-label"><span data-i18n="fireMapCols">أعمدة</span>: <input type="number" id="matrixCols" min="1" max="10" value="9"></label>
+      <button class="log-btn" onclick="matrixDistributeZone()">🔲 <span data-i18n="fireMapMatrixBtn">توزيع مصفوفة لهذا الزون</span></button>
+    </div>
+    <div class="map-toolbar">
+      <label class="map-input-label"><span data-i18n="fireMapRows">صفوف</span>: <input type="number" id="gridRows" min="1" max="8" value="4"></label>
+      <label class="map-input-label"><span data-i18n="fireMapCols">أعمدة</span>: <input type="number" id="gridCols" min="1" max="8" value="4"></label>
+      <label class="map-input-label"><span data-i18n="fireMapStartZone">يبدأ من زون</span>: <input type="number" id="gridStartZone" min="1" max="8" value="1"></label>
+      <button class="log-btn" onclick="gridDistributePins()">🔲 <span data-i18n="fireMapGridBtn">توزيع شبكي لكل الزونات (يستبدل الكل)</span></button>
+      <div class="map-note" style="margin:0;flex-basis:100%;" data-i18n="fireMapGridNote">كل 18 متحسس ينحطون بنفس الزون بالتسلسل، وبعدها ينتقل تلقائياً للزون التالي.</div>
+    </div>
+    <div class="map-container" id="fireMapAdminContainer">
+      <div class="map-empty" id="fireMapAdminEmpty" data-i18n="fireMapEmpty">لا توجد خريطة مرفوعة بعد</div>
+    </div>
+    <div class="map-pins-list" id="fireMapPinsList"></div>
+    <button class="export-btn" style="margin-top:14px;width:100%;" onclick="saveFireMapAdmin()" data-i18n="fireMapSave">💾 حفظ الخريطة</button>
+  </div>
+</div>
+
+<script type="module">
+/* ==========================================================
+   إعدادات Firebase - عدّل بعد ما يصير عندك مشروع فعلي
+   ========================================================== */
+const firebaseConfig = { apiKey:"AIzaSyAvNfgUCEmVikT-IE0XvE5s3SRFfwm5gLA", databaseURL:"https://qamha-metering-default-rtdb.europe-west1.firebasedatabase.app", projectId:"qamha-metering",
+  // ⚠️ لازم تحطهم من Firebase Console > Project Settings > General > Your apps (نفس مكان باقي القيم) حتى تشتغل الإشعارات
+  messagingSenderId:"877494683287", appId:"1:877494683287:web:600c1ef1417e74a6f14bd2" };
+// ⚠️ من Firebase Console > Project Settings > Cloud Messaging > Web configuration > Generate Key Pair
+const VAPID_KEY = "BL9XCN6DQkGSUu4bJJTPeUFXbjSfx19rLbj8ddBfDARgruvmRD6OSWOT65yszv77Ml4W2aSmPKUGXSrAc638uJs";
+
+const WAREHOUSES = [
+  {id:"warehouse_1", nameAr:"المخزن المجمد",        nameEn:"Frozen Warehouse",         nameKu:"کۆگای بەستوو",           tempMin:-20, tempMax:-15},
+  {id:"warehouse_2", nameAr:"المخزن المبرد 1",       nameEn:"Refrigerated Warehouse 1", nameKu:"کۆگای سارد ١",           tempMin:5,   tempMax:20},
+  {id:"warehouse_3", nameAr:"المخزن المبرد 2",       nameEn:"Refrigerated Warehouse 2", nameKu:"کۆگای سارد ٢",           tempMin:5,   tempMax:20},
+  {id:"warehouse_4", nameAr:"مخزن المواد الأولية 1", nameEn:"Raw Materials Warehouse 1",nameKu:"کۆگای ماددە خاوەکان ١",  tempMin:0,   tempMax:40},
+  {id:"warehouse_5", nameAr:"مخزن المواد الأولية 2", nameEn:"Raw Materials Warehouse 2",nameKu:"کۆگای ماددە خاوەکان ٢",  tempMin:0,   tempMax:40},
+  {id:"warehouse_6", nameAr:"مخزن الطحين",           nameEn:"Flour Warehouse",          nameKu:"کۆگای ئارد",             tempMin:5,   tempMax:40},
+  {id:"warehouse_7", nameAr:"منطقة الكهرباء",        nameEn:"Electrical Panel Zone",    nameKu:"ناوچەی کارەبا",          tempMin:0,   tempMax:50}
+];
+const TEMP_MIN=-50, TEMP_MAX=100, HUM_MIN=0, HUM_MAX=100, ALERT_DIFF=2.0, LOG_MAX=500;
+const FIRE_ZONE_COUNT = 8, GAS_ZONE_COUNT = 8, MAX_SENSORS_PER_ZONE = 18;
+
+let state = {};
+let currentLang = localStorage.getItem('qamha_lang') || 'ar';
+let currentLogWarehouse = null;
+let lastGlobalUpdate = null;
+const logs = {}; WAREHOUSES.forEach(w=>logs[w.id]=[]);
+const trendMem = {};
+const humTrendMem = {};
+const alertSinceMem = {};
+
+/* ---------- الترجمة ---------- */
+const I18N = {
+  ar:{ title:'Qamha Scada System', navOverview:'🏭 نظرة عامة', navWarehouses:'🌡️ حرارة المخازن', navFire:'🔥 إنذار الحريق', navGas:'🛢️ تسرب الغاز',
+    labelActive:'المنظومات النشطة', labelLastUpdate:'آخر تحديث', labelAlerts:'تنبيهات نشطة (اضغط للتفاصيل)',
+    avgStripTitle:'🌾 معدل الحرارة لكل مخزن', secWarehousesTitle:'مراقبة حرارة ورطوبة المخازن',
+    zoneTemp:'🌡️ الحرارة', zoneHum:'💧 الرطوبة', sensor1Label:'حساس 1', sensor2Label:'حساس 2', humidityLabel:'الرطوبة',
+    diffLabel:'الفرق بين حساسي الحرارة', statusLabel:'حالة الحرارة', humStatusLabel:'حالة الرطوبة', liveData:'بيانات حية', logBtn:'📋 السجل',
+    rangeLabel:'🎯 الرينج المسموح', toWord:'إلى',
+    dialLabelTemp:'Temp. °C', dialLabelHum:'Humidity %',
+    chipNormal:'● طبيعي', chipAlert:'⚠ تنبيه', statusNormal:'طبيعي', statusRising:'▲ صاعدة', statusFalling:'▼ نازلة',
+    logTitlePrefix:'سجل الأحداث — ', alertsOnlyLabel:'عرض التنبيهات فقط', exportLabel:'⬇ تصدير Excel',
+    colDate:'التاريخ والوقت', colS1:'حساس 1', colS2:'حساس 2', colAvg:'المعدل', colDiff:'الفرق', colStatus:'الحالة',
+    noDataLabel:'لا توجد بيانات مسجلة بعد', alertModalTitle:'تفاصيل التنبيهات النشطة', noActiveAlerts:'لا توجد تنبيهات نشطة حالياً',
+    colWarehouse:'المخزن', colSince:'منذ (ثانية)',
+    adminAuthTitle:'🔒 دخول الإدارة', adminAuthIntro:'أدخل كلمة المرور للوصول إلى إعدادات النظام', adminAuthError:'كلمة المرور غير صحيحة', adminAuthSubmit:'دخول',
+    adminTitle:'⚙️ إعدادات النظام (الرينج المسموح)',
+    adminIntro:'حدد المدى الطبيعي للحرارة والرطوبة لكل مخزن — خارج هذا المدى تتغير الحالة تلقائياً لصاعدة أو نازلة.',
+    tempRangeLabel:'الحرارة °م', humRangeLabel:'الرطوبة %', minLabel:'من', maxLabel:'إلى', adminSave:'💾 حفظ الإعدادات',
+    silenceThresholdBtn:'🔇 كتم تنبيه الحرارة',
+    fireTitle:'منظومة إنذار الحريق 1', zoneWord:'المنطقة', fireMasterOk:'✅ النظام سليم', fireMasterAlarm:'🚨 إنذار نشط', fireMasterFault:'⚠ يوجد عطل',
+    fireStatusNormal:'طبيعي', fireStatusAlarm:'حريق!', fireStatusFault:'عطل', fireStatusDisabled:'معطّل',
+    btnSilence:'🔇 كتم', btnReset:'🔁 إعادة تعيين', btnTest:'🧪 اختبار',
+    fireMapAdminBtn:'إدارة خريطة منظومة الحريق', fireMapAdminTitle:'🗺️ خريطة منظومة الحريق',
+    fireMapNote:'ارفع صورة أو ملف PDF لمخطط الموقع، وحدد مكان كل متحسس بالضغط على الخريطة. ملفات الأوتوكاد (DWG/DXF) غير مدعومة مباشرة — صدّرها كـ PDF أو صورة من برنامج الأوتوكاد أولاً.',
+    fireMapUpload:'⬆ رفع خريطة (صورة / PDF)', fireMapAddPin:'إضافة متحسس', fireMapClear:'مسح الخريطة',
+    fireMapEmpty:'لا توجد خريطة مرفوعة بعد', fireMapSave:'💾 حفظ الخريطة', fireMapSectionTitle:'خريطة الموقع',
+    fireMapEmptyMain:'لا توجد خريطة مرفوعة بعد — أضفها من ⚙️ الإدارة',
+    fireMapTidy:'ترتيب حسب الزون', fireMapCount:'العدد', fireMapStartZone:'يبدأ من زون', fireMapStart:'ابدأ التحديد',
+    fireMapRows:'صفوف', fireMapCols:'أعمدة', fireMapGridBtn:'توزيع شبكي (يستبدل الحالي)',
+    fireMapUploadFirst:'ارفع خريطة أولاً', fireMapZoneLimit:'وصلت للحد الأقصى لعدد الزونات (16)',
+    fireMapTargetZone:'الزون المستهدف', fireMapZoneFull:'هذا الزون ممتلئ (الحد الأقصى 18 متحسس بكل زون)', fireMapZoneCapped:'تم تقليل العدد للسعة المتاحة',
+    fireMapSensorType:'نوع المتحسس', fireMapAddNow:'➕ إضافة الآن',
+    sensorTypeSmoke:'متحسس دخان', sensorTypeHeat:'متحسس حرارة', sensorTypeCombo:'متحسس مزدوج', sensorTypeFlame:'متحسس لهب', sensorTypeSiren:'صافرة إنذار', sensorTypeGlass:'كسر زجاج',
+    fireMapMatrixZone:'الزون', fireMapMatrixBtn:'توزيع مصفوفة لهذا الزون', fireMapNoSensorsInZone:'لا يوجد متحسسات بهذا الزون بعد',
+    fireMapGridNote:'كل 18 متحسس ينحطون بنفس الزون بالتسلسل، وبعدها ينتقل تلقائياً للزون التالي.',
+    gasTitle:'منظومة مراقبة تسرب الغاز', gasMasterOk:'✅ لا يوجد تسرب', gasMasterAlarm:'🚨 تسرب غاز!', gasMasterFault:'⚠ يوجد عطل',
+    gasStatusSafe:'آمن', gasStatusWarning:'تحذير', gasStatusDanger:'خطر تسرب', gasStatusFault:'عطل',
+    footerLine1:'منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز — تعمل حالياً ببيانات تجريبية',
+    companyOwnership:'جميع حقوق هذا البرنامج مملوكة لشركة روابط الإبداع', optDark:'🌙 داكن', optLight:'☀️ فاتح', warehouseWord:'مخزن' },
+  en:{ title:'Qamha Scada System', navOverview:'🏭 Overview', navWarehouses:'🌡️ Warehouse Temps', navFire:'🔥 Fire Alarm', navGas:'🛢️ Gas Leak',
+    labelActive:'Active Systems', labelLastUpdate:'Last Update', labelAlerts:'Active Alerts (click for details)',
+    avgStripTitle:'🌾 Average Temp per Warehouse', secWarehousesTitle:'Warehouse Temp & Humidity Monitoring',
+    zoneTemp:'🌡️ Temperature', zoneHum:'💧 Humidity', sensor1Label:'Sensor 1', sensor2Label:'Sensor 2', humidityLabel:'Humidity',
+    diffLabel:'Temp Sensor Diff', statusLabel:'Temp Status', humStatusLabel:'Humidity Status', liveData:'Live Data', logBtn:'📋 Log',
+    rangeLabel:'🎯 Allowed Range', toWord:'to',
+    dialLabelTemp:'Temp. °C', dialLabelHum:'Humidity %',
+    chipNormal:'● Normal', chipAlert:'⚠ Alert', statusNormal:'Normal', statusRising:'▲ Rising', statusFalling:'▼ Falling',
+    logTitlePrefix:'Event Log — ', alertsOnlyLabel:'Alerts only', exportLabel:'⬇ Export Excel',
+    colDate:'Date & Time', colS1:'Sensor 1', colS2:'Sensor 2', colAvg:'Average', colDiff:'Diff', colStatus:'Status',
+    noDataLabel:'No data logged yet', alertModalTitle:'Active Alert Details', noActiveAlerts:'No active alerts',
+    colWarehouse:'Warehouse', colSince:'Since (sec)',
+    adminAuthTitle:'🔒 Admin Login', adminAuthIntro:'Enter the password to access system settings', adminAuthError:'Incorrect password', adminAuthSubmit:'Enter',
+    adminTitle:'⚙️ System Settings (Allowed Range)',
+    adminIntro:'Set the normal temperature/humidity range per warehouse — outside this range status switches to rising or falling automatically.',
+    tempRangeLabel:'Temp °C', humRangeLabel:'Humidity %', minLabel:'Min', maxLabel:'Max', adminSave:'💾 Save Settings',
+    silenceThresholdBtn:'🔇 Silence Temp Alert',
+    fireTitle:'Fire Alarm System 1', zoneWord:'Zone', fireMasterOk:'✅ System Normal', fireMasterAlarm:'🚨 Active Alarm', fireMasterFault:'⚠ Fault Present',
+    fireStatusNormal:'Normal', fireStatusAlarm:'Fire!', fireStatusFault:'Fault', fireStatusDisabled:'Disabled',
+    btnSilence:'🔇 Silence', btnReset:'🔁 Reset', btnTest:'🧪 Test',
+    fireMapAdminBtn:'Manage Fire System Map', fireMapAdminTitle:'🗺️ Fire System Site Map',
+    fireMapNote:'Upload an image or PDF site plan, then click the map to place each sensor. AutoCAD files (DWG/DXF) are not supported directly — export as PDF or image from AutoCAD first.',
+    fireMapUpload:'⬆ Upload Map (Image / PDF)', fireMapAddPin:'Add Sensor', fireMapClear:'Clear Map',
+    fireMapEmpty:'No map uploaded yet', fireMapSave:'💾 Save Map', fireMapSectionTitle:'Site Map',
+    fireMapEmptyMain:'No map uploaded yet — add one from ⚙️ Admin',
+    fireMapTidy:'Tidy by Zone', fireMapCount:'Count', fireMapStartZone:'Start at zone', fireMapStart:'Start Placing',
+    fireMapRows:'Rows', fireMapCols:'Cols', fireMapGridBtn:'Grid Distribute (replaces current)',
+    fireMapUploadFirst:'Upload a map first', fireMapZoneLimit:'Reached the max zone count (16)',
+    fireMapTargetZone:'Target zone', fireMapZoneFull:'This zone is full (max 18 sensors per zone)', fireMapZoneCapped:'Count reduced to available capacity',
+    fireMapSensorType:'Sensor type', fireMapAddNow:'➕ Add Now',
+    sensorTypeSmoke:'Smoke Detector', sensorTypeHeat:'Heat Detector', sensorTypeCombo:'Combo Detector', sensorTypeFlame:'Flame Detector', sensorTypeSiren:'Alarm Siren', sensorTypeGlass:'Glass Break',
+    fireMapMatrixZone:'Zone', fireMapMatrixBtn:'Matrix distribute this zone', fireMapNoSensorsInZone:'No sensors in this zone yet',
+    fireMapGridNote:'Every 18 sensors are assigned to the same zone in sequence, then it automatically moves to the next zone.',
+    gasTitle:'Gas Leak Monitoring System', gasMasterOk:'✅ No Leak Detected', gasMasterAlarm:'🚨 Gas Leak!', gasMasterFault:'⚠ Fault Present',
+    gasStatusSafe:'Safe', gasStatusWarning:'Warning', gasStatusDanger:'Danger', gasStatusFault:'Fault',
+    footerLine1:'Internal platform for monitoring warehouses, fire and gas systems — currently running demo data',
+    companyOwnership:'All rights of this software belong to Rawabet Al-Ibda Company', optDark:'🌙 Dark', optLight:'☀️ Light', warehouseWord:'Warehouse' }
+};
+function t(k){ return (I18N[currentLang] && I18N[currentLang][k]) || k; }
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function whName(i){
+  const w = WAREHOUSES[i];
+  if(w && w.nameAr && w.nameEn){ return currentLang==='ar' ? w.nameAr : w.nameEn; }
+  return t('warehouseWord') + ' ' + (i+1);
+}
+
+function applyStaticI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = t(el.getAttribute('data-i18n')); });
+}
+
+/* ---------- إعدادات الإدارة (Admin ranges) ---------- */
+const DEFAULT_RANGE = { tempMin:15, tempMax:35, humMin:30, humMax:70 };
+const ADMIN_SETTINGS_VERSION = 2; // رفعناها عشان تعتمد حدود المناطق السبعة الجديدة وتتجاوز أي قيم قديمة محفوظة بالمتصفح
+let adminSettings = {};
+function loadAdminSettings(){
+  let saved = {};
+  const savedVersion = parseInt(localStorage.getItem('qamha_admin_settings_version') || '0', 10);
+  if(savedVersion === ADMIN_SETTINGS_VERSION){
+    try{ saved = JSON.parse(localStorage.getItem('qamha_admin_settings') || '{}'); }catch(e){}
+  }
+  WAREHOUSES.forEach(w=>{
+    const zoneDefault = { tempMin:w.tempMin, tempMax:w.tempMax, humMin:DEFAULT_RANGE.humMin, humMax:DEFAULT_RANGE.humMax };
+    adminSettings[w.id] = Object.assign({}, zoneDefault, saved[w.id]||{});
+  });
+  localStorage.setItem('qamha_admin_settings', JSON.stringify(adminSettings));
+  localStorage.setItem('qamha_admin_settings_version', String(ADMIN_SETTINGS_VERSION));
+}
+loadAdminSettings();
+
+function computeTempStatus(wId, avgValue, cfg){
+  const prev = (wId in trendMem) ? trendMem[wId] : avgValue;
+  trendMem[wId] = avgValue;
+  const delta = avgValue - prev;
+  const inRange = avgValue >= cfg.tempMin && avgValue <= cfg.tempMax;
+  if(Math.abs(delta) >= 0.15) return delta > 0 ? 'rising' : 'falling';
+  return inRange ? 'normal' : (avgValue > cfg.tempMax ? 'rising' : 'falling');
+}
+
+function computeHumStatus(wId, humValue, cfg){
+  if(humValue===undefined || humValue===null || isNaN(humValue)) return 'normal';
+  const prev = (wId in humTrendMem) ? humTrendMem[wId] : humValue;
+  humTrendMem[wId] = humValue;
+  const delta = humValue - prev;
+  const inRange = humValue >= cfg.humMin && humValue <= cfg.humMax;
+  if(Math.abs(delta) >= 0.3) return delta > 0 ? 'rising' : 'falling';
+  return inRange ? 'normal' : (humValue > cfg.humMax ? 'rising' : 'falling');
+}
+
+/* ---------- تنبيه صوتي لتجاوز حدود متحسس فردي (يختلف عن صافرة الحريق) ---------- */
+const thresholdBreachState = {};
+let thresholdSirenSilenced = false;
+let tempAlertOsc=null, tempAlertGain=null, tempAlertInterval=null;
+function anyThresholdBreach(){
+  return Object.values(thresholdBreachState).some(s => s && (s.s1 || s.s2));
+}
+function startTempAlertTone(){
+  const ctx = ensureAudioCtx(); if(!ctx || tempAlertOsc) return;
+  tempAlertOsc = ctx.createOscillator(); tempAlertGain = ctx.createGain();
+  tempAlertOsc.type = 'square';
+  tempAlertOsc.frequency.value = 1000;
+  tempAlertGain.gain.value = 0;
+  tempAlertOsc.connect(tempAlertGain); tempAlertGain.connect(ctx.destination);
+  try{ tempAlertOsc.start(); }catch(e){}
+  let on = false;
+  tempAlertInterval = setInterval(()=>{
+    on = !on;
+    tempAlertGain.gain.setValueAtTime(on ? 0.25 : 0, ctx.currentTime);
+  }, 350);
+}
+function stopTempAlertTone(){
+  if(tempAlertInterval){ clearInterval(tempAlertInterval); tempAlertInterval=null; }
+  if(tempAlertOsc){ try{ tempAlertOsc.stop(); }catch(e){} try{ tempAlertOsc.disconnect(); }catch(e){} tempAlertOsc=null; }
+  if(tempAlertGain){ try{ tempAlertGain.disconnect(); }catch(e){} tempAlertGain=null; }
+}
+function updateThresholdSiren(){
+  const btn = document.getElementById('thresholdSilenceBtn');
+  const breach = anyThresholdBreach();
+  if(breach && !thresholdSirenSilenced){
+    startTempAlertTone();
+    if(btn) btn.style.display = 'inline-flex';
+  } else {
+    stopTempAlertTone();
+    if(btn) btn.style.display = 'none';
+  }
+  if(!breach) thresholdSirenSilenced = false; // نصفّر الكتم تلقائياً بعد ما ترجع القراءة طبيعية
+}
+window.silenceThresholdAlert = function(){ thresholdSirenSilenced = true; updateThresholdSiren(); };
+
+/* ---------- بوب-اب تحذير ثلاثي اللغة (عربي/انكليزي/كردي) عند تجاوز الحد ---------- */
+const tempPopupPrevBreach = {};
+function showTempAlertPopup(whIdx, sensorNum, value){
+  const valStr = Number(value).toFixed(1);
+  const w = WAREHOUSES[whIdx] || {};
+  const arWh = w.nameAr || ('مخزن ' + (whIdx+1)), enWh = w.nameEn || ('Warehouse ' + (whIdx+1)), kuWh = w.nameKu || ('کۆگای ' + (whIdx+1));
+  const arS = 'حساس ' + sensorNum, enS = 'Sensor ' + sensorNum, kuS = 'هەستیاری ' + sensorNum;
+  document.getElementById('tempAlertMsgAr').textContent =
+    `⚠️ تحذير: درجة حرارة ${arS} في ${arWh} وصلت ${valStr}°م — تجاوزت الحد المسموح!`;
+  document.getElementById('tempAlertMsgEn').textContent =
+    `⚠️ Warning: ${enS} temperature in ${enWh} reached ${valStr}°C — exceeded the allowed limit!`;
+  document.getElementById('tempAlertMsgKu').textContent =
+    `⚠️ ئاگاداری: پلەی گەرمی ${kuS} لە ${kuWh} گەیشتووەتە ${valStr}°C — لە سنووری ڕێگەپێدراو تێپەڕیوە!`;
+  document.getElementById('tempAlertModal').classList.add('show');
+}
+window.closeTempAlertPopup = function(){ document.getElementById('tempAlertModal').classList.remove('show'); };
+function maybeShowTempPopup(wId, whIdx, sensorNum, value, breach){
+  const key = wId + '_s' + sensorNum;
+  const wasBreach = !!tempPopupPrevBreach[key];
+  tempPopupPrevBreach[key] = breach;
+  if(breach && !wasBreach){ showTempAlertPopup(whIdx, sensorNum, value); }
+}
+
+function pad(n, len=2){ return String(n).padStart(len,'0'); }
+function num(v){ return (v===undefined||v===null||isNaN(v)) ? '--' : Number(v).toFixed(2); }
+function fmtTime(ts){ const d=new Date(ts); return pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds()); }
+function fmtDate(ts){ return new Date(ts).toLocaleDateString('ar-IQ'); }
+
+/* ==========================================================
+   محرك الكيجات الدائرية (SVG)
+   ========================================================== */
+const GAUGE_START=-135, GAUGE_SWEEP=270;
+const gaugeRefs = {};
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function polar(a,r){ const rad=a*Math.PI/180; return {x:100+r*Math.sin(rad), y:100-r*Math.cos(rad)}; }
+function arcPath(a1,a2,r){ const s=polar(a1,r), e=polar(a2,r); const large=Math.abs(a2-a1)>180?1:0; return `M ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`; }
+function svgEl(tag,attrs){ const el=document.createElementNS(SVG_NS,tag); for(const k in attrs) el.setAttribute(k,attrs[k]); return el; }
+
+function buildGauge(wrapId, zones, minVal, maxVal, opts){
+  opts = opts || {};
+  const unit = opts.unit || '';
+  const tint = opts.bezelTint || 'neutral';
+  const needleColor = opts.needleColor || '#ff5a36';
+  const dialLabel = opts.dialLabel || '';
+  const wrap = document.getElementById(wrapId); if(!wrap) return;
+  const uid = wrapId.replace(/[^a-zA-Z0-9]/g,'');
+  const svg = svgEl('svg', {viewBox:'0 0 200 200'});
+
+  /* ---- تدرجات فاتحة (Bezel / Dial بيضاء بأسلوب مقياس تناظري كلاسيكي) ---- */
+  const defs = svgEl('defs', {});
+  const bezelStops = tint==='warm'
+    ? ['#ffffff','#efe6d8','#cdbfa8']
+    : tint==='cool'
+    ? ['#ffffff','#e2edf5','#aac2d4']
+    : ['#ffffff','#e8e8ec','#c4c4cc'];
+  const bezelGrad = svgEl('radialGradient', {id:'bezel-'+uid, cx:'40%', cy:'32%', r:'75%'});
+  bezelGrad.appendChild(svgEl('stop', {offset:'0%', 'stop-color':bezelStops[0]}));
+  bezelGrad.appendChild(svgEl('stop', {offset:'60%', 'stop-color':bezelStops[1]}));
+  bezelGrad.appendChild(svgEl('stop', {offset:'100%', 'stop-color':bezelStops[2]}));
+  defs.appendChild(bezelGrad);
+
+  const dialGrad = svgEl('radialGradient', {id:'dial-'+uid, cx:'42%', cy:'35%', r:'80%'});
+  dialGrad.appendChild(svgEl('stop', {offset:'0%', 'stop-color':'#ffffff'}));
+  dialGrad.appendChild(svgEl('stop', {offset:'80%', 'stop-color':'#f2f3f6'}));
+  dialGrad.appendChild(svgEl('stop', {offset:'100%', 'stop-color':'#dfe1e6'}));
+  defs.appendChild(dialGrad);
+  svg.appendChild(defs);
+
+  /* ---- الإطار (Bezel) والقرص الأبيض ---- */
+  svg.appendChild(svgEl('circle', {cx:100, cy:100, r:96, fill:'none', stroke:'url(#bezel-'+uid+')', 'stroke-width':9}));
+  svg.appendChild(svgEl('circle', {cx:100, cy:100, r:84, fill:'url(#dial-'+uid+')', stroke:'#d4d6dc', 'stroke-width':1}));
+
+  /* ---- حزام الألوان (Zones) ---- */
+  let from=0;
+  zones.forEach(z=>{
+    const a1=GAUGE_START+from*GAUGE_SWEEP, a2=GAUGE_START+z.to*GAUGE_SWEEP;
+    svg.appendChild(svgEl('path',{d:arcPath(a1,a2,78), fill:'none', stroke:z.color, 'stroke-width':7}));
+    from=z.to;
+  });
+
+  /* ---- علامات القياس الكبيرة والصغيرة + أرقام (داكنة على قرص أبيض) ---- */
+  for(let i=0;i<=20;i++){
+    const tt=i/20, isMajor = i%4===0, ang=GAUGE_START+tt*GAUGE_SWEEP;
+    const outerR=71, innerR = isMajor?58:65;
+    const p1=polar(ang,innerR), p2=polar(ang,outerR);
+    svg.appendChild(svgEl('line',{x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y, stroke: isMajor?'#2a2f3a':'#8b93a3', 'stroke-width': isMajor?2:1, 'stroke-linecap':'round'}));
+    if(isMajor){
+      const lp = polar(ang, 48);
+      const val = minVal + tt*(maxVal-minVal);
+      const txt = svgEl('text', {x:lp.x, y:lp.y+3, 'text-anchor':'middle', 'font-size':8.5, 'font-family':'Consolas,monospace', fill:'#2a2f3a', 'font-weight':'700'});
+      txt.textContent = Math.round(val) + unit;
+      svg.appendChild(txt);
+    }
+  }
+
+  /* ---- نص اسم القياس على القرص ---- */
+  if(dialLabel){
+    const dl = svgEl('text', {x:100, y:150, 'text-anchor':'middle', 'font-size':10.5, 'font-weight':'800', fill:'#3a3f4a'});
+    dl.textContent = dialLabel;
+    svg.appendChild(dl);
+  }
+
+  /* ---- العقرب (مدبب بلون ثابت مميز) ---- */
+  const needle = svgEl('g', {class:'gauge-needle'});
+  needle.appendChild(svgEl('polygon', {points:'97,100 100,24 103,100', fill:'currentColor'}));
+  svg.appendChild(needle);
+  needle.style.color = needleColor;
+  svg.appendChild(svgEl('circle', {cx:100, cy:100, r:6, fill:'#2a2f3a'}));
+  svg.appendChild(svgEl('circle', {cx:98.5, cy:98.5, r:1.6, fill:'#ffffff', opacity:'0.7'}));
+
+  wrap.appendChild(svg);
+  gaugeRefs[wrapId] = {needle};
+}
+function zoneColorAt(zones,tt){ for(const z of zones){ if(tt<=z.to) return z.color; } return zones[zones.length-1].color; }
+function updateGauge(wrapId, digitalId, value, min, max, zones){
+  const refs = gaugeRefs[wrapId]; const wrapEl=document.getElementById(wrapId); const digitalEl=document.getElementById(digitalId);
+  if(!refs || !wrapEl || !digitalEl) return;
+  if(value===null||value===undefined||isNaN(value)){ wrapEl.classList.add('na'); digitalEl.textContent='N/A'; return; }
+  wrapEl.classList.remove('na');
+  const tt = Math.max(0, Math.min(1, (value-min)/(max-min)));
+  const angle = GAUGE_START + tt*GAUGE_SWEEP;
+  const color = zoneColorAt(zones, tt);
+  refs.needle.style.transform = `rotate(${angle}deg)`;
+  digitalEl.textContent = value.toFixed(2);
+  digitalEl.style.color = color;
+}
+const TEMP_ZONES=[{to:.25,color:'#2f8fdb'},{to:.55,color:'#2ee6a6'},{to:.72,color:'#ffe066'},{to:.87,color:'#ffb020'},{to:1,color:'#ff3b5c'}];
+const HUM_ZONES=[{to:.20,color:'#e3a83c'},{to:.60,color:'#2ee6a6'},{to:.85,color:'#00c2e0'},{to:1,color:'#5b6fee'}];
+
+/* ---------- بناء بطاقات المخازن ---------- */
+function fmtRangeNum(v){ const n = Number(v); return (Math.round(n*10)/10).toString(); }
+function fmtRange(cfg){ return `${fmtRangeNum(cfg.tempMin)}° ${t('toWord')} ${fmtRangeNum(cfg.tempMax)}°`; }
+function buildStationCards(){
+  const grid = document.getElementById('stationsGrid');
+  grid.innerHTML = '';
+  WAREHOUSES.forEach((w,i)=>{
+    const el = document.createElement('div');
+    el.className='station'; el.id='st-'+w.id; el.style.animationDelay=(i*0.1)+'s';
+    const cfg = adminSettings[w.id] || DEFAULT_RANGE;
+    el.innerHTML = `
+      <div class="station-head"><h3><span class="ic">🌾</span> ${whName(i)}</h3><div class="status-chip normal" id="chip-${w.id}">${t('chipNormal')}</div></div>
+      <div class="range-badge"><span class="rb-title">${t('rangeLabel')}</span><span class="rb-val" id="range-${w.id}">${fmtRange(cfg)}</span></div>
+      <div class="gauge-row">
+      <div class="zone-section"><div class="zone-title">${t('zoneTemp')}</div>
+        <div class="gauges">
+          <div class="gauge-box"><div class="gauge-wrap" id="gaugewrap-s1-${w.id}"></div><div class="gauge-digital-panel"><div class="gauge-digital" id="gv-s1-${w.id}">--</div></div><div class="gauge-unit">°م</div><div class="gauge-label">${t('sensor1Label')} — ${whName(i)}</div></div>
+          <div class="gauge-box"><div class="gauge-wrap" id="gaugewrap-s2-${w.id}"></div><div class="gauge-digital-panel"><div class="gauge-digital" id="gv-s2-${w.id}">--</div></div><div class="gauge-unit">°م</div><div class="gauge-label">${t('sensor2Label')} — ${whName(i)}</div></div>
+        </div>
+        <div class="readings cols2">
+          <div class="read-item diff" id="diffbox-${w.id}"><div class="rl">${t('diffLabel')}</div><div class="rv" id="diff-${w.id}">--°</div></div>
+          <div class="read-item"><div class="rl">${t('statusLabel')}</div><div class="rv" id="statustxt-${w.id}">--</div></div>
+        </div>
+      </div>
+      <div class="zone-section"><div class="zone-title">${t('zoneHum')}</div>
+        <div class="gauges"><div class="gauge-box"><div class="gauge-wrap" id="gaugewrap-hum-${w.id}"></div><div class="gauge-digital-panel"><div class="gauge-digital" id="gv-hum-${w.id}">--</div></div><div class="gauge-unit">%</div><div class="gauge-label">${t('humidityLabel')} — ${whName(i)}</div></div></div>
+        <div class="readings cols1">
+          <div class="read-item"><div class="rl">${t('humStatusLabel')}</div><div class="rv" id="humstatustxt-${w.id}">--</div></div>
+        </div>
+      </div>
+      </div>
+      <div class="station-foot"><span class="live"><span class="dot" style="color:var(--ok)"></span> ${t('liveData')}</span>
+        <button class="log-btn" onclick="openLog('${w.id}')">${t('logBtn')}</button><span id="ts-${w.id}">--</span></div>`;
+    grid.appendChild(el);
+    buildGauge('gaugewrap-s1-'+w.id, TEMP_ZONES, TEMP_MIN, TEMP_MAX, {unit:'°', bezelTint:'warm', needleColor:'#ff5a36', dialLabel:t('dialLabelTemp')});
+    buildGauge('gaugewrap-s2-'+w.id, TEMP_ZONES, TEMP_MIN, TEMP_MAX, {unit:'°', bezelTint:'warm', needleColor:'#ff5a36', dialLabel:t('dialLabelTemp')});
+    buildGauge('gaugewrap-hum-'+w.id, HUM_ZONES, HUM_MIN, HUM_MAX, {unit:'%', bezelTint:'cool', needleColor:'#1ea7c9', dialLabel:t('dialLabelHum')});
+  });
+}
+
+/* ---------- السجل ---------- */
+function pushLog(wId, data){
+  const arr = logs[wId];
+  arr.push({ ts:data.timestamp||Date.now(), sensor1:data.sensor1, sensor2:data.sensor2, average:data.average, diff:data.diff, alert:!!data.alert });
+  if(arr.length>LOG_MAX) arr.shift();
+}
+window.openLog = function(wId){
+  currentLogWarehouse = wId;
+  const idx = WAREHOUSES.findIndex(x=>x.id===wId);
+  document.getElementById('logModalTitle').textContent = t('logTitlePrefix') + whName(idx);
+  document.getElementById('alertsOnlyChk').checked = false;
+  window.renderLogTable();
+  document.getElementById('logModal').classList.add('show');
+};
+window.closeLog = function(){ document.getElementById('logModal').classList.remove('show'); currentLogWarehouse=null; };
+window.renderLogTable = function(){
+  if(!currentLogWarehouse) return;
+  const onlyAlerts = document.getElementById('alertsOnlyChk').checked;
+  let rows = logs[currentLogWarehouse].slice().reverse();
+  if(onlyAlerts) rows = rows.filter(r=>r.alert);
+  const tbody = document.getElementById('logTableBody'); const empty = document.getElementById('logEmpty');
+  tbody.innerHTML='';
+  if(rows.length===0){ empty.style.display='block'; return; } empty.style.display='none';
+  rows.slice(0,300).forEach(r=>{
+    const tr=document.createElement('tr'); if(r.alert) tr.className='alert-row';
+    tr.innerHTML = `<td>${fmtDate(r.ts)} ${fmtTime(r.ts)}</td><td>${num(r.sensor1)}</td><td>${num(r.sensor2)}</td><td>${num(r.average)}</td><td>${num(r.diff)}</td><td>${r.alert?t('chipAlert'):t('statusNormal')}</td>`;
+    tbody.appendChild(tr);
+  });
+};
+window.exportLogExcel = function(){
+  if(!currentLogWarehouse) return;
+  const idx = WAREHOUSES.findIndex(x=>x.id===currentLogWarehouse);
+  const onlyAlerts = document.getElementById('alertsOnlyChk').checked;
+  let rows = logs[currentLogWarehouse].slice().reverse();
+  if(onlyAlerts) rows = rows.filter(r=>r.alert);
+  const data = rows.map(r=>({ [t('colDate')]:fmtDate(r.ts)+' '+fmtTime(r.ts), [t('colS1')]:num(r.sensor1), [t('colS2')]:num(r.sensor2), [t('colAvg')]:num(r.average), [t('colDiff')]:num(r.diff), [t('colStatus')]: r.alert?t('chipAlert'):t('statusNormal') }));
+  if(typeof XLSX==='undefined'){ alert('Export library unavailable'); return; }
+  const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, whName(idx));
+  XLSX.writeFile(wb, `log_${whName(idx)}_${Date.now()}.xlsx`);
+};
+
+/* ---------- تنبيهات نشطة ---------- */
+window.openAlertsModal = function(){
+  const tbody = document.getElementById('alertTableBody'); const empty = document.getElementById('alertEmpty');
+  tbody.innerHTML='';
+  const activeList = WAREHOUSES.filter(w=> state[w.id] && state[w.id].alert);
+  if(activeList.length===0){ empty.style.display='block'; }
+  else{
+    empty.style.display='none';
+    activeList.forEach(w=>{
+      const idx = WAREHOUSES.indexOf(w); const d = state[w.id];
+      const since = alertSinceMem[w.id] ? Math.max(0, Math.round((Date.now()-alertSinceMem[w.id])/1000)) : 0;
+      const tr=document.createElement('tr'); tr.className='alert-row';
+      tr.innerHTML = `<td>${whName(idx)}</td><td>${num(d.sensor1)}</td><td>${num(d.sensor2)}</td><td>${num(d.diff)}</td><td>${since}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  document.getElementById('alertModal').classList.add('show');
+};
+window.closeAlertModal = function(){ document.getElementById('alertModal').classList.remove('show'); };
+
+/* ---------- حماية دخول الإدارة (Password) ---------- */
+const ADMIN_PASSWORD = 'p@55word';
+window.requestAdminAccess = function(){
+  document.getElementById('adminPassInput').value = '';
+  document.getElementById('adminAuthError').style.display = 'none';
+  document.getElementById('adminAuthModal').classList.add('show');
+  setTimeout(()=>{ const inp=document.getElementById('adminPassInput'); if(inp) inp.focus(); }, 50);
+};
+window.closeAdminAuth = function(){ document.getElementById('adminAuthModal').classList.remove('show'); };
+window.checkAdminPassword = function(){
+  const val = document.getElementById('adminPassInput').value;
+  if(val === ADMIN_PASSWORD){
+    window.closeAdminAuth();
+    window.openAdmin();
+  } else {
+    document.getElementById('adminAuthError').style.display = 'block';
+  }
+};
+
+/* ---------- الإدارة (Admin) ---------- */
+window.openAdmin = function(){
+  const form = document.getElementById('adminForm');
+  let html = `<p style="font-size:12px;color:var(--text-1);margin-bottom:14px;">${t('adminIntro')}</p>`;
+  WAREHOUSES.forEach((w,i)=>{
+    const cfg = adminSettings[w.id];
+    html += `<div style="margin-bottom:14px;padding:12px;background:rgba(255,255,255,0.03);border:1px solid var(--card-border);border-radius:10px;">
+      <div style="font-weight:800;margin-bottom:8px;">${whName(i)}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px;color:var(--text-1);">
+        <label>${t('tempRangeLabel')} ${t('minLabel')}<input type="number" step="0.1" id="adm-${w.id}-tmin" value="${cfg.tempMin}" style="width:100%;margin-top:4px;background:rgba(255,255,255,.05);border:1px solid var(--card-border);color:var(--text-0);border-radius:6px;padding:6px;"></label>
+        <label>${t('tempRangeLabel')} ${t('maxLabel')}<input type="number" step="0.1" id="adm-${w.id}-tmax" value="${cfg.tempMax}" style="width:100%;margin-top:4px;background:rgba(255,255,255,.05);border:1px solid var(--card-border);color:var(--text-0);border-radius:6px;padding:6px;"></label>
+        <label>${t('humRangeLabel')} ${t('minLabel')}<input type="number" step="0.1" id="adm-${w.id}-hmin" value="${cfg.humMin}" style="width:100%;margin-top:4px;background:rgba(255,255,255,.05);border:1px solid var(--card-border);color:var(--text-0);border-radius:6px;padding:6px;"></label>
+        <label>${t('humRangeLabel')} ${t('maxLabel')}<input type="number" step="0.1" id="adm-${w.id}-hmax" value="${cfg.humMax}" style="width:100%;margin-top:4px;background:rgba(255,255,255,.05);border:1px solid var(--card-border);color:var(--text-0);border-radius:6px;padding:6px;"></label>
+      </div></div>`;
+  });
+  form.innerHTML = html;
+  document.getElementById('adminModal').classList.add('show');
+};
+window.closeAdmin = function(){ document.getElementById('adminModal').classList.remove('show'); };
+window.saveAdmin = function(){
+  WAREHOUSES.forEach(w=>{
+    adminSettings[w.id] = {
+      tempMin: parseFloat(document.getElementById(`adm-${w.id}-tmin`).value),
+      tempMax: parseFloat(document.getElementById(`adm-${w.id}-tmax`).value),
+      humMin: parseFloat(document.getElementById(`adm-${w.id}-hmin`).value),
+      humMax: parseFloat(document.getElementById(`adm-${w.id}-hmax`).value)
+    };
+  });
+  localStorage.setItem('qamha_admin_settings', JSON.stringify(adminSettings));
+  if(fbDb && fbRef && fbSet){ fbSet(fbRef(fbDb, 'adminSettings'), adminSettings).catch(e=>console.warn('sync adminSettings to Firebase failed', e)); }
+  WAREHOUSES.forEach(w=>{
+    const badge = document.getElementById('range-'+w.id);
+    if(badge) badge.textContent = fmtRange(adminSettings[w.id]);
+  });
+  closeAdmin();
+};
+
+/* ---------- تحديث بطاقة مخزن واحد ---------- */
+function renderStation(w, data){
+  const cfg = adminSettings[w.id];
+  data.tempStatus = computeTempStatus(w.id, data.average, cfg);
+  data.humStatus = computeHumStatus(w.id, data.humidity, cfg);
+
+  // تلوين كل متحسس أخضر/أحمر حسب رينج المخزن الخاص فيه (من الإدارة) + تنبيه صوتي وبوب-اب عند التجاوز
+  const s1Breach = (data.sensor1!==undefined && data.sensor1!==null && !isNaN(data.sensor1)) && (data.sensor1 < cfg.tempMin || data.sensor1 > cfg.tempMax);
+  const s2Breach = (data.sensor2!==undefined && data.sensor2!==null && !isNaN(data.sensor2)) && (data.sensor2 < cfg.tempMin || data.sensor2 > cfg.tempMax);
+  const humBreach = data.humStatus !== 'normal';
+  // حالة التنبيه العامة للبطاقة (الشارة + الإطار) تعتمد على تجاوز رينج الحرارة أو الرطوبة، مو بس فرق الحساسين اللي يرسله الجهاز
+  const alertFlag = !!data.alert || s1Breach || s2Breach || humBreach;
+  if(alertFlag && !alertSinceMem[w.id]) alertSinceMem[w.id] = Date.now();
+  if(!alertFlag) delete alertSinceMem[w.id];
+
+  const card = document.getElementById('st-'+w.id); if(!card) return;
+  card.classList.toggle('alert', alertFlag);
+
+  updateGauge('gaugewrap-s1-'+w.id, 'gv-s1-'+w.id, data.sensor1, TEMP_MIN, TEMP_MAX, TEMP_ZONES);
+  updateGauge('gaugewrap-s2-'+w.id, 'gv-s2-'+w.id, data.sensor2, TEMP_MIN, TEMP_MAX, TEMP_ZONES);
+  updateGauge('gaugewrap-hum-'+w.id, 'gv-hum-'+w.id, data.humidity, HUM_MIN, HUM_MAX, HUM_ZONES);
+
+  const gvS1 = document.getElementById('gv-s1-'+w.id);
+  const gvS2 = document.getElementById('gv-s2-'+w.id);
+  if(gvS1){ gvS1.classList.toggle('g-alert', s1Breach); gvS1.classList.toggle('g-ok', !s1Breach); gvS1.style.color = s1Breach ? 'var(--danger-bright)' : 'var(--ok)'; }
+  if(gvS2){ gvS2.classList.toggle('g-alert', s2Breach); gvS2.classList.toggle('g-ok', !s2Breach); gvS2.style.color = s2Breach ? 'var(--danger-bright)' : 'var(--ok)'; }
+  thresholdBreachState[w.id] = { s1: s1Breach, s2: s2Breach };
+
+  const whIdx = WAREHOUSES.findIndex(x=>x.id===w.id);
+  maybeShowTempPopup(w.id, whIdx, 1, data.sensor1, s1Breach);
+  maybeShowTempPopup(w.id, whIdx, 2, data.sensor2, s2Breach);
+  updateThresholdSiren();
+
+  document.getElementById('diff-'+w.id).textContent = num(data.diff) + '°';
+  document.getElementById('diffbox-'+w.id).classList.toggle('high', (data.diff??0) > ALERT_DIFF);
+
+  const statusEl = document.getElementById('statustxt-'+w.id);
+  statusEl.className = 'rv status-' + data.tempStatus;
+  statusEl.textContent = t('status'+cap(data.tempStatus));
+
+  const humStatusEl = document.getElementById('humstatustxt-'+w.id);
+  humStatusEl.className = 'rv status-' + data.humStatus;
+  humStatusEl.textContent = t('status'+cap(data.humStatus));
+
+  document.getElementById('ts-'+w.id).textContent = secondsAgo(data.timestamp) + 's';
+
+  const chip = document.getElementById('chip-'+w.id);
+  chip.className = 'status-chip ' + (alertFlag?'alert':'normal');
+  chip.textContent = alertFlag ? t('chipAlert') : t('chipNormal');
+
+  pushLog(w.id, data);
+  if(currentLogWarehouse===w.id) window.renderLogTable();
+
+  lastGlobalUpdate = Date.now();
+  renderAvgStrip();
+}
+function secondsAgo(ts){ if(!ts) return 0; return Math.max(0, Math.round((Date.now()-ts)/1000)); }
+
+function renderAvgStrip(){
+  const container = document.getElementById('avgChips'); if(!container) return;
+  container.innerHTML = WAREHOUSES.map((w,i)=>{
+    const d = state[w.id]; if(!d) return '';
+    const cfg = adminSettings[w.id] || DEFAULT_RANGE;
+    const outOfRange = (d.average!==undefined && d.average!==null && !isNaN(d.average)) && (d.average < cfg.tempMin || d.average > cfg.tempMax);
+    let color, pulse = '';
+    if(outOfRange){
+      color = 'var(--danger-bright)';
+      pulse = 'animation:thresholdPulse 1s infinite;';
+    } else {
+      color = 'var(--ok)';
+    }
+    const arrow = d.tempStatus==='rising' ? '▲' : (d.tempStatus==='falling' ? '▼' : '–');
+    return `<div class="avg-chip"><div class="name">${whName(i)}</div><div class="val" style="color:${color};text-shadow:0 0 14px ${color};${pulse}">${num(d.average)}°</div><div class="trend" style="color:${color};${pulse}">${arrow} ${t('status'+cap(d.tempStatus))}</div></div>`;
+  }).join('');
+}
+
+function renderSummary(){
+  const vals = Object.values(state);
+  document.getElementById('sumActive').textContent = vals.length + ' / ' + WAREHOUSES.length;
+  const alertsCount = vals.filter(d=>d.alert).length;
+  document.getElementById('sumAlerts').textContent = alertsCount;
+  document.getElementById('sumAlertCard').classList.toggle('danger', true);
+}
+
+/* ---------- الساعة وآخر تحديث ---------- */
+function tickClock(){
+  const now = new Date();
+  document.getElementById('clockTime').textContent = pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+  document.getElementById('clockDate').textContent = now.toLocaleDateString(currentLang==='ar'?'ar-IQ':'en-GB');
+  if(lastGlobalUpdate){
+    const diffSec = Math.max(0, Math.round((Date.now()-lastGlobalUpdate)/1000));
+    const mm = pad(Math.floor(diffSec/60)), ss = pad(diffSec%60);
+    document.getElementById('sumUpdate').textContent = (currentLang==='ar' ? 'قبل ' : '') + mm+':'+ss + (currentLang==='en' ? ' ago' : '');
+  }
+}
+setInterval(tickClock, 1000); tickClock();
+
+/* ---------- التبويبات ---------- */
+function selectView(view){
+  document.querySelectorAll('.tab').forEach(t2=>t2.classList.toggle('active', t2.dataset.view===view));
+  document.body.setAttribute('data-fsview', view);
+  const summaryStrip = document.getElementById('summaryStrip');
+  const avgStrip = document.getElementById('avgStrip');
+  const whSection = document.getElementById('section-warehouses');
+  const fireGasCol = document.getElementById('fsFireGasCol');
+  const fireSection = document.getElementById('section-fire');
+  const gasSection = document.getElementById('section-gas');
+  if(view==='overview'){
+    summaryStrip.style.display=''; avgStrip.style.display='';
+    whSection.style.display=''; fireGasCol.style.display='';
+    fireSection.style.display=''; gasSection.style.display='';
+  } else if(view==='warehouses'){
+    summaryStrip.style.display='none'; avgStrip.style.display='none';
+    whSection.style.display=''; fireGasCol.style.display='none';
+  } else if(view==='fire'){
+    summaryStrip.style.display='none'; avgStrip.style.display='none';
+    whSection.style.display='none'; fireGasCol.style.display='';
+    fireSection.style.display=''; gasSection.style.display='none';
+  } else if(view==='gas'){
+    summaryStrip.style.display='none'; avgStrip.style.display='none';
+    whSection.style.display='none'; fireGasCol.style.display='';
+    fireSection.style.display='none'; gasSection.style.display='';
+  }
+}
+document.querySelectorAll('.tab').forEach(tabEl=>{
+  tabEl.addEventListener('click', ()=> selectView(tabEl.dataset.view));
+});
+
+/* ---------- اللغة والثيم ---------- */
+window.setLang = function(lang){
+  currentLang = lang;
+  localStorage.setItem('qamha_lang', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang==='ar' ? 'rtl' : 'ltr';
+  document.getElementById('langSelect').value = lang;
+  applyStaticI18n();
+  rebuildDynamic();
+};
+window.setTheme = function(theme){
+  document.body.classList.toggle('light-theme', theme==='light');
+  document.getElementById('themeSelect').value = theme;
+  localStorage.setItem('qamha_theme', theme);
+};
+
+/* ---------- Info Modal (تثبيت التطبيق / الإشعارات) ---------- */
+function showInfoModal(title, body){
+  document.getElementById('infoModalTitle').textContent = title;
+  document.getElementById('infoModalBody').textContent = body;
+  document.getElementById('infoModal').classList.add('show');
+}
+window.closeInfoModal = function(){ document.getElementById('infoModal').classList.remove('show'); };
+
+/* ---------- تثبيت التطبيق على الموبايل/التابلت (PWA) ---------- */
+let deferredInstallPrompt = null;
+let swRegistration = null;
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').then(reg=>{ swRegistration = reg; }).catch(e=>console.warn('SW register failed:', e));
+  });
+}
+
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const btn = document.getElementById('installBtn');
+  if(btn) btn.style.display = '';
+});
+window.addEventListener('appinstalled', ()=>{
+  const btn = document.getElementById('installBtn');
+  if(btn) btn.style.display = 'none';
+  deferredInstallPrompt = null;
+});
+
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+if(isIOS && !isStandalone){
+  const btn = document.getElementById('installBtn');
+  if(btn) btn.style.display = '';
+}
+
+window.installApp = async function(){
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    const choice = await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    if(choice && choice.outcome === 'accepted'){ document.getElementById('installBtn').style.display = 'none'; }
+    return;
+  }
+  if(isIOS){
+    showInfoModal(currentLang==='ar' ? '📲 تثبيت التطبيق على آيفون/آيباد' : '📲 Install on iPhone/iPad',
+      currentLang==='ar'
+        ? 'افتح الموقع من متصفح Safari (مو من داخل تطبيق ثاني)، اضغط زر المشاركة ⬆️ بالأسفل، بعدين اختر "إضافة إلى الشاشة الرئيسية" Add to Home Screen.'
+        : 'Open this site in Safari, tap the Share ⬆️ button at the bottom, then choose "Add to Home Screen".');
+    return;
+  }
+  showInfoModal(currentLang==='ar' ? '📲 تثبيت التطبيق' : '📲 Install App',
+    currentLang==='ar'
+      ? 'المتصفح ما عرض خيار التثبيت التلقائي. جرب من قائمة المتصفح (⋮ أو ⋯) وابحث عن "تثبيت التطبيق" أو "إضافة إلى الشاشة الرئيسية".'
+      : 'The browser did not offer automatic install. Try the browser menu (⋮ or ⋯) and look for "Install App" or "Add to Home Screen".');
+};
+
+/* ---------- تفعيل الإشعارات (FCM Push - تشتغل حتى لو الموقع مسكر) ---------- */
+window.enableNotifications = async function(){
+  const btn = document.getElementById('notifyBtn');
+  if(!('Notification' in window)){
+    showInfoModal(currentLang==='ar' ? '🔕 غير مدعوم' : '🔕 Not Supported',
+      currentLang==='ar' ? 'هذا المتصفح ما يدعم إشعارات الويب.' : 'This browser does not support web notifications.');
+    return;
+  }
+  if(firebaseConfig.messagingSenderId === 'YOUR_MESSAGING_SENDER_ID' || VAPID_KEY === 'YOUR_VAPID_KEY'){
+    showInfoModal(currentLang==='ar' ? '⚙️ الإشعارات غير مفعّلة بعد' : '⚙️ Notifications not configured yet',
+      currentLang==='ar'
+        ? 'لازم أول شي تضيف messagingSenderId وappId وVAPID key بإعدادات Firebase بالكود (راجع دليل الإعداد).'
+        : 'You need to add messagingSenderId, appId, and the VAPID key from Firebase settings in the code first (see the setup guide).');
+    return;
+  }
+  try{
+    const permission = await Notification.requestPermission();
+    if(permission !== 'granted'){
+      showInfoModal(currentLang==='ar' ? '🔕 التنبيهات مرفوضة' : '🔕 Notifications blocked',
+        currentLang==='ar' ? 'لازم توافق على إذن الإشعارات من إعدادات المتصفح حتى تشتغل.' : 'You need to allow notification permission from browser settings for this to work.');
+      return;
+    }
+    if(!swRegistration && 'serviceWorker' in navigator){ swRegistration = await navigator.serviceWorker.register('sw.js'); }
+    const { initializeApp, getApps } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+    const { getMessaging, getToken } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js");
+    const { getDatabase, ref, set } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js");
+    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const messaging = getMessaging(app);
+    const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: swRegistration });
+    if(token){
+      const db = getDatabase(app);
+      await set(ref(db, 'fcmTokens/' + token), { addedAt: Date.now(), lang: currentLang });
+      localStorage.setItem('qamha_fcm_token', token);
+      if(btn){ btn.textContent = '🔔'; btn.title = 'Notifications enabled'; btn.style.color = 'var(--ok)'; }
+      showInfoModal(currentLang==='ar' ? '🔔 تم التفعيل' : '🔔 Enabled',
+        currentLang==='ar' ? 'راح توصلك تنبيهات حتى لو الصفحة أو المتصفح مسكر.' : 'You will now receive alerts even if the page or browser is closed.');
+    }
+  }catch(e){
+    console.warn('enableNotifications failed:', e);
+    showInfoModal(currentLang==='ar' ? '⚠️ صار خطأ' : '⚠️ Something went wrong',
+      currentLang==='ar' ? 'ما كدرت أفعّل الإشعارات. تأكد إعدادات Firebase صحيحة وجرب مرة ثانية.' : 'Could not enable notifications. Check the Firebase settings and try again.');
+  }
+};
+
+/* ---------- ملء الشاشة (Fullscreen) ---------- */
+window.toggleFullscreen = function(){
+  const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  if(!isFs){
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+    if(req) req.call(el);
+  } else {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+    if(exit) exit.call(document);
+  }
+};
+function onFsChange(){
+  const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  document.documentElement.classList.toggle('fs-mode', isFs);
+  document.body.classList.toggle('fs-mode', isFs);
+  const btn = document.getElementById('fullscreenBtn');
+  if(btn) btn.textContent = isFs ? '⤢' : '⛶';
+}
+document.addEventListener('fullscreenchange', onFsChange);
+document.addEventListener('webkitfullscreenchange', onFsChange);
+
+function rebuildDynamic(){
+  buildStationCards();
+  Object.keys(state).forEach(id=>{ const w = WAREHOUSES.find(x=>x.id===id); if(state[id]) renderStation(w, state[id]); });
+  buildFireZones(); renderFireZones();
+  buildGasZones(); renderGasZones();
+  renderFireMapMain();
+  renderSummary(); renderAvgStrip();
+}
+
+/* ==========================================================
+   منظومة إنذار الحريق 1 (8 زون - محاكاة)
+   ========================================================== */
+let fireZones = Array.from({length:FIRE_ZONE_COUNT}, (_,i)=>({id:i+1, status:'normal'}));
+let fireSilenced = false;
+
+/* ---- صافرة الإنذار الصوتية (نمط صفارة إنذار الكوارث/الغارات - عواء مستمر صاعد هابط) ---- */
+let audioCtx=null, sirenOsc=null, sirenOsc2=null, sirenMasterGain=null, sirenTimer=null;
+const SIREN_LOW=260, SIREN_HIGH=920, SIREN_UP_S=3.2, SIREN_DOWN_S=3.2;
+function ensureAudioCtx(){
+  if(!audioCtx){ try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ audioCtx=null; } }
+  if(audioCtx && audioCtx.state==='suspended'){ audioCtx.resume().catch(()=>{}); }
+  return audioCtx;
+}
+document.addEventListener('pointerdown', ()=> ensureAudioCtx(), {once:true});
+function startSiren(){
+  const ctx = ensureAudioCtx(); if(!ctx || sirenOsc) return;
+  sirenMasterGain = ctx.createGain();
+  sirenMasterGain.gain.setValueAtTime(0, ctx.currentTime);
+  sirenMasterGain.gain.linearRampToValueAtTime(0.6, ctx.currentTime + 0.7);
+  sirenMasterGain.connect(ctx.destination);
+
+  sirenOsc = ctx.createOscillator(); sirenOsc.type='sawtooth';
+  sirenOsc2 = ctx.createOscillator(); sirenOsc2.type='sine';
+  sirenOsc.frequency.setValueAtTime(SIREN_LOW, ctx.currentTime);
+  sirenOsc2.frequency.setValueAtTime(SIREN_LOW, ctx.currentTime);
+  sirenOsc.connect(sirenMasterGain); sirenOsc2.connect(sirenMasterGain);
+
+  try{ sirenOsc.start(); sirenOsc2.start(); }catch(e){}
+  sirenWailCycle(ctx);
+}
+function sirenWailCycle(ctx){
+  if(!sirenOsc) return;
+  const now = ctx.currentTime;
+  [sirenOsc, sirenOsc2].forEach(osc=>{
+    osc.frequency.cancelScheduledValues(now);
+    osc.frequency.setValueAtTime(SIREN_LOW, now);
+    osc.frequency.exponentialRampToValueAtTime(SIREN_HIGH, now + SIREN_UP_S);
+    osc.frequency.exponentialRampToValueAtTime(SIREN_LOW, now + SIREN_UP_S + SIREN_DOWN_S);
+  });
+  sirenTimer = setTimeout(()=> sirenWailCycle(ctx), (SIREN_UP_S + SIREN_DOWN_S) * 1000);
+}
+function stopSiren(){
+  if(sirenTimer){ clearTimeout(sirenTimer); sirenTimer=null; }
+  const ctx = audioCtx;
+  if(sirenMasterGain && ctx){ try{ sirenMasterGain.gain.cancelScheduledValues(ctx.currentTime); sirenMasterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.25); }catch(e){} }
+  if(sirenOsc){ try{ sirenOsc.stop(ctx?ctx.currentTime+0.3:undefined); }catch(e){} try{ sirenOsc.disconnect(); }catch(e){} sirenOsc=null; }
+  if(sirenOsc2){ try{ sirenOsc2.stop(ctx?ctx.currentTime+0.3:undefined); }catch(e){} try{ sirenOsc2.disconnect(); }catch(e){} sirenOsc2=null; }
+  if(sirenMasterGain){ try{ sirenMasterGain.disconnect(); }catch(e){} sirenMasterGain=null; }
+}
+function buildFireZones(){
+  const grid = document.getElementById('fireZonesGrid'); grid.innerHTML='';
+  fireZones.forEach(z=>{
+    const tile = document.createElement('div'); tile.className='zone-tile normal'; tile.id='fireZonesGrid-z'+z.id;
+    tile.innerHTML = `<div class="zn">${t('zoneWord')} ${z.id}</div><div class="zicon">●</div><div class="zstatus">${t('fireStatusNormal')}</div>`;
+    grid.appendChild(tile);
+  });
+}
+function renderFireZones(){
+  let alarmCount=0, faultCount=0;
+  const iconMap={normal:'●',alarm:'🔥',fault:'🛠️',disabled:'—'};
+  const keyMap={normal:'fireStatusNormal',alarm:'fireStatusAlarm',fault:'fireStatusFault',disabled:'fireStatusDisabled'};
+  fireZones.forEach(z=>{
+    const tile = document.getElementById('fireZonesGrid-z'+z.id); if(!tile) return;
+    tile.className = 'zone-tile ' + z.status;
+    tile.querySelector('.zicon').textContent = iconMap[z.status];
+    tile.querySelector('.zstatus').textContent = t(keyMap[z.status]);
+    if(z.status==='alarm') alarmCount++;
+    if(z.status==='fault') faultCount++;
+  });
+  const master = document.getElementById('fireMasterStatus');
+  if(alarmCount>0){ master.className='master-status '+(fireSilenced?'danger silenced':'danger'); master.textContent = t('fireMasterAlarm')+' ('+alarmCount+')'; }
+  else if(faultCount>0){ master.className='master-status warn'; master.textContent = t('fireMasterFault'); }
+  else{ master.className='master-status ok'; master.textContent = t('fireMasterOk'); }
+  if(alarmCount>0 && !fireSilenced){ startSiren(); } else { stopSiren(); }
+  renderFireMapMain();
+}
+window.fireSilence = function(){ fireSilenced = !fireSilenced; renderFireZones(); };
+window.fireReset = function(){ fireZones.forEach(z=>z.status='normal'); fireSilenced=false; renderFireZones(); };
+window.fireTest = function(){ const z = fireZones[Math.floor(Math.random()*fireZones.length)]; z.status='alarm'; renderFireZones(); };
+
+/* ==========================================================
+   خريطة موقع منظومة الحريق (Site Map + Sensor Placement)
+   ========================================================== */
+let fireMapData = { imageUrl:null, pins:[] };
+let dragState = null; // {idx, container, pinEl, moved, x, y}
+
+const SENSOR_TYPES = {
+  smoke:{ icon:'💨', key:'sensorTypeSmoke' },
+  heat:{ icon:'🌡️', key:'sensorTypeHeat' },
+  combo:{ icon:'🌀', key:'sensorTypeCombo' },
+  flame:{ icon:'🔥', key:'sensorTypeFlame' },
+  siren:{ icon:'📢', key:'sensorTypeSiren' },
+  glassbreak:{ icon:'🔨', key:'sensorTypeGlass' }
+};
+
+function loadFireMapData(){
+  try{ const saved = JSON.parse(localStorage.getItem('qamha_fire_map') || 'null'); if(saved) fireMapData = saved; }catch(e){}
+}
+
+/* ---- تموضع دقيق يراعي الفراغ الجانبي (letterbox) عند object-fit:contain ---- */
+function getImageRect(container){
+  const img = container.querySelector('img');
+  const cw = container.clientWidth, ch = container.clientHeight;
+  if(!img || !img.naturalWidth || !cw || !ch) return {x:0,y:0,w:cw||0,h:ch||0};
+  const containerRatio = cw/ch, imgRatio = img.naturalWidth/img.naturalHeight;
+  let w,h,x,y;
+  if(imgRatio > containerRatio){ w=cw; h=cw/imgRatio; x=0; y=(ch-h)/2; }
+  else { h=ch; w=ch*imgRatio; y=0; x=(cw-w)/2; }
+  return {x,y,w,h};
+}
+function pctToPx(container, xPct, yPct){
+  const r = getImageRect(container);
+  return { left: r.x + (xPct/100)*r.w, top: r.y + (yPct/100)*r.h };
+}
+function pxToPct(container, clientX, clientY){
+  const rect = container.getBoundingClientRect();
+  const r = getImageRect(container);
+  const localX = clientX - rect.left - r.x, localY = clientY - rect.top - r.y;
+  return { xPct: Math.max(0,Math.min(100,(localX/(r.w||1))*100)), yPct: Math.max(0,Math.min(100,(localY/(r.h||1))*100)) };
+}
+function ensureMapImage(container, onReady){
+  let img = container.querySelector('img');
+  const needsLoad = !img || img.getAttribute('data-src') !== fireMapData.imageUrl;
+  if(!img){ img = document.createElement('img'); container.insertBefore(img, container.firstChild); }
+  if(needsLoad){
+    img.setAttribute('data-src', fireMapData.imageUrl);
+    img.onload = ()=>{ if(onReady) onReady(img); };
+    img.src = fireMapData.imageUrl;
+  } else if(onReady){
+    if(img.naturalWidth) onReady(img); else img.onload = ()=> onReady(img);
+  }
+  return img;
+}
+
+window.openFireMapAdmin = function(){ renderFireMapAdmin(); document.getElementById('fireMapAdminModal').classList.add('show'); };
+window.closeFireMapAdmin = function(){
+  document.getElementById('fireMapAdminModal').classList.remove('show');
+  document.getElementById('addPinConfig').style.display='none';
+  window.removePinEditPopup();
+};
+
+window.handleFireMapFile = async function(evt){
+  const file = evt.target.files[0]; if(!file) return;
+  if(file.type === 'application/pdf'){
+    try{
+      const buf = await file.arrayBuffer();
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({scale:2});
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width; canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+      await page.render({canvasContext:ctx, viewport:viewport}).promise;
+      fireMapData.imageUrl = canvas.toDataURL('image/png');
+      fireMapData.pins = fireMapData.pins || [];
+      renderFireMapAdmin();
+    }catch(e){ alert('PDF read failed: ' + e.message); }
+  } else if(file.type.startsWith('image/')){
+    const reader = new FileReader();
+    reader.onload = ()=>{ fireMapData.imageUrl = reader.result; fireMapData.pins = fireMapData.pins||[]; renderFireMapAdmin(); };
+    reader.readAsDataURL(file);
+  } else { alert('Unsupported file type — upload an image or PDF'); }
+};
+
+/* ---- توزيع مواقع افتراضي (شبكة) لعدد نقاط داخل مساحة الصورة ---- */
+function computeGridPositions(n, rows, cols){
+  const pts=[];
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      if(pts.length>=n) break;
+      const xPct = cols<=1 ? 50 : 10 + (c*(80/(cols-1)));
+      const yPct = rows<=1 ? 50 : 10 + (r*(80/(rows-1)));
+      pts.push({xPct, yPct});
+    }
+  }
+  return pts;
+}
+
+/* ---- إضافة عدة متحسسات دفعة واحدة (فورية + نوع المتحسس) ---- */
+window.toggleAddPinMode = function(){
+  const bar = document.getElementById('addPinConfig');
+  const showing = bar.style.display !== 'none';
+  if(showing){ bar.style.display='none'; return; }
+  const sel = document.getElementById('addPinType');
+  sel.innerHTML = Object.keys(SENSOR_TYPES).map(k=>`<option value="${k}">${SENSOR_TYPES[k].icon} ${t(SENSOR_TYPES[k].key)}</option>`).join('');
+  bar.style.display = 'flex';
+};
+window.cancelBulkAddPins = function(){ document.getElementById('addPinConfig').style.display='none'; };
+window.confirmBulkAdd = function(){
+  if(!fireMapData.imageUrl){ alert(t('fireMapUploadFirst')); return; }
+  const zoneId = Math.max(1, Math.min(FIRE_ZONE_COUNT, parseInt(document.getElementById('addPinStartZone').value,10) || 1));
+  const requested = Math.max(1, parseInt(document.getElementById('addPinCount').value,10) || 1);
+  const type = document.getElementById('addPinType').value || 'smoke';
+  const existing = (fireMapData.pins||[]).filter(p=>p.zoneId===zoneId).length;
+  const capacity = MAX_SENSORS_PER_ZONE - existing;
+  if(capacity<=0){ alert(t('fireMapZoneFull')); return; }
+  const allowed = Math.min(requested, capacity);
+  if(allowed < requested){ alert(t('fireMapZoneCapped') + ' (' + allowed + ')'); }
+  const cols = Math.ceil(Math.sqrt(allowed)); const rows = Math.ceil(allowed/cols);
+  const pts = computeGridPositions(allowed, rows, cols);
+  pts.forEach(p=> fireMapData.pins.push({ zoneId, xPct:p.xPct, yPct:p.yPct, type }));
+  document.getElementById('addPinConfig').style.display='none';
+  renderFireMapAdmin();
+};
+
+/* ---- توزيع مصفوفة (صفوف × أعمدة) لمتحسسات زون معين ---- */
+window.matrixDistributeZone = function(){
+  if(!fireMapData.imageUrl){ alert(t('fireMapUploadFirst')); return; }
+  const zoneId = Math.max(1, Math.min(FIRE_ZONE_COUNT, parseInt(document.getElementById('matrixZone').value,10)||1));
+  const rows = Math.max(1, parseInt(document.getElementById('matrixRows').value,10)||1);
+  const cols = Math.max(1, parseInt(document.getElementById('matrixCols').value,10)||1);
+  const zonePins = (fireMapData.pins||[]).filter(p=>p.zoneId===zoneId);
+  if(zonePins.length===0){ alert(t('fireMapNoSensorsInZone')); return; }
+  const n = Math.min(zonePins.length, rows*cols);
+  const pts = computeGridPositions(n, rows, cols);
+  const repositioned = zonePins.slice(0,n).map((p,i)=>({ zoneId, xPct:pts[i].xPct, yPct:pts[i].yPct, type:p.type||'smoke' }));
+  const leftover = zonePins.slice(n);
+  const otherPins = (fireMapData.pins||[]).filter(p=>p.zoneId!==zoneId);
+  fireMapData.pins = otherPins.concat(repositioned, leftover);
+  renderFireMapAdmin();
+};
+
+/* ---- توزيع شبكي عام لكل الزونات على الخريطة (يستبدل الكل) ---- */
+window.gridDistributePins = function(){
+  if(!fireMapData.imageUrl){ alert(t('fireMapUploadFirst')); return; }
+  const rows = Math.max(1, parseInt(document.getElementById('gridRows').value,10)||1);
+  const cols = Math.max(1, parseInt(document.getElementById('gridCols').value,10)||1);
+  const start = Math.max(1, Math.min(FIRE_ZONE_COUNT, parseInt(document.getElementById('gridStartZone').value,10)||1));
+  let total = rows*cols;
+  const maxCapacity = (FIRE_ZONE_COUNT - start + 1) * MAX_SENSORS_PER_ZONE;
+  if(total > maxCapacity){ total = maxCapacity; alert(t('fireMapZoneLimit')); }
+  if(total<=0){ return; }
+  const pts = computeGridPositions(total, rows, cols);
+  const pins = []; let zoneId = start, countInZone = 0;
+  for(let i=0;i<total;i++){
+    if(countInZone >= MAX_SENSORS_PER_ZONE){ zoneId++; countInZone = 0; }
+    pins.push({ zoneId, xPct:pts[i].xPct, yPct:pts[i].yPct, type:'smoke' });
+    countInZone++;
+  }
+  fireMapData.pins = pins;
+  renderFireMapAdmin();
+};
+window.tidyPinsByZone = function(){
+  const pins = (fireMapData.pins||[]).slice().sort((a,b)=>a.zoneId-b.zoneId);
+  const n = pins.length; if(n===0) return;
+  const cols = Math.ceil(Math.sqrt(n)); const rows = Math.ceil(n/cols);
+  const pts = computeGridPositions(n, rows, cols);
+  fireMapData.pins = pins.map((p,i)=>({ zoneId:p.zoneId, xPct:pts[i].xPct, yPct:pts[i].yPct, type:p.type||'smoke' }));
+  renderFireMapAdmin();
+};
+
+/* ---- تحريك المتحسسات بالسحب + تعديل التفاصيل بعد الإضافة ---- */
+function startDragPin(e, idx){
+  if(e.target.closest('.pin-del')) return;
+  e.stopPropagation();
+  const container = document.getElementById('fireMapAdminContainer');
+  dragState = { idx, container, pinEl:e.currentTarget, moved:false, x:null, y:null };
+  try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(err){}
+}
+document.addEventListener('pointermove', (e)=>{
+  if(!dragState) return;
+  dragState.moved = true;
+  const pct = pxToPct(dragState.container, e.clientX, e.clientY);
+  const px = pctToPx(dragState.container, pct.xPct, pct.yPct);
+  dragState.pinEl.style.left = px.left+'px'; dragState.pinEl.style.top = px.top+'px';
+  dragState.x = pct.xPct; dragState.y = pct.yPct;
+});
+document.addEventListener('pointerup', ()=>{
+  if(!dragState) return;
+  const wasMoved = dragState.moved; const idx = dragState.idx;
+  if(wasMoved){ fireMapData.pins[idx].xPct = dragState.x; fireMapData.pins[idx].yPct = dragState.y; }
+  dragState = null;
+  if(!wasMoved){ window.openPinEditPopup(idx); }
+});
+
+window.openPinEditPopup = function(idx){
+  window.removePinEditPopup();
+  const container = document.getElementById('fireMapAdminContainer');
+  const p = fireMapData.pins[idx]; if(!p) return;
+  const px = pctToPx(container, p.xPct, p.yPct);
+  const popup = document.createElement('div'); popup.className='zone-pick-popup'; popup.id='pinEditPopup';
+  popup.style.left = px.left+'px'; popup.style.top = px.top+'px';
+  let zoneOptions=''; for(let i=1;i<=FIRE_ZONE_COUNT;i++) zoneOptions += `<option value="${i}" ${i===p.zoneId?'selected':''}>${t('zoneWord')} ${i}</option>`;
+  let typeOptions = Object.keys(SENSOR_TYPES).map(k=>`<option value="${k}" ${k===(p.type||'smoke')?'selected':''}>${SENSOR_TYPES[k].icon} ${t(SENSOR_TYPES[k].key)}</option>`).join('');
+  popup.innerHTML = `<div style="display:flex;flex-direction:column;gap:6px;">
+      <select id="pinEditSelect">${zoneOptions}</select>
+      <select id="pinEditType">${typeOptions}</select>
+      <div style="display:flex;gap:6px;">
+        <button class="log-btn" onclick="savePinEdit(${idx})">💾</button>
+        <button class="log-btn" onclick="deleteFireMapPin(${idx})">🗑️</button>
+        <button class="log-btn" onclick="removePinEditPopup()">✕</button>
+      </div>
+    </div>`;
+  popup.addEventListener('pointerdown', ev=> ev.stopPropagation());
+  popup.addEventListener('click', ev=> ev.stopPropagation());
+  container.appendChild(popup);
+};
+window.removePinEditPopup = function(){ const el=document.getElementById('pinEditPopup'); if(el) el.remove(); };
+window.savePinEdit = function(idx){
+  const sel = document.getElementById('pinEditSelect'); const typeSel = document.getElementById('pinEditType'); if(!sel) return;
+  const newZone = parseInt(sel.value,10);
+  const currentZone = fireMapData.pins[idx].zoneId;
+  if(newZone !== currentZone){
+    const count = fireMapData.pins.filter((p,i)=> i!==idx && p.zoneId===newZone).length;
+    if(count >= MAX_SENSORS_PER_ZONE){ alert(t('fireMapZoneFull')); return; }
+  }
+  fireMapData.pins[idx].zoneId = newZone;
+  if(typeSel) fireMapData.pins[idx].type = typeSel.value;
+  window.removePinEditPopup();
+  renderFireMapAdmin();
+};
+
+function renderFireMapAdmin(){
+  const container = document.getElementById('fireMapAdminContainer'); const listEl = document.getElementById('fireMapPinsList');
+  if(!container) return;
+  window.removePinEditPopup();
+  const emptyMsg = document.getElementById('fireMapAdminEmpty');
+  if(!fireMapData.imageUrl){
+    container.querySelectorAll('.map-pin, img').forEach(el=>el.remove());
+    if(emptyMsg) emptyMsg.style.display='block'; if(listEl) listEl.innerHTML=''; return;
+  }
+  if(emptyMsg) emptyMsg.style.display='none';
+  ensureMapImage(container, ()=> renderFireMapAdminPins(container));
+  if(listEl){
+    listEl.innerHTML = (fireMapData.pins||[]).map((p,idx)=>`<div class="map-pin-chip">${SENSOR_TYPES[p.type||'smoke'].icon} ${t('zoneWord')} ${p.zoneId} <button onclick="deleteFireMapPin(${idx})">✕</button></div>`).join('');
+  }
+}
+function renderFireMapAdminPins(container){
+  container.querySelectorAll('.map-pin').forEach(el=>el.remove());
+  (fireMapData.pins||[]).forEach((p, idx)=>{
+    const px = pctToPx(container, p.xPct, p.yPct);
+    const type = p.type || 'smoke';
+    const pin = document.createElement('div'); pin.className='map-pin admin-pin';
+    pin.style.left=px.left+'px'; pin.style.top=px.top+'px'; pin.title = t('zoneWord')+' '+p.zoneId+' — '+t(SENSOR_TYPES[type].key);
+    pin.innerHTML = `<span class="pin-del" onclick="event.stopPropagation(); deleteFireMapPin(${idx})">✕</span><span class="pin-icon">${SENSOR_TYPES[type].icon}</span><span class="pin-num">${p.zoneId}</span>`;
+    pin.addEventListener('pointerdown', (e)=> startDragPin(e, idx));
+    container.appendChild(pin);
+  });
+}
+window.deleteFireMapPin = function(idx){ window.removePinEditPopup(); fireMapData.pins.splice(idx,1); renderFireMapAdmin(); };
+window.clearFireMap = function(){ fireMapData = {imageUrl:null, pins:[]}; renderFireMapAdmin(); };
+window.saveFireMapAdmin = function(){
+  try{ localStorage.setItem('qamha_fire_map', JSON.stringify(fireMapData)); }
+  catch(e){ alert('Could not save map (file may be too large)'); return; }
+  window.closeFireMapAdmin();
+  renderFireMapMain();
+};
+
+function renderFireMapMain(){
+  const container = document.getElementById('fireMapMainContainer'); const emptyMsg = document.getElementById('fireMapMainEmpty');
+  if(!container) return;
+  if(!fireMapData.imageUrl){
+    container.querySelectorAll('.map-pin, img').forEach(el=>el.remove());
+    if(emptyMsg) emptyMsg.style.display='block'; return;
+  }
+  if(emptyMsg) emptyMsg.style.display='none';
+  ensureMapImage(container, ()=> renderFireMapMainPins(container));
+}
+function renderFireMapMainPins(container){
+  container.querySelectorAll('.map-pin').forEach(el=>el.remove());
+  (fireMapData.pins||[]).forEach(p=>{
+    const zone = fireZones.find(z=>z.id===p.zoneId);
+    const status = zone ? zone.status : 'normal';
+    const type = p.type || 'smoke';
+    const px = pctToPx(container, p.xPct, p.yPct);
+    const pin = document.createElement('div'); pin.className='map-pin '+status;
+    pin.style.left=px.left+'px'; pin.style.top=px.top+'px';
+    pin.innerHTML = `<span class="pin-icon">${SENSOR_TYPES[type].icon}</span><span class="pin-num">${p.zoneId}</span>`;
+    pin.onclick = (e)=>{ e.stopPropagation(); showMapPopup(container, p, zone); };
+    container.appendChild(pin);
+  });
+}
+function showMapPopup(container, p, zone){
+  window.removeMapPopup();
+  const status = zone ? zone.status : 'normal';
+  const type = p.type || 'smoke';
+  const keyMap={normal:'fireStatusNormal',alarm:'fireStatusAlarm',fault:'fireStatusFault',disabled:'fireStatusDisabled'};
+  const px = pctToPx(container, p.xPct, p.yPct);
+  const popup = document.createElement('div'); popup.className='map-popup'; popup.id='mapPopup';
+  popup.style.left=px.left+'px'; popup.style.top=px.top+'px';
+  popup.innerHTML = `<span class="mp-close" onclick="removeMapPopup()">✕</span><div class="mp-title">${SENSOR_TYPES[type].icon} ${t('zoneWord')} ${p.zoneId}</div><div>${t(SENSOR_TYPES[type].key)}</div><div>${t('colStatus')}: <b>${t(keyMap[status])}</b></div>`;
+  container.appendChild(popup);
+}
+window.removeMapPopup = function(){ const el=document.getElementById('mapPopup'); if(el) el.remove(); };
+
+function repositionMapPinsOnResize(){
+  const admin = document.getElementById('fireMapAdminContainer');
+  const main = document.getElementById('fireMapMainContainer');
+  if(admin && fireMapData.imageUrl && admin.querySelector('img')) renderFireMapAdminPins(admin);
+  if(main && fireMapData.imageUrl && main.querySelector('img')) renderFireMapMainPins(main);
+}
+window.addEventListener('resize', ()=> repositionMapPinsOnResize());
+function initMapResizeObserver(){
+  if(typeof ResizeObserver === 'undefined') return;
+  const ro = new ResizeObserver(()=> repositionMapPinsOnResize());
+  const admin = document.getElementById('fireMapAdminContainer');
+  const main = document.getElementById('fireMapMainContainer');
+  if(admin) ro.observe(admin);
+  if(main) ro.observe(main);
+}
+
+function tickFireDemo(){
+  fireZones.forEach(z=>{ if(Math.random()<0.015){ const r=Math.random(); z.status = r<0.6?'normal':(r<0.85?'fault':'alarm'); } });
+  renderFireZones();
+}
+
+/* ==========================================================
+   منظومة مراقبة تسرب الغاز (16 زون - محاكاة)
+   ========================================================== */
+let gasZones = Array.from({length:GAS_ZONE_COUNT}, (_,i)=>({id:i+1, status:'safe', ppm: 50+Math.random()*80}));
+let gasSilenced = false;
+function buildGasZones(){
+  const grid = document.getElementById('gasZonesGrid'); grid.innerHTML='';
+  gasZones.forEach(z=>{
+    const tile = document.createElement('div'); tile.className='zone-tile safe'; tile.id='gasZonesGrid-z'+z.id;
+    tile.innerHTML = `<div class="zn">${t('zoneWord')} ${z.id}</div><div class="zicon">●</div><div class="zstatus">${t('gasStatusSafe')}</div><div class="zval">-- ppm</div>`;
+    grid.appendChild(tile);
+  });
+}
+function gasStatusFromPpm(ppm){ if(ppm<200) return 'safe'; if(ppm<450) return 'warning'; return 'danger'; }
+function renderGasZones(){
+  let dangerCount=0, warnCount=0, faultCount=0;
+  const iconMap={safe:'●',warning:'🟡',danger:'💨',fault:'🛠️'};
+  const keyMap={safe:'gasStatusSafe',warning:'gasStatusWarning',danger:'gasStatusDanger',fault:'gasStatusFault'};
+  gasZones.forEach(z=>{
+    const tile = document.getElementById('gasZonesGrid-z'+z.id); if(!tile) return;
+    tile.className = 'zone-tile ' + z.status;
+    tile.querySelector('.zicon').textContent = iconMap[z.status];
+    tile.querySelector('.zstatus').textContent = t(keyMap[z.status]);
+    tile.querySelector('.zval').textContent = z.status==='fault' ? '--' : z.ppm.toFixed(0)+' ppm';
+    if(z.status==='danger') dangerCount++;
+    if(z.status==='warning') warnCount++;
+    if(z.status==='fault') faultCount++;
+  });
+  const master = document.getElementById('gasMasterStatus');
+  if(dangerCount>0){ master.className='master-status '+(gasSilenced?'danger silenced':'danger'); master.textContent = t('gasMasterAlarm')+' ('+dangerCount+')'; }
+  else if(warnCount>0 || faultCount>0){ master.className='master-status warn'; master.textContent = t('gasMasterFault'); }
+  else{ master.className='master-status ok'; master.textContent = t('gasMasterOk'); }
+}
+window.gasSilence = function(){ gasSilenced = !gasSilenced; renderGasZones(); };
+window.gasReset = function(){ gasZones.forEach(z=>{ z.status='safe'; z.ppm=50+Math.random()*80; }); gasSilenced=false; renderGasZones(); };
+window.gasTest = function(){ const z = gasZones[Math.floor(Math.random()*gasZones.length)]; z.ppm=520; z.status='danger'; renderGasZones(); };
+function tickGasDemo(){
+  gasZones.forEach(z=>{
+    if(z.status!=='fault'){
+      z.ppm = Math.max(20, z.ppm + (Math.random()-0.5)*30);
+      if(Math.random()<0.01) z.ppm += 300;
+      z.status = gasStatusFromPpm(z.ppm);
+    }
+    if(Math.random()<0.005) z.status='fault';
+  });
+  renderGasZones();
+}
+
+/* ==========================================================
+   وضع العرض التجريبي للمخازن (Demo)
+   ========================================================== */
+function seedDemo(){
+  WAREHOUSES.forEach((w,i)=>{
+    const base = 20 + i*8;
+    state[w.id] = { sensor1:base+Math.random()*2, sensor2:base+Math.random()*2, average:base, diff:Math.random()*1.2, alert:false, humidity:40+Math.random()*20, timestamp:Date.now() };
+  });
+}
+function tickDemo(){
+  WAREHOUSES.forEach((w,i)=>{
+    const d = state[w.id];
+    d.sensor1 = clamp(d.sensor1 + (Math.random()-0.5)*1.4, TEMP_MIN, TEMP_MAX);
+    d.sensor2 = clamp(d.sensor2 + (Math.random()-0.5)*(i===1?3.2:1.4), TEMP_MIN, TEMP_MAX);
+    d.average = (d.sensor1+d.sensor2)/2;
+    d.diff = Math.abs(d.sensor1-d.sensor2);
+    d.alert = d.diff > ALERT_DIFF;
+    d.humidity = clamp(d.humidity + (Math.random()-0.5)*2, 20, 80);
+    d.timestamp = Date.now();
+    renderStation(w, d);
+  });
+  renderSummary();
+}
+function clamp(v,mn,mx){ return Math.max(mn, Math.min(mx, v)); }
+
+let fbDb = null, fbRef = null, fbSet = null;
+
+async function tryConnectFirebase(){
+  if(firebaseConfig.apiKey === "YOUR_API_KEY"){ startDemo(); return; }
+  try{
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+    const { getDatabase, ref, onValue, set } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js");
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    fbDb = db; fbRef = ref; fbSet = set;
+    setConnBadge(true);
+    WAREHOUSES.forEach(w=>{
+      onValue(ref(db, 'warehouses/'+w.id), (snap)=>{ const val=snap.val(); if(!val) return; state[w.id]=val; renderStation(w,val); renderSummary(); });
+    });
+    // مزامنة حدود الرينج مع فايربيس حتى يقدر Cloud Function يقرأها هو الثاني (مو بس المتصفح بالـlocalStorage)
+    // ويطلع نفس الحدود بكل جهاز يفتح الداشبورد، مو بس الجهاز الي عدلها
+    onValue(ref(db, 'adminSettings'), (snap)=>{
+      const val = snap.val();
+      if(val){
+        WAREHOUSES.forEach(w=>{ if(val[w.id]) adminSettings[w.id] = Object.assign({}, adminSettings[w.id], val[w.id]); });
+        localStorage.setItem('qamha_admin_settings', JSON.stringify(adminSettings));
+        WAREHOUSES.forEach(w=>{ const badge = document.getElementById('range-'+w.id); if(badge) badge.textContent = fmtRange(adminSettings[w.id]); });
+      } else {
+        set(ref(db, 'adminSettings'), adminSettings).catch(e=>console.warn('initial adminSettings push failed', e));
+      }
+    });
+  }catch(e){ console.warn('Firebase connect failed, demo mode:', e); startDemo(); }
+}
+function startDemo(){
+  setConnBadge(false, true);
+  seedDemo();
+  Object.keys(state).forEach(id=>{ const w=WAREHOUSES.find(x=>x.id===id); renderStation(w, state[id]); });
+  renderSummary();
+  setInterval(tickDemo, 3000);
+  setInterval(tickFireDemo, 4000);
+  setInterval(tickGasDemo, 3500);
+}
+function setConnBadge(online, demo){
+  const badge=document.getElementById('connBadge'), text=document.getElementById('connText');
+  if(demo){ badge.classList.remove('offline'); text.textContent='Demo'; return; }
+  badge.classList.toggle('offline', !online); text.textContent = online ? 'Live' : 'Offline';
+}
+
+/* ---------- Init ---------- */
+function init(){
+  document.documentElement.lang = currentLang;
+  document.documentElement.dir = currentLang==='ar' ? 'rtl' : 'ltr';
+  document.getElementById('langSelect').value = currentLang;
+  const savedTheme = localStorage.getItem('qamha_theme') || 'dark';
+  document.getElementById('themeSelect').value = savedTheme;
+  document.body.classList.toggle('light-theme', savedTheme==='light');
+  applyStaticI18n();
+  buildStationCards();
+  loadFireMapData();
+  buildFireZones(); renderFireZones();
+  buildGasZones(); renderGasZones();
+  document.getElementById('fireMapMainContainer').addEventListener('click', ()=> window.removeMapPopup());
+  initMapResizeObserver();
+  tryConnectFirebase();
+  if('Notification' in window && Notification.permission==='granted' && localStorage.getItem('qamha_fcm_token')){
+    const btn = document.getElementById('notifyBtn');
+    if(btn){ btn.textContent = '🔔'; btn.title = 'Notifications enabled'; btn.style.color = 'var(--ok)'; }
+  }
+}
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a1220"/>
+      <stop offset="100%" stop-color="#101c30"/>
+    </linearGradient>
+    <linearGradient id="wheat" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="5%" stop-color="#e3a83c"/>
+      <stop offset="45%" stop-color="#f2c96b"/>
+      <stop offset="100%" stop-color="#00e5ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <text x="256" y="330" font-size="300" text-anchor="middle" font-family="Segoe UI Emoji, Noto Color Emoji, sans-serif">🌾</text>
+  <rect x="106" y="400" width="300" height="10" rx="5" fill="url(#wheat)"/>
+</svg>
