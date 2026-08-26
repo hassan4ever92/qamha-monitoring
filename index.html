@@ -737,22 +737,17 @@ function loadAdminSettings(){
 loadAdminSettings();
 
 function computeTempStatus(wId, avgValue, cfg){
-  const prev = (wId in trendMem) ? trendMem[wId] : avgValue;
-  trendMem[wId] = avgValue;
-  const delta = avgValue - prev;
-  const inRange = avgValue >= cfg.tempMin && avgValue <= cfg.tempMax;
-  if(Math.abs(delta) >= 0.15) return delta > 0 ? 'rising' : 'falling';
-  return inRange ? 'normal' : (avgValue > cfg.tempMax ? 'rising' : 'falling');
+  if(avgValue===undefined || avgValue===null || isNaN(avgValue)) return 'normal';
+  if(avgValue > cfg.tempMax) return 'rising';
+  if(avgValue < cfg.tempMin) return 'falling';
+  return 'normal';
 }
 
 function computeHumStatus(wId, humValue, cfg){
   if(humValue===undefined || humValue===null || isNaN(humValue)) return 'normal';
-  const prev = (wId in humTrendMem) ? humTrendMem[wId] : humValue;
-  humTrendMem[wId] = humValue;
-  const delta = humValue - prev;
-  const inRange = humValue >= cfg.humMin && humValue <= cfg.humMax;
-  if(Math.abs(delta) >= 0.3) return delta > 0 ? 'rising' : 'falling';
-  return inRange ? 'normal' : (humValue > cfg.humMax ? 'rising' : 'falling');
+  if(humValue > cfg.humMax) return 'rising';
+  if(humValue < cfg.humMin) return 'falling';
+  return 'normal';
 }
 
 /* ---------- تنبيه صوتي لتجاوز حدود متحسس فردي (يختلف عن صافرة الحريق) ---------- */
