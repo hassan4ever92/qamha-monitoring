@@ -743,6 +743,17 @@ function computeTempStatus(wId, avgValue, cfg){
   return 'normal';
 }
 
+// حالة الحرارة العامة للبطاقة: تفحص كل متحسس لحاله، مو المعدل بينهم —
+// أي متحسس واحد يطلع فوق الحد الأعلى تصير الحالة "مرتفعة"، وإذا ماكو متحسس فوق الحد
+// بس فيه واحد تحت الحد الأدنى تصير "منخفضة"، وإلا "طبيعي"
+function computeTempStatusFromSensors(s1v, s2v, cfg){
+  const vals = [s1v, s2v].filter(v => v!==null && v!==undefined && !isNaN(v));
+  if(vals.length===0) return 'normal';
+  if(vals.some(v => v > cfg.tempMax)) return 'rising';
+  if(vals.some(v => v < cfg.tempMin)) return 'falling';
+  return 'normal';
+}
+
 function computeHumStatus(wId, humValue, cfg){
   if(humValue===undefined || humValue===null || isNaN(humValue)) return 'normal';
   if(humValue > cfg.humMax) return 'rising';
@@ -1080,12 +1091,10 @@ window.saveAdmin = function(){
 /* ---------- تحديث بطاقة مخزن واحد ---------- */
 function renderStation(w, data){
   const cfg = adminSettings[w.id];
-  // نحسب المعدل محلياً من قراءتي الحساسين الفعليتين (مو من حقل average اللي يرسله الجهاز)
-  // حتى تكون حالة الحرارة متطابقة دائماً مع الأرقام المعروضة على الشاشة
+  // حالة الحرارة تعتمد على كل متحسس لحاله (مو المعدل) — أي متحسس يطلع عن الرينج يحدد الحالة
   const s1v = (data.sensor1!==undefined && data.sensor1!==null && !isNaN(data.sensor1)) ? data.sensor1 : null;
   const s2v = (data.sensor2!==undefined && data.sensor2!==null && !isNaN(data.sensor2)) ? data.sensor2 : null;
-  const avgTemp = (s1v!==null && s2v!==null) ? (s1v+s2v)/2 : (s1v!==null ? s1v : (s2v!==null ? s2v : data.average));
-  data.tempStatus = computeTempStatus(w.id, avgTemp, cfg);
+  data.tempStatus = computeTempStatusFromSensors(s1v, s2v, cfg);
   data.humStatus = computeHumStatus(w.id, data.humidity, cfg);
 
   // تلوين كل متحسس أخضر/أحمر حسب رينج المخزن الخاص فيه (من الإدارة) + تنبيه صوتي وبوب-اب عند التجاوز
