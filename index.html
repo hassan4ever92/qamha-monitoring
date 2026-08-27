@@ -976,7 +976,9 @@ function buildStationCards(){
 /* ---------- السجل ---------- */
 function pushLog(wId, data){
   const arr = logs[wId];
-  arr.push({ ts:data.timestamp||Date.now(), sensor1:data.sensor1, sensor2:data.sensor2, average:data.average, diff:data.diff, alert:!!data.alert });
+  // data.timestamp من الجهاز الحقيقي هو millis() (وقت تشغيل داخلي) مو تاريخ فعلي - نستخدم
+  // وقت وصول البيانات للمتصفح بدالها حتى يطلع التاريخ/الوقت صحيح بجدول السجل
+  arr.push({ ts:Date.now(), sensor1:data.sensor1, sensor2:data.sensor2, average:data.average, diff:data.diff, alert:!!data.alert });
   if(arr.length>LOG_MAX) arr.shift();
 }
 window.openLog = function(wId){
@@ -1138,7 +1140,9 @@ function renderStation(w, data){
   humStatusEl.className = 'rv status-' + data.humStatus;
   humStatusEl.textContent = t('status'+cap(data.humStatus));
 
-  document.getElementById('ts-'+w.id).textContent = secondsAgo(data.timestamp) + 's';
+  // ملاحظة: data.timestamp اللي يرسله الجهاز هو millis() (وقت التشغيل الداخلي للجهاز)
+  // مو ساعة حقيقية، فما نصلح نقارنه بالوقت الفعلي - نستخدم وقت وصول البيانات للمتصفح بدالها
+  document.getElementById('ts-'+w.id).textContent = secondsAgo(Date.now()) + 's';
   const fwEl = document.getElementById('fw-'+w.id);
   if(fwEl) fwEl.textContent = data.fw ? ('FW ' + data.fw) : '';
 
