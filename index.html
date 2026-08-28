@@ -117,6 +117,11 @@
   .status-chip{ font-size:11px; font-weight:700; padding:5px 12px; border-radius:999px; }
   .status-chip.normal{ background: rgba(46,230,166,0.1); color:var(--ok); border:1px solid rgba(46,230,166,0.35); }
   .status-chip.alert{ background: rgba(255,20,20,0.14); color:var(--danger-bright); border:1px solid rgba(255,20,20,0.45); font-weight:800; }
+  .status-chip.offline{ background: rgba(140,140,150,0.18); color:#9aa0ac; border:1px solid rgba(154,160,172,0.5); font-weight:800; }
+  .station.is-offline{ border-color:#8a8f9a; box-shadow:0 0 0 1px rgba(154,160,172,0.35); }
+  .offline-banner{ display:none; margin:-4px 0 12px; padding:10px 14px; border-radius:10px; background:rgba(154,160,172,0.14); border:1px solid rgba(154,160,172,0.4); font-size:12.5px; line-height:1.7; color:#c7ccd6; }
+  .station.is-offline .offline-banner{ display:block; }
+  .offline-banner .ob-title{ font-weight:800; color:#e6e9ee; display:block; margin-bottom:3px; }
 
   .range-badge{ display:inline-flex; align-items:center; gap:7px; background: linear-gradient(135deg, rgba(255,193,7,0.08), rgba(255,193,7,0.02)); border:1px solid rgba(255,193,7,0.28); border-radius:999px; padding:5px 14px; font-size:11.5px; font-weight:700; color:var(--text-1); margin-bottom:12px; }
   .range-badge .rb-title{ color:var(--wheat); }
@@ -431,6 +436,9 @@
     <div class="sum-card danger alerts-clickable" id="sumAlertCard" onclick="openAlertsModal()"><div class="glow" style="color:var(--danger)"></div>
       <div class="label" data-i18n="labelAlerts">تنبيهات نشطة (اضغط للتفاصيل)</div><div class="val" id="sumAlerts">0</div>
     </div>
+    <div class="sum-card" id="sumOfflineCard"><div class="glow" style="color:#9aa0ac"></div>
+      <div class="label" data-i18n="labelOffline">مخازن غير متصلة</div><div class="val" id="sumOffline">0</div>
+    </div>
   </div>
 
   <div class="fs-row" id="fsRow">
@@ -636,6 +644,8 @@ const trendMem = {};
 const humTrendMem = {};
 const alertSinceMem = {};
 const lastSeenLocal = {}; // آخر وقت وصلت فيه بيانات فعلية لكل مخزن (وقت المتصفح، مو الجهاز)
+const isOfflineLocal = {}; // حالة الاتصال الحالية لكل مخزن (true = منقطع)
+const OFFLINE_THRESHOLD_MS = 3 * 60 * 1000; // 3 دقائق بدون بيانات = نعتبره منقطع (الجهاز يرسل كل 15 ثانية عادة)
 
 /* ---------- الترجمة ---------- */
 const I18N = {
@@ -646,7 +656,8 @@ const I18N = {
     diffLabel:'الفرق بين حساسي الحرارة', statusLabel:'حالة الحرارة', humStatusLabel:'حالة الرطوبة', liveData:'بيانات حية', logBtn:'📋 السجل', fwLabel:'نسخة البرنامج المنصّبة بالجهاز (Firmware)',
     rangeLabel:'🎯 الرينج المسموح', toWord:'إلى',
     dialLabelTemp:'Temp. °C', dialLabelHum:'Humidity %',
-    chipNormal:'● طبيعي', chipAlert:'⚠ تنبيه', statusNormal:'طبيعي', statusRising:'▲ مرتفعة', statusFalling:'▼ منخفضة',
+    chipNormal:'● طبيعي', chipAlert:'⚠ تنبيه', chipOffline:'⛔ غير متصل', statusNormal:'طبيعي', statusRising:'▲ مرتفعة', statusFalling:'▼ منخفضة',
+    offlineBannerTitle:'⛔ تم قطع الاتصال مع منظومة متحسسات المنطقة', offlineBannerSince:'منذ', labelOffline:'مخازن غير متصلة',
     logTitlePrefix:'سجل الأحداث — ', alertsOnlyLabel:'عرض التنبيهات فقط', exportLabel:'⬇ تصدير Excel',
     logFromLabel:'من', logToLabel:'إلى', clearFilterLabel:'✕ مسح الفلترة', loadingLabel:'جاري التحميل...',
     colDate:'التاريخ والوقت', colS1:'حساس 1', colS2:'حساس 2', colAvg:'المعدل', colDiff:'الفرق', colStatus:'الحالة',
@@ -684,7 +695,8 @@ const I18N = {
     diffLabel:'Temp Sensor Diff', statusLabel:'Temp Status', humStatusLabel:'Humidity Status', liveData:'Live Data', logBtn:'📋 Log', fwLabel:'Firmware version installed on device',
     rangeLabel:'🎯 Allowed Range', toWord:'to',
     dialLabelTemp:'Temp. °C', dialLabelHum:'Humidity %',
-    chipNormal:'● Normal', chipAlert:'⚠ Alert', statusNormal:'Normal', statusRising:'▲ High', statusFalling:'▼ Low',
+    chipNormal:'● Normal', chipAlert:'⚠ Alert', chipOffline:'⛔ Offline', statusNormal:'Normal', statusRising:'▲ High', statusFalling:'▼ Low',
+    offlineBannerTitle:'⛔ Connection lost with the sensor system for this zone', offlineBannerSince:'since', labelOffline:'Offline Warehouses',
     logTitlePrefix:'Event Log — ', alertsOnlyLabel:'Alerts only', exportLabel:'⬇ Export Excel',
     logFromLabel:'From', logToLabel:'To', clearFilterLabel:'✕ Clear filter', loadingLabel:'Loading...',
     colDate:'Date & Time', colS1:'Sensor 1', colS2:'Sensor 2', colAvg:'Average', colDiff:'Diff', colStatus:'Status',
@@ -953,6 +965,7 @@ function buildStationCards(){
     const cfg = adminSettings[w.id] || DEFAULT_RANGE;
     el.innerHTML = `
       <div class="station-head"><h3><span class="ic">🌾</span> ${whName(i)}</h3><div class="status-chip normal" id="chip-${w.id}">${t('chipNormal')}</div></div>
+      <div class="offline-banner" id="offlineban-${w.id}"><span class="ob-title">${t('offlineBannerTitle')}</span><span id="offlinesince-${w.id}"></span></div>
       <div class="range-badge"><span class="rb-title">${t('rangeLabel')}</span><span class="rb-val" id="range-${w.id}">${fmtRange(cfg)}</span></div>
       <div class="gauge-row">
       <div class="zone-section"><div class="zone-title">${t('zoneTemp')}</div>
@@ -1210,6 +1223,7 @@ function renderStation(w, data){
   // مو ساعة حقيقية، فما نصلح نقارنه بالوقت الفعلي - نسجل وقت وصول البيانات للمتصفح بدالها
   // ونعرضه كعداد حي بالدقائق (يتحدث لحاله عن طريق tickStationAges حتى بين التحديثات)
   lastSeenLocal[w.id] = Date.now();
+  if(isOfflineLocal[w.id]) setStationOffline(w.id, false); // وصلت بيانات جديدة = رجع الاتصال
   updateStationAge(w.id);
   const fwEl = document.getElementById('fw-'+w.id);
   if(fwEl) fwEl.textContent = data.fw ? ('FW ' + data.fw) : '';
@@ -1234,8 +1248,37 @@ function updateStationAge(wId){
   const mins = Math.floor((Date.now()-seen)/60000);
   el.textContent = currentLang==='ar' ? ('قبل '+mins+' د') : (mins+'m ago');
 }
-function tickStationAges(){ WAREHOUSES.forEach(w=>updateStationAge(w.id)); }
-setInterval(tickStationAges, 15000); // نحدثها كل 15 ثانية - يكفي لعداد دقائق
+
+/* ---------- كشف انقطاع الاتصال لكل مخزن (بدون بيانات جديدة أكثر من OFFLINE_THRESHOLD_MS) ---------- */
+function fmtOfflineDuration(ms){
+  const mins = Math.floor(ms/60000);
+  if(mins < 60) return currentLang==='ar' ? (mins+' د') : (mins+'m');
+  const hrs = Math.floor(mins/60), rem = mins%60;
+  return currentLang==='ar' ? (hrs+' س '+rem+' د') : (hrs+'h '+rem+'m');
+}
+function setStationOffline(wId, isOffline){
+  isOfflineLocal[wId] = isOffline;
+  const card = document.getElementById('st-'+wId);
+  const chip = document.getElementById('chip-'+wId);
+  if(card) card.classList.toggle('is-offline', isOffline);
+  if(chip && isOffline){ chip.className = 'status-chip offline'; chip.textContent = t('chipOffline'); }
+  if(!isOffline) return; // الحالة الطبيعية/تنبيه تترسم من renderStation نفسها لما توصل بيانات جديدة
+  const sinceEl = document.getElementById('offlinesince-'+wId);
+  const seen = lastSeenLocal[wId];
+  if(sinceEl) sinceEl.textContent = t('offlineBannerSince') + ' ' + (seen ? fmtOfflineDuration(Date.now()-seen) : '--');
+}
+function checkOfflineStations(){
+  WAREHOUSES.forEach(w=>{
+    const seen = lastSeenLocal[w.id];
+    if(!seen) return; // لسا ما وصلت أي بيانات من هذا المخزن أصلاً - مو "انقطاع"، هذا وضعه الأولي
+    const stale = (Date.now() - seen) > OFFLINE_THRESHOLD_MS;
+    if(stale && !isOfflineLocal[w.id]) setStationOffline(w.id, true);
+    else if(stale && isOfflineLocal[w.id]) setStationOffline(w.id, true); // نحدث نص "منذ كذا" حتى وهو منقطع أصلاً
+  });
+  renderSummary();
+}
+function tickStationAges(){ WAREHOUSES.forEach(w=>updateStationAge(w.id)); checkOfflineStations(); }
+setInterval(tickStationAges, 15000); // نحدثها كل 15 ثانية - يكفي لعداد دقائق وكشف الانقطاع
 
 function renderSummary(){
   const vals = Object.values(state);
@@ -1243,6 +1286,13 @@ function renderSummary(){
   const alertsCount = vals.filter(d=>d.alert).length;
   document.getElementById('sumAlerts').textContent = alertsCount;
   document.getElementById('sumAlertCard').classList.toggle('danger', true);
+  const offEl = document.getElementById('sumOffline');
+  if(offEl){
+    const offlineCount = WAREHOUSES.filter(w=>isOfflineLocal[w.id]).length;
+    offEl.textContent = offlineCount;
+    const card = document.getElementById('sumOfflineCard');
+    if(card) card.classList.toggle('danger', offlineCount>0);
+  }
 }
 
 /* ---------- الساعة وآخر تحديث ---------- */
