@@ -210,6 +210,8 @@
   .modal-close:hover{ color:var(--text-0); border-color:var(--danger); }
   .modal-controls{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px; }
   .chk{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-1); cursor:pointer; }
+  .log-date-filter{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-1); }
+  .log-date-filter input[type="datetime-local"]{ background:var(--panel-2); border:1px solid var(--line); color:var(--text-1); border-radius:8px; padding:5px 8px; font-size:12px; font-family:inherit; }
   .export-btn{ background: linear-gradient(135deg, var(--wheat), var(--wheat-2)); border:none; color:#241a05; font-size:12px; font-weight:800; padding:8px 14px; border-radius:10px; cursor:pointer; }
   .modal-table-wrap{ overflow-y:auto; border:1px solid var(--card-border); border-radius:10px; }
   .log-table{ width:100%; border-collapse:collapse; font-size:12px; }
@@ -490,7 +492,10 @@
   <div class="modal-box">
     <div class="modal-head"><h3 id="logModalTitle">سجل الأحداث</h3><button class="modal-close" onclick="closeLog()">✕</button></div>
     <div class="modal-controls">
-      <label class="chk"><input type="checkbox" id="alertsOnlyChk" onchange="renderLogTable()"> <span data-i18n="alertsOnlyLabel">عرض التنبيهات فقط</span></label>
+      <label class="chk"><input type="checkbox" id="alertsOnlyChk" onchange="renderLogTableFromCache()"> <span data-i18n="alertsOnlyLabel">عرض التنبيهات فقط</span></label>
+      <label class="log-date-filter"><span data-i18n="logFromLabel">من</span> <input type="datetime-local" id="logFromInput" onchange="renderLogTable()"></label>
+      <label class="log-date-filter"><span data-i18n="logToLabel">إلى</span> <input type="datetime-local" id="logToInput" onchange="renderLogTable()"></label>
+      <button class="export-btn" id="logClearFilterBtn" onclick="clearLogDateFilter()" data-i18n="clearFilterLabel">✕ مسح الفلترة</button>
       <button class="export-btn" onclick="exportLogExcel()" data-i18n="exportLabel">⬇ تصدير Excel</button>
     </div>
     <div class="modal-table-wrap">
@@ -630,6 +635,7 @@ const logs = {}; WAREHOUSES.forEach(w=>logs[w.id]=[]);
 const trendMem = {};
 const humTrendMem = {};
 const alertSinceMem = {};
+const lastSeenLocal = {}; // آخر وقت وصلت فيه بيانات فعلية لكل مخزن (وقت المتصفح، مو الجهاز)
 
 /* ---------- الترجمة ---------- */
 const I18N = {
@@ -642,6 +648,7 @@ const I18N = {
     dialLabelTemp:'Temp. °C', dialLabelHum:'Humidity %',
     chipNormal:'● طبيعي', chipAlert:'⚠ تنبيه', statusNormal:'طبيعي', statusRising:'▲ مرتفعة', statusFalling:'▼ منخفضة',
     logTitlePrefix:'سجل الأحداث — ', alertsOnlyLabel:'عرض التنبيهات فقط', exportLabel:'⬇ تصدير Excel',
+    logFromLabel:'من', logToLabel:'إلى', clearFilterLabel:'✕ مسح الفلترة', loadingLabel:'جاري التحميل...',
     colDate:'التاريخ والوقت', colS1:'حساس 1', colS2:'حساس 2', colAvg:'المعدل', colDiff:'الفرق', colStatus:'الحالة',
     noDataLabel:'لا توجد بيانات مسجلة بعد', alertModalTitle:'تفاصيل التنبيهات النشطة', noActiveAlerts:'لا توجد تنبيهات نشطة حالياً',
     colWarehouse:'المخزن', colSince:'منذ (ثانية)',
@@ -679,6 +686,7 @@ const I18N = {
     dialLabelTemp:'Temp. °C', dialLabelHum:'Humidity %',
     chipNormal:'● Normal', chipAlert:'⚠ Alert', statusNormal:'Normal', statusRising:'▲ High', statusFalling:'▼ Low',
     logTitlePrefix:'Event Log — ', alertsOnlyLabel:'Alerts only', exportLabel:'⬇ Export Excel',
+    logFromLabel:'From', logToLabel:'To', clearFilterLabel:'✕ Clear filter', loadingLabel:'Loading...',
     colDate:'Date & Time', colS1:'Sensor 1', colS2:'Sensor 2', colAvg:'Average', colDiff:'Diff', colStatus:'Status',
     noDataLabel:'No data logged yet', alertModalTitle:'Active Alert Details', noActiveAlerts:'No active alerts',
     colWarehouse:'Warehouse', colSince:'Since (sec)',
@@ -981,35 +989,93 @@ function pushLog(wId, data){
   arr.push({ ts:Date.now(), sensor1:data.sensor1, sensor2:data.sensor2, average:data.average, diff:data.diff, alert:!!data.alert });
   if(arr.length>LOG_MAX) arr.shift();
 }
-window.openLog = function(wId){
+// ذاكرة تخزين مؤقتة (cache) بالمتصفح بس لآخر نتيجة جلبناها من Firebase - تفادي إعادة الجلب
+// لو المستخدم بدّل بين "التنبيهات فقط" بدون ما يغيّر فترة التاريخ
+let logRowsCache = [];
+
+window.openLog = async function(wId){
   currentLogWarehouse = wId;
   const idx = WAREHOUSES.findIndex(x=>x.id===wId);
   document.getElementById('logModalTitle').textContent = t('logTitlePrefix') + whName(idx);
   document.getElementById('alertsOnlyChk').checked = false;
-  window.renderLogTable();
+  // افتراضياً نعرض آخر 7 أيام فقط (السجل الكامل ممكن يوصل شهرين+، وتحميله كامل كل مرة بطيء)
+  // المستخدم يقدر يوسّع الفترة يدوياً من حقول من/إلى لين تغطية شهرين كاملة أو أكثر
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7*24*60*60*1000);
+  document.getElementById('logFromInput').value = toDatetimeLocalValue(weekAgo);
+  document.getElementById('logToInput').value = toDatetimeLocalValue(now);
   document.getElementById('logModal').classList.add('show');
+  await window.renderLogTable();
 };
 window.closeLog = function(){ document.getElementById('logModal').classList.remove('show'); currentLogWarehouse=null; };
-window.renderLogTable = function(){
+window.clearLogDateFilter = async function(){
+  document.getElementById('logFromInput').value = '';
+  document.getElementById('logToInput').value = '';
+  await window.renderLogTable();
+};
+function toDatetimeLocalValue(d){
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+// يجيب سجل الأحداث الدائم من Firebase (/logs/{warehouse_id}) للفترة المحددة (من/إلى) -
+// هذا السجل يبقى محفوظ بقاعدة البيانات لأشهر، مو مرتبط بذاكرة المتصفح المؤقتة
+async function fetchLogRowsFromFirebase(wId){
+  if(!fbDb || !fbRef){ return []; } // وضع تجريبي (Demo) بدون Firebase حقيقي - ماكو سجل دائم
+  const fromVal = document.getElementById('logFromInput').value;
+  const toVal = document.getElementById('logToInput').value;
+  const logRef = fbRef(fbDb, 'logs/'+wId);
+  let q;
+  if(fromVal || toVal){
+    const fromTs = fromVal ? new Date(fromVal).getTime() : 0;
+    const toTs = toVal ? new Date(toVal).getTime() : Date.now();
+    // مفاتيح السجل هي الوقت الحقيقي (epoch ms) كنص - نقارنها كنص لأن Firebase يخزن مفاتيح الكائنات كنصوص دايماً
+    q = fbQuery(logRef, fbOrderByKey(), fbStartAt(String(fromTs)), fbEndAt(String(toTs)));
+  } else {
+    // بدون فلترة تاريخ - آخر 500 قراءة بس (تفادي تحميل السجل الكامل بالخطأ)
+    q = fbQuery(logRef, fbOrderByKey(), fbLimitToLast(500));
+  }
+  try{
+    const snap = await fbGet(q);
+    const val = snap.val();
+    if(!val) return [];
+    return Object.keys(val).map(k=>({ ts:Number(k), sensor1:val[k].s1, sensor2:val[k].s2, average:val[k].avg, diff:val[k].diff, alert:!!val[k].alert }));
+  }catch(e){
+    console.warn('fetchLogRowsFromFirebase failed:', e);
+    return [];
+  }
+}
+window.renderLogTable = async function(){
   if(!currentLogWarehouse) return;
-  const onlyAlerts = document.getElementById('alertsOnlyChk').checked;
-  let rows = logs[currentLogWarehouse].slice().reverse();
-  if(onlyAlerts) rows = rows.filter(r=>r.alert);
   const tbody = document.getElementById('logTableBody'); const empty = document.getElementById('logEmpty');
+  tbody.innerHTML=''; empty.style.display='block'; empty.textContent = t('loadingLabel');
+
+  logRowsCache = await fetchLogRowsFromFirebase(currentLogWarehouse);
+  logRowsCache.sort((a,b)=>b.ts-a.ts); // الأحدث فوق
+
+  window.renderLogTableFromCache();
+};
+// يعيد رسم الجدول من البيانات المخزنة مؤقتاً (logRowsCache) بدون إعادة جلب من Firebase -
+// نستخدمها لما يبدل المستخدم فلتر "التنبيهات فقط" بس، بدون ما يغيّر فترة التاريخ
+window.renderLogTableFromCache = function(){
+  const tbody = document.getElementById('logTableBody'); const empty = document.getElementById('logEmpty');
+  const onlyAlerts = document.getElementById('alertsOnlyChk').checked;
+  let rows = onlyAlerts ? logRowsCache.filter(r=>r.alert) : logRowsCache;
+
   tbody.innerHTML='';
-  if(rows.length===0){ empty.style.display='block'; return; } empty.style.display='none';
-  rows.slice(0,300).forEach(r=>{
+  if(rows.length===0){ empty.textContent = t('noDataLabel'); empty.style.display='block'; return; }
+  empty.style.display='none';
+  rows.slice(0,500).forEach(r=>{
     const tr=document.createElement('tr'); if(r.alert) tr.className='alert-row';
     tr.innerHTML = `<td>${fmtDate(r.ts)} ${fmtTime(r.ts)}</td><td>${num(r.sensor1)}</td><td>${num(r.sensor2)}</td><td>${num(r.average)}</td><td>${num(r.diff)}</td><td>${r.alert?t('chipAlert'):t('statusNormal')}</td>`;
     tbody.appendChild(tr);
   });
 };
-window.exportLogExcel = function(){
+window.exportLogExcel = async function(){
   if(!currentLogWarehouse) return;
   const idx = WAREHOUSES.findIndex(x=>x.id===currentLogWarehouse);
   const onlyAlerts = document.getElementById('alertsOnlyChk').checked;
-  let rows = logs[currentLogWarehouse].slice().reverse();
-  if(onlyAlerts) rows = rows.filter(r=>r.alert);
+  // نستخدم آخر بيانات جلبناها (logRowsCache) لتفادي جلب مكرر - لو المستخدم غيّر الفترة، renderLogTable يكون حدّثها أصلاً
+  let rows = onlyAlerts ? logRowsCache.filter(r=>r.alert) : logRowsCache;
   const data = rows.map(r=>({ [t('colDate')]:fmtDate(r.ts)+' '+fmtTime(r.ts), [t('colS1')]:num(r.sensor1), [t('colS2')]:num(r.sensor2), [t('colAvg')]:num(r.average), [t('colDiff')]:num(r.diff), [t('colStatus')]: r.alert?t('chipAlert'):t('statusNormal') }));
   if(typeof XLSX==='undefined'){ alert('Export library unavailable'); return; }
   const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new();
@@ -1141,8 +1207,10 @@ function renderStation(w, data){
   humStatusEl.textContent = t('status'+cap(data.humStatus));
 
   // ملاحظة: data.timestamp اللي يرسله الجهاز هو millis() (وقت التشغيل الداخلي للجهاز)
-  // مو ساعة حقيقية، فما نصلح نقارنه بالوقت الفعلي - نستخدم وقت وصول البيانات للمتصفح بدالها
-  document.getElementById('ts-'+w.id).textContent = secondsAgo(Date.now()) + 's';
+  // مو ساعة حقيقية، فما نصلح نقارنه بالوقت الفعلي - نسجل وقت وصول البيانات للمتصفح بدالها
+  // ونعرضه كعداد حي بالدقائق (يتحدث لحاله عن طريق tickStationAges حتى بين التحديثات)
+  lastSeenLocal[w.id] = Date.now();
+  updateStationAge(w.id);
   const fwEl = document.getElementById('fw-'+w.id);
   if(fwEl) fwEl.textContent = data.fw ? ('FW ' + data.fw) : '';
 
@@ -1156,6 +1224,18 @@ function renderStation(w, data){
   lastGlobalUpdate = Date.now();
 }
 function secondsAgo(ts){ if(!ts) return 0; return Math.max(0, Math.round((Date.now()-ts)/1000)); }
+
+/* ---------- عداد "آخر تحديث" لكل مخزن، بالدقائق، حي حتى بين تحديثات البيانات ---------- */
+function updateStationAge(wId){
+  const el = document.getElementById('ts-'+wId);
+  if(!el) return;
+  const seen = lastSeenLocal[wId];
+  if(!seen){ el.textContent = '--'; return; }
+  const mins = Math.floor((Date.now()-seen)/60000);
+  el.textContent = currentLang==='ar' ? ('قبل '+mins+' د') : (mins+'m ago');
+}
+function tickStationAges(){ WAREHOUSES.forEach(w=>updateStationAge(w.id)); }
+setInterval(tickStationAges, 15000); // نحدثها كل 15 ثانية - يكفي لعداد دقائق
 
 function renderSummary(){
   const vals = Object.values(state);
@@ -1838,16 +1918,16 @@ function tickDemo(){
 }
 function clamp(v,mn,mx){ return Math.max(mn, Math.min(mx, v)); }
 
-let fbDb = null, fbRef = null, fbSet = null;
+let fbDb = null, fbRef = null, fbSet = null, fbQuery = null, fbOrderByKey = null, fbStartAt = null, fbEndAt = null, fbGet = null, fbLimitToLast = null;
 
 async function tryConnectFirebase(){
   if(firebaseConfig.apiKey === "YOUR_API_KEY"){ startDemo(); return; }
   try{
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
-    const { getDatabase, ref, onValue, set } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js");
+    const { getDatabase, ref, onValue, set, query, orderByKey, startAt, endAt, get, limitToLast } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js");
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    fbDb = db; fbRef = ref; fbSet = set;
+    fbDb = db; fbRef = ref; fbSet = set; fbQuery = query; fbOrderByKey = orderByKey; fbStartAt = startAt; fbEndAt = endAt; fbGet = get; fbLimitToLast = limitToLast;
     setConnBadge(true);
     WAREHOUSES.forEach(w=>{
       onValue(ref(db, 'warehouses/'+w.id), (snap)=>{ const val=snap.val(); if(!val) return; state[w.id]=val; renderStation(w,val); renderSummary(); });
