@@ -1311,6 +1311,20 @@ function setStationOffline(wId, isOffline){
   const sinceEl = document.getElementById('offlinesince-'+wId);
   const seen = lastSeenLocal[wId];
   if(sinceEl) sinceEl.textContent = t('offlineBannerSince') + ' ' + (seen ? fmtOfflineDuration(Date.now()-seen) : '--');
+
+  // انقطع الاتصال بكامل المنطقة - نرجّع كل متحسس (1 و2 والرطوبة) لحالة "غير متصل" برضو، حتى ما تضل
+  // القراءات القديمة معلّقة بالمقاييس وكأنها لسا حية وهي أصلاً آخر رقم وصل قبل الانقطاع
+  applySensorGaugeState(wId, 's1', false, null, false);
+  applySensorGaugeState(wId, 's2', false, null, false);
+  applySensorGaugeState(wId, 'hum', false, null, false, HUM_MIN, HUM_MAX, HUM_ZONES);
+  const diffEl = document.getElementById('diff-'+wId);
+  const diffBoxEl = document.getElementById('diffbox-'+wId);
+  if(diffEl) diffEl.textContent = t('diffPendingLabel');
+  if(diffBoxEl) diffBoxEl.classList.remove('high');
+  const statusEl = document.getElementById('statustxt-'+wId);
+  if(statusEl){ statusEl.className = 'rv'; statusEl.textContent = '--'; }
+  const humStatusEl = document.getElementById('humstatustxt-'+wId);
+  if(humStatusEl){ humStatusEl.className = 'rv'; humStatusEl.textContent = '--'; }
 }
 function checkOfflineStations(){
   WAREHOUSES.forEach(w=>{
