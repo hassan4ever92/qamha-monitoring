@@ -150,6 +150,11 @@
   .gauge-wrap.na .gauge-digital{ color: var(--text-2); font-size:18px; }
   .gauge-digital.g-ok{ color: var(--ok); }
   .gauge-digital.g-alert{ color: var(--danger-bright); animation: thresholdPulse 1s infinite; }
+  .gauge-box.pending-box .gauge-wrap{ opacity:0.5; filter:grayscale(0.6); }
+  .gauge-digital.g-pending{ color:#c98a2e; font-size:13px; font-weight:800; letter-spacing:0; }
+  .gauge-box.pending-box .gauge-unit, .gauge-box.pending-box .gauge-label{ opacity:0.7; }
+  .pending-badge{ display:none; font-size:10px; font-weight:700; color:#c98a2e; background:rgba(201,138,46,0.12); border:1px solid rgba(201,138,46,0.4); border-radius:999px; padding:2px 8px; margin-top:4px; }
+  .gauge-box.pending-box .pending-badge{ display:inline-block; }
   @keyframes thresholdPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.55; } }
 
   .readings{ display:grid; gap:8px; margin-top:8px; }
@@ -667,6 +672,7 @@ const I18N = {
     adminTitle:'⚙️ إعدادات النظام (الرينج المسموح)',
     adminIntro:'حدد المدى الطبيعي للحرارة والرطوبة لكل مخزن — خارج هذا المدى تتغير الحالة تلقائياً لصاعدة أو نازلة.',
     tempRangeLabel:'الحرارة °م', humRangeLabel:'الرطوبة %', minLabel:'من', maxLabel:'إلى', adminSave:'💾 حفظ الإعدادات',
+    sensor2InstalledLabel:'المتحسس الثاني مركّب بهذا المخزن', sensor2PendingShort:'⏳ بانتظار التنصيب', sensor2PendingBadge:'بانتظار تنصيب المتحسس الثاني', diffPendingLabel:'—',
     silenceThresholdBtn:'🔇 كتم تنبيه الحرارة',
     fireTitle:'منظومة إنذار الحريق 1', zoneWord:'المنطقة', fireMasterOk:'✅ النظام سليم', fireMasterAlarm:'🚨 إنذار نشط', fireMasterFault:'⚠ يوجد عطل',
     fireStatusNormal:'طبيعي', fireStatusAlarm:'حريق!', fireStatusFault:'عطل', fireStatusDisabled:'معطّل',
@@ -706,6 +712,7 @@ const I18N = {
     adminTitle:'⚙️ System Settings (Allowed Range)',
     adminIntro:'Set the normal temperature/humidity range per warehouse — outside this range status switches to rising or falling automatically.',
     tempRangeLabel:'Temp °C', humRangeLabel:'Humidity %', minLabel:'Min', maxLabel:'Max', adminSave:'💾 Save Settings',
+    sensor2InstalledLabel:'Sensor 2 is installed at this warehouse', sensor2PendingShort:'⏳ Awaiting install', sensor2PendingBadge:'Awaiting sensor 2 installation', diffPendingLabel:'—',
     silenceThresholdBtn:'🔇 Silence Temp Alert',
     fireTitle:'Fire Alarm System 1', zoneWord:'Zone', fireMasterOk:'✅ System Normal', fireMasterAlarm:'🚨 Active Alarm', fireMasterFault:'⚠ Fault Present',
     fireStatusNormal:'Normal', fireStatusAlarm:'Fire!', fireStatusFault:'Fault', fireStatusDisabled:'Disabled',
@@ -742,7 +749,7 @@ function applyStaticI18n(){
 
 /* ---------- إعدادات الإدارة (Admin ranges) ---------- */
 const DEFAULT_RANGE = { tempMin:15, tempMax:35, humMin:30, humMax:70 };
-const ADMIN_SETTINGS_VERSION = 2; // رفعناها عشان تعتمد حدود المناطق السبعة الجديدة وتتجاوز أي قيم قديمة محفوظة بالمتصفح
+const ADMIN_SETTINGS_VERSION = 3; // رفعناها عشان تضيف sensor2Installed (افتراضياً false لكل المخازن لحد ما يتركب المتحسس الثاني)
 let adminSettings = {};
 function loadAdminSettings(){
   let saved = {};
@@ -751,7 +758,7 @@ function loadAdminSettings(){
     try{ saved = JSON.parse(localStorage.getItem('qamha_admin_settings') || '{}'); }catch(e){}
   }
   WAREHOUSES.forEach(w=>{
-    const zoneDefault = { tempMin:w.tempMin, tempMax:w.tempMax, humMin:DEFAULT_RANGE.humMin, humMax:DEFAULT_RANGE.humMax };
+    const zoneDefault = { tempMin:w.tempMin, tempMax:w.tempMax, humMin:DEFAULT_RANGE.humMin, humMax:DEFAULT_RANGE.humMax, sensor2Installed:false };
     adminSettings[w.id] = Object.assign({}, zoneDefault, saved[w.id]||{});
   });
   localStorage.setItem('qamha_admin_settings', JSON.stringify(adminSettings));
@@ -971,7 +978,7 @@ function buildStationCards(){
       <div class="zone-section"><div class="zone-title">${t('zoneTemp')}</div>
         <div class="gauges">
           <div class="gauge-box"><div class="gauge-wrap" id="gaugewrap-s1-${w.id}"></div><div class="gauge-digital-panel"><div class="gauge-digital" id="gv-s1-${w.id}">--</div></div><div class="gauge-unit">°م</div><div class="gauge-label">${t('sensor1Label')} — ${whName(i)}</div></div>
-          <div class="gauge-box"><div class="gauge-wrap" id="gaugewrap-s2-${w.id}"></div><div class="gauge-digital-panel"><div class="gauge-digital" id="gv-s2-${w.id}">--</div></div><div class="gauge-unit">°م</div><div class="gauge-label">${t('sensor2Label')} — ${whName(i)}</div></div>
+          <div class="gauge-box" id="gbox-s2-${w.id}"><div class="gauge-wrap" id="gaugewrap-s2-${w.id}"></div><div class="gauge-digital-panel"><div class="gauge-digital" id="gv-s2-${w.id}">--</div></div><div class="gauge-unit">°م</div><div class="gauge-label">${t('sensor2Label')} — ${whName(i)}</div><div class="pending-badge">${t('sensor2PendingBadge')}</div></div>
         </div>
         <div class="readings cols2">
           <div class="read-item diff" id="diffbox-${w.id}"><div class="rl">${t('diffLabel')}</div><div class="rv" id="diff-${w.id}">--°</div></div>
@@ -1148,7 +1155,12 @@ window.openAdmin = function(){
         <label>${t('tempRangeLabel')} ${t('maxLabel')}<input type="number" step="0.1" id="adm-${w.id}-tmax" value="${cfg.tempMax}" style="width:100%;margin-top:4px;background:rgba(255,255,255,.05);border:1px solid var(--card-border);color:var(--text-0);border-radius:6px;padding:6px;"></label>
         <label>${t('humRangeLabel')} ${t('minLabel')}<input type="number" step="0.1" id="adm-${w.id}-hmin" value="${cfg.humMin}" style="width:100%;margin-top:4px;background:rgba(255,255,255,.05);border:1px solid var(--card-border);color:var(--text-0);border-radius:6px;padding:6px;"></label>
         <label>${t('humRangeLabel')} ${t('maxLabel')}<input type="number" step="0.1" id="adm-${w.id}-hmax" value="${cfg.humMax}" style="width:100%;margin-top:4px;background:rgba(255,255,255,.05);border:1px solid var(--card-border);color:var(--text-0);border-radius:6px;padding:6px;"></label>
-      </div></div>`;
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:11.5px;color:var(--text-1);cursor:pointer;">
+        <input type="checkbox" id="adm-${w.id}-s2installed" ${cfg.sensor2Installed ? 'checked' : ''} style="width:15px;height:15px;">
+        ${t('sensor2InstalledLabel')}
+      </label>
+      </div>`;
   });
   form.innerHTML = html;
   document.getElementById('adminModal').classList.add('show');
@@ -1160,7 +1172,8 @@ window.saveAdmin = function(){
       tempMin: parseFloat(document.getElementById(`adm-${w.id}-tmin`).value),
       tempMax: parseFloat(document.getElementById(`adm-${w.id}-tmax`).value),
       humMin: parseFloat(document.getElementById(`adm-${w.id}-hmin`).value),
-      humMax: parseFloat(document.getElementById(`adm-${w.id}-hmax`).value)
+      humMax: parseFloat(document.getElementById(`adm-${w.id}-hmax`).value),
+      sensor2Installed: !!document.getElementById(`adm-${w.id}-s2installed`).checked
     };
   });
   localStorage.setItem('qamha_admin_settings', JSON.stringify(adminSettings));
@@ -1175,15 +1188,17 @@ window.saveAdmin = function(){
 /* ---------- تحديث بطاقة مخزن واحد ---------- */
 function renderStation(w, data){
   const cfg = adminSettings[w.id];
+  const sensor2Installed = !!cfg.sensor2Installed;
   // حالة الحرارة تعتمد على كل متحسس لحاله (مو المعدل) — أي متحسس يطلع عن الرينج يحدد الحالة
+  // لو المتحسس الثاني لسا ما انتصب، نتجاهل قراءته كلياً (حتى لو الجهاز يرسل رقم عشوائي/خطأ) حتى ما يسبب تنبيهات كاذبة
   const s1v = (data.sensor1!==undefined && data.sensor1!==null && !isNaN(data.sensor1)) ? data.sensor1 : null;
-  const s2v = (data.sensor2!==undefined && data.sensor2!==null && !isNaN(data.sensor2)) ? data.sensor2 : null;
+  const s2v = sensor2Installed ? ((data.sensor2!==undefined && data.sensor2!==null && !isNaN(data.sensor2)) ? data.sensor2 : null) : null;
   data.tempStatus = computeTempStatusFromSensors(s1v, s2v, cfg);
   data.humStatus = computeHumStatus(w.id, data.humidity, cfg);
 
   // تلوين كل متحسس أخضر/أحمر حسب رينج المخزن الخاص فيه (من الإدارة) + تنبيه صوتي وبوب-اب عند التجاوز
-  const s1Breach = (data.sensor1!==undefined && data.sensor1!==null && !isNaN(data.sensor1)) && (data.sensor1 < cfg.tempMin || data.sensor1 > cfg.tempMax);
-  const s2Breach = (data.sensor2!==undefined && data.sensor2!==null && !isNaN(data.sensor2)) && (data.sensor2 < cfg.tempMin || data.sensor2 > cfg.tempMax);
+  const s1Breach = (s1v!==null) && (s1v < cfg.tempMin || s1v > cfg.tempMax);
+  const s2Breach = sensor2Installed && (s2v!==null) && (s2v < cfg.tempMin || s2v > cfg.tempMax);
   const humBreach = data.humStatus !== 'normal';
   // حالة التنبيه العامة للبطاقة (الشارة + الإطار) تعتمد على تجاوز رينج الحرارة أو الرطوبة، مو بس فرق الحساسين اللي يرسله الجهاز
   const alertFlag = !!data.alert || s1Breach || s2Breach || humBreach;
@@ -1194,22 +1209,36 @@ function renderStation(w, data){
   card.classList.toggle('alert', alertFlag);
 
   updateGauge('gaugewrap-s1-'+w.id, 'gv-s1-'+w.id, data.sensor1, TEMP_MIN, TEMP_MAX, TEMP_ZONES);
-  updateGauge('gaugewrap-s2-'+w.id, 'gv-s2-'+w.id, data.sensor2, TEMP_MIN, TEMP_MAX, TEMP_ZONES);
+  const gboxS2 = document.getElementById('gbox-s2-'+w.id);
+  if(sensor2Installed){
+    if(gboxS2) gboxS2.classList.remove('pending-box');
+    updateGauge('gaugewrap-s2-'+w.id, 'gv-s2-'+w.id, data.sensor2, TEMP_MIN, TEMP_MAX, TEMP_ZONES);
+  } else {
+    if(gboxS2) gboxS2.classList.add('pending-box');
+    const gvPending = document.getElementById('gv-s2-'+w.id);
+    if(gvPending){ gvPending.textContent = t('sensor2PendingShort'); gvPending.classList.remove('g-alert','g-ok'); gvPending.classList.add('g-pending'); gvPending.style.color=''; }
+  }
   updateGauge('gaugewrap-hum-'+w.id, 'gv-hum-'+w.id, data.humidity, HUM_MIN, HUM_MAX, HUM_ZONES);
 
   const gvS1 = document.getElementById('gv-s1-'+w.id);
   const gvS2 = document.getElementById('gv-s2-'+w.id);
   if(gvS1){ gvS1.classList.toggle('g-alert', s1Breach); gvS1.classList.toggle('g-ok', !s1Breach); gvS1.style.color = s1Breach ? 'var(--danger-bright)' : 'var(--ok)'; }
-  if(gvS2){ gvS2.classList.toggle('g-alert', s2Breach); gvS2.classList.toggle('g-ok', !s2Breach); gvS2.style.color = s2Breach ? 'var(--danger-bright)' : 'var(--ok)'; }
+  if(sensor2Installed && gvS2){ gvS2.classList.toggle('g-alert', s2Breach); gvS2.classList.toggle('g-ok', !s2Breach); gvS2.style.color = s2Breach ? 'var(--danger-bright)' : 'var(--ok)'; }
   thresholdBreachState[w.id] = { s1: s1Breach, s2: s2Breach };
 
   const whIdx = WAREHOUSES.findIndex(x=>x.id===w.id);
   maybeShowTempPopup(w.id, whIdx, 1, data.sensor1, s1Breach);
-  maybeShowTempPopup(w.id, whIdx, 2, data.sensor2, s2Breach);
+  if(sensor2Installed) maybeShowTempPopup(w.id, whIdx, 2, data.sensor2, s2Breach);
   updateThresholdSiren();
 
-  document.getElementById('diff-'+w.id).textContent = num(data.diff) + '°';
-  document.getElementById('diffbox-'+w.id).classList.toggle('high', (data.diff??0) > ALERT_DIFF);
+  // فرق الحساسين ما إله معنى إذا المتحسس الثاني لسا ما انتصب - نعرض شرطة بدل رقم عشوائي
+  if(sensor2Installed){
+    document.getElementById('diff-'+w.id).textContent = num(data.diff) + '°';
+    document.getElementById('diffbox-'+w.id).classList.toggle('high', (data.diff??0) > ALERT_DIFF);
+  } else {
+    document.getElementById('diff-'+w.id).textContent = t('diffPendingLabel');
+    document.getElementById('diffbox-'+w.id).classList.remove('high');
+  }
 
   const statusEl = document.getElementById('statustxt-'+w.id);
   statusEl.className = 'rv status-' + data.tempStatus;
