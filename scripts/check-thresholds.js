@@ -67,6 +67,60 @@ async function pruneOldLogs(db) {
   console.log(`تنظيف السجل: حذفنا ${deletedCount} قراءة أقدم من ${LOG_RETENTION_DAYS} يوم.`);
 }
 
+// ==========================================================
+// كشف انقطاع الاتصال (كهرباء أو انترنت) عن كل مخزن
+// نعتمد على حقل timestamp (وقت حقيقي متزامن NTP يرسله الجهاز مع كل قراءة) - لو
+// الوقت الحالي أبعد من آخر timestamp بأكثر من CONN_OFFLINE_MS نعتبر المخزن منقطع.
+// نحفظ آخر حالة معروفة بـ /connState/{warehouseId} حتى ما نرسل إشعار كل 5 دقايق وهو
+// لسا منقطع - نرسل بس أول لحظة ينقطع (rising edge) وأول لحظة يرجع (recovery).
+// ==========================================================
+const CONN_OFFLINE_MS = 3 * 60 * 1000; // 3 دقايق بدون بيانات = منقطع (الجهاز يرسل كل 15 ثانية عادة)
+
+async function checkConnectivity(db, warehouses) {
+  const now = Date.now();
+  const connStateSnap = await db.ref("connState").get();
+  const connStateAll = connStateSnap.val() || {};
+  const connUpdates = {};
+  const connMessages = [];
+
+  const statusByWarehouse = {};
+  for (const warehouseId of Object.keys(warehouses)) {
+    const data = warehouses[warehouseId] || {};
+    const ts = Number(data.timestamp) || 0;
+    if (ts <= 0) { statusByWarehouse[warehouseId] = null; continue; } // NTP ما تزامن لهسة - نتجاهله هذا الدور
+    statusByWarehouse[warehouseId] = (now - ts) > CONN_OFFLINE_MS;
+  }
+
+  for (const warehouseId of Object.keys(statusByWarehouse)) {
+    const isOffline = statusByWarehouse[warehouseId];
+    if (isOffline === null) continue;
+    const prev = connStateAll[warehouseId] || {};
+    const wasOffline = !!prev.offline;
+    const name = (WAREHOUSE_NAMES[warehouseId] || { ar: warehouseId }).ar;
+
+    if (isOffline && !wasOffline) {
+      // لحظة انقطاع جديدة
+      connMessages.push({
+        title: `⛔ انقطع الاتصال — ${name}`,
+        body: "تم قطع الاتصال مع منظومة متحسسات المنطقة.",
+      });
+      connUpdates[warehouseId] = { offline: true, since: now };
+    } else if (!isOffline && wasOffline) {
+      // رجع الاتصال
+      connMessages.push({
+        title: `✅ عاد الاتصال — ${name}`,
+        body: "رجعت البيانات توصل من هذا المخزن طبيعي.",
+      });
+      connUpdates[warehouseId] = { offline: false, since: now };
+    }
+  }
+
+  if (Object.keys(connUpdates).length) {
+    await db.ref("connState").update(connUpdates);
+  }
+  return connMessages;
+}
+
 async function main() {
   const db = admin.database();
 
@@ -87,6 +141,12 @@ async function main() {
 
   const alertUpdates = {};
   const messages = [];
+
+  const connMessages = await checkConnectivity(db, warehouses).catch((e) => {
+    console.error("فشل كشف انقطاع الاتصال:", e);
+    return [];
+  });
+  messages.push(...connMessages);
 
   for (const warehouseId of Object.keys(warehouses)) {
     const data = warehouses[warehouseId];
