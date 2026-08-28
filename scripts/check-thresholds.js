@@ -157,11 +157,15 @@ async function main() {
     const alertState = alertStateAll[warehouseId] || {};
     const newAlertState = Object.assign({}, alertState);
 
+    // لو المتحسس الثاني لسا ما انتصب بهذا المخزن (adminSettings.sensor2Installed=false)، نتجاهل قراءته
+    // كلياً حتى ما يرسل تنبيهات push كاذبة بسبب رقم عشوائي/خطأ من شريحة غير موصولة
     const checks = [
       { key: "sensor1", label: "حساس 1", value: data.sensor1, min: cfg.tempMin, max: cfg.tempMax, unit: "°C" },
-      { key: "sensor2", label: "حساس 2", value: data.sensor2, min: cfg.tempMin, max: cfg.tempMax, unit: "°C" },
       { key: "humidity", label: "الرطوبة", value: data.humidity, min: cfg.humMin, max: cfg.humMax, unit: "%" },
     ];
+    if (cfg.sensor2Installed) {
+      checks.push({ key: "sensor2", label: "حساس 2", value: data.sensor2, min: cfg.tempMin, max: cfg.tempMax, unit: "°C" });
+    }
 
     const lines = [];
     for (const c of checks) {
