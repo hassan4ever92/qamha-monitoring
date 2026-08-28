@@ -995,7 +995,7 @@ function buildStationCards(){
         </div>
       </div>
       <div class="zone-section"><div class="zone-title">${t('zoneHum')}</div>
-        <div class="gauges"><div class="gauge-box"><div class="gauge-wrap" id="gaugewrap-hum-${w.id}"></div><div class="gauge-digital-panel"><div class="gauge-digital" id="gv-hum-${w.id}">--</div></div><div class="gauge-unit">%</div><div class="gauge-label">${t('humidityLabel')} — ${whName(i)}</div></div></div>
+        <div class="gauges"><div class="gauge-box pending-box" id="gbox-hum-${w.id}"><div class="gauge-wrap" id="gaugewrap-hum-${w.id}"></div><div class="gauge-digital-panel"><div class="gauge-digital" id="gv-hum-${w.id}">--</div></div><div class="gauge-unit">%</div><div class="gauge-label">${t('humidityLabel')} — ${whName(i)}</div><div class="pending-badge">${t('sensorPendingBadge')}</div></div></div>
         <div class="readings cols1">
           <div class="read-item"><div class="rl">${t('humStatusLabel')}</div><div class="rv" id="humstatustxt-${w.id}">--</div></div>
         </div>
@@ -1189,13 +1189,18 @@ window.saveAdmin = function(){
   closeAdmin();
 };
 
-/* ---------- تحديث حالة "غير متصل / متصل" لمتحسس واحد (تُستدعى لحساس 1 وحساس 2 كل وحد لحاله) ---------- */
-function applySensorGaugeState(wId, sensorKey, present, rawValue, breach){
+/* ---------- تحديث حالة "غير متصل / متصل" لمتحسس واحد (تُستدعى لحساس 1 وحساس 2 والرطوبة، كل وحد لحاله) ----------
+   minVal/maxVal/zones اختيارية - تفتكر مقياس الحرارة (TEMP_*) افتراضياً لو ما انعطت (حساس 1 وحساس 2)،
+   وتنعطى صراحة (HUM_MIN/HUM_MAX/HUM_ZONES) لحساس الرطوبة عشان يشتغل بمقياسه الصحيح */
+function applySensorGaugeState(wId, sensorKey, present, rawValue, breach, minVal, maxVal, zones){
+  minVal = (minVal!==undefined) ? minVal : TEMP_MIN;
+  maxVal = (maxVal!==undefined) ? maxVal : TEMP_MAX;
+  zones = zones || TEMP_ZONES;
   const gbox = document.getElementById('gbox-'+sensorKey+'-'+wId);
   const gv = document.getElementById('gv-'+sensorKey+'-'+wId);
   if(present){
     if(gbox) gbox.classList.remove('pending-box');
-    updateGauge('gaugewrap-'+sensorKey+'-'+wId, 'gv-'+sensorKey+'-'+wId, rawValue, TEMP_MIN, TEMP_MAX, TEMP_ZONES);
+    updateGauge('gaugewrap-'+sensorKey+'-'+wId, 'gv-'+sensorKey+'-'+wId, rawValue, minVal, maxVal, zones);
     if(gv){ gv.classList.toggle('g-alert', breach); gv.classList.toggle('g-ok', !breach); gv.classList.remove('g-pending'); gv.style.color = breach ? 'var(--danger-bright)' : 'var(--ok)'; }
   } else {
     if(gbox) gbox.classList.add('pending-box');
@@ -1211,15 +1216,17 @@ function renderStation(w, data){
   // وبمجرد ما يوصل رقم حقيقي (أي لحظة تركيب المتحسس فعلياً) يتفعل تلقائياً بدون أي إعداد يدوي
   const s1Present = isValidSensorReading(data.sensor1);
   const s2Present = isValidSensorReading(data.sensor2);
+  const humPresent = isValidSensorReading(data.humidity);
   const s1v = s1Present ? data.sensor1 : null;
   const s2v = s2Present ? data.sensor2 : null;
+  const humv = humPresent ? data.humidity : null;
   data.tempStatus = computeTempStatusFromSensors(s1v, s2v, cfg);
-  data.humStatus = computeHumStatus(w.id, data.humidity, cfg);
+  data.humStatus = computeHumStatus(w.id, humv, cfg);
 
   // تلوين كل متحسس أخضر/أحمر حسب رينج المخزن الخاص فيه (من الإدارة) + تنبيه صوتي وبوب-اب عند التجاوز
   const s1Breach = (s1v!==null) && (s1v < cfg.tempMin || s1v > cfg.tempMax);
   const s2Breach = (s2v!==null) && (s2v < cfg.tempMin || s2v > cfg.tempMax);
-  const humBreach = data.humStatus !== 'normal';
+  const humBreach = humPresent && data.humStatus !== 'normal';
   // حالة التنبيه العامة للبطاقة (الشارة + الإطار) تعتمد على تجاوز رينج الحرارة أو الرطوبة، مو بس فرق الحساسين اللي يرسله الجهاز
   const alertFlag = !!data.alert || s1Breach || s2Breach || humBreach;
   if(alertFlag && !alertSinceMem[w.id]) alertSinceMem[w.id] = Date.now();
@@ -1230,7 +1237,7 @@ function renderStation(w, data){
 
   applySensorGaugeState(w.id, 's1', s1Present, data.sensor1, s1Breach);
   applySensorGaugeState(w.id, 's2', s2Present, data.sensor2, s2Breach);
-  updateGauge('gaugewrap-hum-'+w.id, 'gv-hum-'+w.id, data.humidity, HUM_MIN, HUM_MAX, HUM_ZONES);
+  applySensorGaugeState(w.id, 'hum', humPresent, data.humidity, humBreach, HUM_MIN, HUM_MAX, HUM_ZONES);
 
   thresholdBreachState[w.id] = { s1: s1Breach, s2: s2Breach };
 
