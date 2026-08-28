@@ -986,8 +986,8 @@ function buildStationCards(){
       <div class="gauge-row">
       <div class="zone-section"><div class="zone-title">${t('zoneTemp')}</div>
         <div class="gauges">
-          <div class="gauge-box pending-box" id="gbox-s1-${w.id}"><div class="gauge-wrap" id="gaugewrap-s1-${w.id}"></div><div class="gauge-digital-panel"><div class="gauge-digital" id="gv-s1-${w.id}">--</div></div><div class="gauge-unit">°م</div><div class="gauge-label">${t('sensor1Label')} — ${whName(i)}</div><div class="pending-badge">${t('sensorPendingBadge')}</div></div>
-          <div class="gauge-box pending-box" id="gbox-s2-${w.id}"><div class="gauge-wrap" id="gaugewrap-s2-${w.id}"></div><div class="gauge-digital-panel"><div class="gauge-digital" id="gv-s2-${w.id}">--</div></div><div class="gauge-unit">°م</div><div class="gauge-label">${t('sensor2Label')} — ${whName(i)}</div><div class="pending-badge">${t('sensorPendingBadge')}</div></div>
+          <div class="gauge-box pending-box" id="gbox-s1-${w.id}"><div class="gauge-wrap" id="gaugewrap-s1-${w.id}"></div><div class="gauge-digital-panel"><div class="gauge-digital g-pending" id="gv-s1-${w.id}">${t('sensorPendingShort')}</div></div><div class="gauge-unit">°م</div><div class="gauge-label">${t('sensor1Label')} — ${whName(i)}</div><div class="pending-badge">${t('sensorPendingBadge')}</div></div>
+          <div class="gauge-box pending-box" id="gbox-s2-${w.id}"><div class="gauge-wrap" id="gaugewrap-s2-${w.id}"></div><div class="gauge-digital-panel"><div class="gauge-digital g-pending" id="gv-s2-${w.id}">${t('sensorPendingShort')}</div></div><div class="gauge-unit">°م</div><div class="gauge-label">${t('sensor2Label')} — ${whName(i)}</div><div class="pending-badge">${t('sensorPendingBadge')}</div></div>
         </div>
         <div class="readings cols2">
           <div class="read-item diff" id="diffbox-${w.id}"><div class="rl">${t('diffLabel')}</div><div class="rv" id="diff-${w.id}">--°</div></div>
@@ -995,7 +995,7 @@ function buildStationCards(){
         </div>
       </div>
       <div class="zone-section"><div class="zone-title">${t('zoneHum')}</div>
-        <div class="gauges"><div class="gauge-box pending-box" id="gbox-hum-${w.id}"><div class="gauge-wrap" id="gaugewrap-hum-${w.id}"></div><div class="gauge-digital-panel"><div class="gauge-digital" id="gv-hum-${w.id}">--</div></div><div class="gauge-unit">%</div><div class="gauge-label">${t('humidityLabel')} — ${whName(i)}</div><div class="pending-badge">${t('sensorPendingBadge')}</div></div></div>
+        <div class="gauges"><div class="gauge-box pending-box" id="gbox-hum-${w.id}"><div class="gauge-wrap" id="gaugewrap-hum-${w.id}"></div><div class="gauge-digital-panel"><div class="gauge-digital g-pending" id="gv-hum-${w.id}">${t('sensorPendingShort')}</div></div><div class="gauge-unit">%</div><div class="gauge-label">${t('humidityLabel')} — ${whName(i)}</div><div class="pending-badge">${t('sensorPendingBadge')}</div></div></div>
         <div class="readings cols1">
           <div class="read-item"><div class="rl">${t('humStatusLabel')}</div><div class="rv" id="humstatustxt-${w.id}">--</div></div>
         </div>
