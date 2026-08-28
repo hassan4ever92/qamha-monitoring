@@ -1,5 +1,13 @@
+/* ==========================================================
+   سكربت مراقبة حدود الحرارة/الرطوبة لمنصة Qamha Scada System
+   يشتغل عن طريق GitHub Actions كل چند دقايق (بدل Cloud Function،
+   لأن خطة Firebase Blaze تحتاج بطاقة دفع دولية غير متوفرة بالعراق حالياً)
+   ما يحتاج أي خطة مدفوعة - firebase-admin يشتغل مجاني بخطة Spark
+   ========================================================== */
+
 const admin = require("firebase-admin");
 
+// بيانات حساب الخدمة تجي من GitHub Secret (متغير بيئة FIREBASE_SERVICE_ACCOUNT_KEY)
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
 
 admin.initializeApp({
@@ -7,6 +15,7 @@ admin.initializeApp({
   databaseURL: "https://qamha-metering-default-rtdb.europe-west1.firebasedatabase.app",
 });
 
+// ⚠️ لازم تطابق أسماء المخازن هنا نفس WAREHOUSES بملف index.html
 const WAREHOUSE_NAMES = {
   warehouse_1: { ar: "المخزن المجمد" },
   warehouse_2: { ar: "المخزن المبرد 1" },
@@ -17,8 +26,51 @@ const WAREHOUSE_NAMES = {
   warehouse_7: { ar: "منطقة الكهرباء" },
 };
 
+// ==========================================================
+// تنظيف سجل الأحداث القديم (/logs/{warehouse}) - نحتفظ بس بآخر LOG_RETENTION_DAYS يوم،
+// حتى ما تكبر قاعدة البيانات بلا حدود. نشغلها بس مرة كل 24 ساعة (مو كل تشغيل للسكربت
+// كل 5 دقايق) عن طريق علامة زمنية نخزنها بمسار /meta/lastLogCleanup
+// ==========================================================
+const LOG_RETENTION_DAYS = 60;
+const CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000; // مرة كل يوم
+
+async function pruneOldLogs(db) {
+  const metaSnap = await db.ref("meta/lastLogCleanup").get();
+  const lastCleanup = metaSnap.val() || 0;
+  const now = Date.now();
+  if (now - lastCleanup < CLEANUP_INTERVAL_MS) {
+    return; // ماكو داعي ننظف - آخر تنظيف كان أقل من 24 ساعة
+  }
+
+  const cutoff = now - LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+  const logsSnap = await db.ref("logs").get();
+  const logsObj = logsSnap.val() || {};
+  let deletedCount = 0;
+
+  for (const warehouseId of Object.keys(logsObj)) {
+    const oldEntriesSnap = await db
+      .ref(`logs/${warehouseId}`)
+      .orderByKey()
+      .endAt(String(cutoff))
+      .get();
+    const oldEntries = oldEntriesSnap.val() || {};
+    const keys = Object.keys(oldEntries);
+    if (keys.length === 0) continue;
+
+    const updates = {};
+    keys.forEach((k) => { updates[`logs/${warehouseId}/${k}`] = null; });
+    await db.ref().update(updates);
+    deletedCount += keys.length;
+  }
+
+  await db.ref("meta/lastLogCleanup").set(now);
+  console.log(`تنظيف السجل: حذفنا ${deletedCount} قراءة أقدم من ${LOG_RETENTION_DAYS} يوم.`);
+}
+
 async function main() {
   const db = admin.database();
+
+  await pruneOldLogs(db).catch((e) => console.error("فشل تنظيف السجل القديم:", e));
 
   const [warehousesSnap, adminSettingsSnap, alertStateSnap, tokensSnap] = await Promise.all([
     db.ref("warehouses").get(),
@@ -56,6 +108,7 @@ async function main() {
       if (c.value === undefined || c.value === null || isNaN(c.value)) continue;
       const breach = c.value < c.min || c.value > c.max;
       const wasBreach = !!alertState[c.key];
+      // نرسل بس أول لحظة تجاوز (rising edge) - مو كل مرة يشتغل السكربت وهي لسا خارج الرينج
       if (breach && !wasBreach) {
         const v = Number(c.value).toFixed(1);
         lines.push(`${c.label}: ${v}${c.unit} (المسموح ${c.min} إلى ${c.max}${c.unit})`);
