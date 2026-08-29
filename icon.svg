@@ -11,6 +11,17 @@
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="96" fill="url(#bg)"/>
-  <text x="256" y="330" font-size="300" text-anchor="middle" font-family="Segoe UI Emoji, Noto Color Emoji, sans-serif">🌾</text>
+  <rect x="252" y="170" width="8" height="210" rx="4" fill="url(#wheat)"/>
+  <ellipse cx="230" cy="180" rx="15" ry="25" fill="url(#wheat)" transform="rotate(-32 230 180)"/>
+  <ellipse cx="282" cy="180" rx="15" ry="25" fill="url(#wheat)" transform="rotate(32 282 180)"/>
+  <ellipse cx="230" cy="220" rx="15" ry="25" fill="url(#wheat)" transform="rotate(-32 230 220)"/>
+  <ellipse cx="282" cy="220" rx="15" ry="25" fill="url(#wheat)" transform="rotate(32 282 220)"/>
+  <ellipse cx="230" cy="260" rx="15" ry="25" fill="url(#wheat)" transform="rotate(-32 230 260)"/>
+  <ellipse cx="282" cy="260" rx="15" ry="25" fill="url(#wheat)" transform="rotate(32 282 260)"/>
+  <ellipse cx="230" cy="300" rx="15" ry="25" fill="url(#wheat)" transform="rotate(-32 230 300)"/>
+  <ellipse cx="282" cy="300" rx="15" ry="25" fill="url(#wheat)" transform="rotate(32 282 300)"/>
+  <ellipse cx="230" cy="340" rx="15" ry="25" fill="url(#wheat)" transform="rotate(-32 230 340)"/>
+  <ellipse cx="282" cy="340" rx="15" ry="25" fill="url(#wheat)" transform="rotate(32 282 340)"/>
+  <ellipse cx="256" cy="160" rx="12" ry="20" fill="url(#wheat)"/>
   <rect x="106" y="400" width="300" height="10" rx="5" fill="url(#wheat)"/>
 </svg>
