@@ -224,6 +224,28 @@
   .modal-head h3{ font-size:16px; }
   .modal-close{ background:none; border:1px solid var(--card-border); color:var(--text-1); font-size:14px; cursor:pointer; width:28px; height:28px; border-radius:8px; }
   .modal-close:hover{ color:var(--text-0); border-color:var(--danger); }
+  /* ---- لوحة التنبيهات الجانبية (منزلقة) ---- */
+  .side-panel-overlay{ display:none; position:fixed; inset:0; background:rgba(4,8,16,0.6); z-index:210; }
+  .side-panel-overlay.show{ display:block; }
+  .side-panel{ position:fixed; top:0; bottom:0; inset-inline-end:-360px; width:340px; max-width:90vw; background:var(--bg-2); border-inline-start:1px solid var(--card-border); box-shadow:-10px 0 40px rgba(0,0,0,.5); z-index:211; transition:inset-inline-end .28s ease; padding:18px; overflow-y:auto; box-sizing:border-box; }
+  .side-panel.show{ inset-inline-end:0; }
+  .side-panel-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .side-panel-head h3{ font-size:15px; color:var(--danger); }
+  .fire-alert-item{ background:rgba(255,59,92,.08); border:1px solid rgba(255,59,92,.35); border-radius:10px; padding:10px 12px; margin-bottom:10px; cursor:pointer; transition:.2s; }
+  .fire-alert-item:hover{ background:rgba(255,59,92,.16); }
+  .fire-alert-item .fai-sys{ font-size:11px; color:var(--text-1); margin-bottom:2px; }
+  .fire-alert-item .fai-zone{ font-size:14px; font-weight:800; color:var(--danger-bright); }
+  .fire-alert-item .fai-since{ font-size:10px; color:var(--text-2); margin-top:4px; }
+  .fire-alerts-empty{ text-align:center; color:var(--text-2); font-size:12px; padding:30px 10px; }
+  .alert-badge-dot{ display:none; background:var(--danger-bright); color:#fff; font-size:10px; font-weight:800; border-radius:999px; min-width:16px; height:16px; padding:0 4px; align-items:center; justify-content:center; margin-inline-start:4px; }
+  @keyframes flashHighlight{ 0%,100%{ box-shadow:0 0 0 rgba(255,59,92,0); } 50%{ box-shadow:0 0 0 6px rgba(255,59,92,.5); } }
+  .flash-highlight{ animation: flashHighlight .6s ease 4; }
+  /* ---- إدارة منظومات الحريق ---- */
+  .fire-sys-row{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:10px 12px; background:rgba(255,255,255,.03); border:1px solid var(--card-border); border-radius:10px; margin-bottom:8px; }
+  .fire-sys-row .fsr-name{ font-weight:800; font-size:13px; }
+  .fire-sys-row .fsr-count{ font-size:11px; color:var(--text-2); }
+  .fire-sys-zone-row{ display:flex; align-items:center; gap:6px; margin-bottom:6px; }
+  .fire-sys-zone-row input{ flex:1; padding:6px 8px; border-radius:6px; background:rgba(255,255,255,.05); border:1px solid var(--card-border); color:var(--text-0); font-size:12px; }
   .modal-controls{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px; }
   .chk{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-1); cursor:pointer; }
   .log-date-filter{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-1); }
@@ -497,8 +519,12 @@
   <div class="sys-section" data-sys="fire" id="section-fire">
     <div class="panel-card">
       <div class="panel-header">
-        <div class="panel-title">🔥 <span data-i18n="fireTitle">منظومة إنذار الحريق 1</span></div>
-        <div class="master-status ok" id="fireMasterStatus">--</div>
+        <div class="panel-title">🔥 <select class="mini-select" id="fireSystemSelect" onchange="switchFireSystem(this.value)" style="max-width:200px;"></select></div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <button class="ctrl-btn" onclick="openFireAlertsPanel()" title="Alerts">🔔<span id="fireAlertsCount" class="alert-badge-dot"></span></button>
+          <button class="ctrl-btn" onclick="openFireSystemsAdmin()" title="Manage Systems">⚙️</button>
+          <div class="master-status ok" id="fireMasterStatus">--</div>
+        </div>
       </div>
       <div class="panel-toolbar">
         <button class="ctrl-btn" onclick="fireSilence()">🔇 <span data-i18n="btnSilence">كتم</span></button>
@@ -536,7 +562,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 1.0.9</div>
+      <div class="brand-version">Ver 1.1.0</div>
     </div>
   </footer>
 </div>
@@ -622,7 +648,7 @@
 <!-- ===== Fire Map Admin Modal ===== -->
 <div class="modal-overlay" id="fireMapAdminModal">
   <div class="modal-box" style="max-width:820px;">
-    <div class="modal-head"><h3 data-i18n="fireMapAdminTitle">🗺️ خريطة منظومة الحريق</h3><button class="modal-close" onclick="closeFireMapAdmin()">✕</button></div>
+    <div class="modal-head"><h3 id="fireMapAdminModalTitle" data-i18n="fireMapAdminTitle">🗺️ خريطة منظومة الحريق</h3><button class="modal-close" onclick="closeFireMapAdmin()">✕</button></div>
     <div class="map-note" data-i18n="fireMapNote">ارفع صورة أو ملف PDF لمخطط الموقع، وحدد مكان كل متحسس بالضغط على الخريطة. ملفات الأوتوكاد (DWG/DXF) غير مدعومة مباشرة — صدّرها كـ PDF أو صورة من برنامج الأوتوكاد أولاً.</div>
     <div class="map-toolbar">
       <label class="map-file-label" for="fireMapFile" data-i18n="fireMapUpload">⬆ رفع خريطة (صورة / PDF)</label>
@@ -657,6 +683,36 @@
     <div class="map-pins-list" id="fireMapPinsList"></div>
     <button class="export-btn" style="margin-top:14px;width:100%;" onclick="saveFireMapAdmin()" data-i18n="fireMapSave">💾 حفظ الخريطة</button>
   </div>
+</div>
+
+<!-- ===== Fire Systems Admin Modal (إنشاء/تعديل منظومات الحريق) ===== -->
+<div class="modal-overlay" id="fireSystemsAdminModal">
+  <div class="modal-box" style="max-width:640px;">
+    <div class="modal-head"><h3 data-i18n="fireSysAdminTitle">🏢 إدارة منظومات الحريق</h3><button class="modal-close" onclick="closeFireSystemsAdmin()">✕</button></div>
+    <p style="font-size:12px;color:var(--text-1);margin-bottom:14px;" data-i18n="fireSysAdminIntro">أنشئ منظومة حريق مستقلة لكل مبنى/موقع (مثلاً: معمل المعجنات، الإدارة، السكن والمطعم)، وحدد عدد الزونات بداخلها. تكدر تعدل الاسم أو تضيف/تحذف/تسمي الزونات بأي وقت بعدها.</p>
+    <div id="fireSystemsList"></div>
+    <div style="margin-top:16px;padding:12px;background:rgba(255,255,255,.03);border:1px solid var(--card-border);border-radius:10px;">
+      <div style="font-weight:800;margin-bottom:8px;" data-i18n="fireSysAddNew">➕ إضافة منظومة جديدة</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input type="text" id="newFireSysName" data-i18n-ph="fireSysNamePh" placeholder="اسم المنظومة (مثال: منظومة حريق الإدارة)" style="flex:2;min-width:180px;padding:8px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid var(--card-border);color:var(--text-0);">
+        <label style="display:flex;flex-direction:column;font-size:10px;color:var(--text-2);gap:2px;">
+          <span data-i18n="fireMapCount">العدد</span>
+          <input type="number" id="newFireSysZoneCount" min="1" max="32" value="4" style="width:80px;padding:8px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid var(--card-border);color:var(--text-0);">
+        </label>
+        <button class="log-btn" onclick="addFireSystem()" data-i18n="fireSysCreate">➕ إنشاء</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Fire Alerts Sidebar (تنبيهات الحريق عبر كل المنظومات) ===== -->
+<div class="side-panel-overlay" id="fireAlertsOverlay" onclick="closeFireAlertsPanel()"></div>
+<div class="side-panel" id="fireAlertsPanel">
+  <div class="side-panel-head">
+    <h3 data-i18n="fireAlertsPanelTitle">🚨 تنبيهات الحريق النشطة</h3>
+    <button class="modal-close" onclick="closeFireAlertsPanel()">✕</button>
+  </div>
+  <div id="fireAlertsList"></div>
 </div>
 
 <script type="module">
@@ -720,6 +776,12 @@ const I18N = {
     sensorPendingShort:'⛔ غير متصل', sensorPendingBadge:'غير متصل — بانتظار وصول قراءة', diffPendingLabel:'—',
     silenceThresholdBtn:'🔇 كتم تنبيه الحرارة',
     fireTitle:'منظومة إنذار الحريق 1', zoneWord:'المنطقة', fireMasterOk:'✅ النظام سليم', fireMasterAlarm:'🚨 إنذار نشط', fireMasterFault:'⚠ يوجد عطل', fireMasterOffline:'⛔ لا توجد أجهزة متصلة',
+    fireSysAdminTitle:'🏢 إدارة منظومات الحريق',
+    fireSysAdminIntro:'أنشئ منظومة حريق مستقلة لكل مبنى/موقع (مثلاً: معمل المعجنات، الإدارة، السكن والمطعم)، وحدد عدد الزونات بداخلها. تكدر تعدل الاسم أو تضيف/تحذف/تسمي الزونات بأي وقت بعدها.',
+    fireSysAddNew:'➕ إضافة منظومة جديدة', fireSysNamePh:'اسم المنظومة (مثال: منظومة حريق الإدارة)', fireSysCreate:'➕ إنشاء',
+    fireSysEdit:'تعديل', fireSysZonesLabel:'الزونات:', fireSysAddZone:'إضافة زون', fireSysSave:'حفظ', fireSysCancel:'إلغاء',
+    fireSysNameRequired:'اكتب اسم المنظومة أولاً', fireSysDeleteConfirm:'حذف هذي المنظومة نهائياً؟ (كل زوناتها وخريطتها بينحذفون)',
+    fireAlertsPanelTitle:'🚨 تنبيهات الحريق النشطة', fireAlertsNone:'ماكو أي إنذار حريق نشط حالياً', fireAlertsSince:'منذ', minsShort:'د', secsShort:'ث',
     fireStatusNormal:'طبيعي', fireStatusAlarm:'حريق!', fireStatusFault:'عطل', fireStatusDisabled:'معطّل', fireStatusOffline:'⛔ غير متصل',
     btnSilence:'🔇 كتم', btnReset:'🔁 إعادة تعيين', btnTest:'🧪 اختبار',
     fireMapAdminBtn:'إدارة خريطة منظومة الحريق', fireMapAdminTitle:'🗺️ خريطة منظومة الحريق',
@@ -760,6 +822,12 @@ const I18N = {
     sensorPendingShort:'⛔ Offline', sensorPendingBadge:'Offline — waiting for a reading', diffPendingLabel:'—',
     silenceThresholdBtn:'🔇 Silence Temp Alert',
     fireTitle:'Fire Alarm System 1', zoneWord:'Zone', fireMasterOk:'✅ System Normal', fireMasterAlarm:'🚨 Active Alarm', fireMasterFault:'⚠ Fault Present', fireMasterOffline:'⛔ No Devices Connected',
+    fireSysAdminTitle:'🏢 Manage Fire Systems',
+    fireSysAdminIntro:'Create an independent fire system for each building/site (e.g. Pastry Factory, Administration, Housing & Restaurant), and set how many zones it has. You can rename it or add/remove/rename zones anytime afterward.',
+    fireSysAddNew:'➕ Add New System', fireSysNamePh:'System name (e.g. Administration Fire System)', fireSysCreate:'➕ Create',
+    fireSysEdit:'Edit', fireSysZonesLabel:'Zones:', fireSysAddZone:'Add Zone', fireSysSave:'Save', fireSysCancel:'Cancel',
+    fireSysNameRequired:'Enter a system name first', fireSysDeleteConfirm:'Permanently delete this system? (all its zones and map will be deleted)',
+    fireAlertsPanelTitle:'🚨 Active Fire Alerts', fireAlertsNone:'No active fire alarms right now', fireAlertsSince:'for', minsShort:'m', secsShort:'s',
     fireStatusNormal:'Normal', fireStatusAlarm:'Fire!', fireStatusFault:'Fault', fireStatusDisabled:'Disabled', fireStatusOffline:'⛔ Offline',
     btnSilence:'🔇 Silence', btnReset:'🔁 Reset', btnTest:'🧪 Test',
     fireMapAdminBtn:'Manage Fire System Map', fireMapAdminTitle:'🗺️ Fire System Site Map',
@@ -790,6 +858,7 @@ function whName(i){
 
 function applyStaticI18n(){
   document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = t(el.getAttribute('data-i18n')); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{ el.placeholder = t(el.getAttribute('data-i18n-ph')); });
 }
 
 /* ---------- إعدادات الإدارة (Admin ranges) ---------- */
@@ -810,6 +879,57 @@ function loadAdminSettings(){
   localStorage.setItem('qamha_admin_settings_version', String(ADMIN_SETTINGS_VERSION));
 }
 loadAdminSettings();
+
+/* ==========================================================
+   منظومات إنذار الحريق (متعددة) - قابلة للإنشاء والتعديل بالكامل من
+   الإدارة، بدل منظومة واحدة ثابتة بالكود. كل منظومة عندها اسمها
+   الخاص وعدد زوناتها الخاص (كل زون بأسمه القابل للتعديل)، وتتخزن
+   بفايربيس تحت /fireSystemsConfig (نفس مبدأ adminSettings) حتى
+   تتزامن نفس القائمة بين كل جهاز يفتح الداشبورد.
+   هذا البلوك لازم يبقى هنا بأول الملف (قبل أي استخدام) عشان
+   fireSystems/fireZoneLive تصير جاهزة قبل ما أي كود ثاني يحاول يوصلها
+   ========================================================== */
+function defaultFireSystems(){
+  // ترحيل تلقائي بدون فقدان شي: منظومة الحريق الوحيدة سابقاً (8 زونات) تتحول لأول
+  // منظومة بهذا النظام الجديد المتعدد أول مرة يفتح فيها أحد الداشبورد بعد هذا التحديث
+  return [{
+    id: 'sys1',
+    name: 'منظومة إنذار الحريق 1',
+    zones: Array.from({length:8}, (_,i)=>({ id:i+1, name:'المنطقة '+(i+1) }))
+  }];
+}
+function uid(prefix){ return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+let fireSystems = [];
+function loadFireSystemsLocal(){
+  let saved = null;
+  try{ saved = JSON.parse(localStorage.getItem('qamha_fire_systems') || 'null'); }catch(e){}
+  fireSystems = (saved && Array.isArray(saved) && saved.length) ? saved : defaultFireSystems();
+}
+function saveFireSystemsLocal(){
+  localStorage.setItem('qamha_fire_systems', JSON.stringify(fireSystems));
+}
+loadFireSystemsLocal();
+
+// تخزين حي لكل منظومة (يبقى محدث لكل المنظومات حتى الي مو معروضة حالياً، مهم للصفارة
+// والتنبيهات - حريق حقيقي بمنظومة ثانية غير معروضة لازم يصفر برضو، مو بس الي شايفها المستخدم)
+let fireZoneLive = {};     // {[systemId]: [{id, status}, ...]}
+let lastSeenFireZone = {}; // {[systemId]: {[zoneId]: epochMs}}
+let fireMapDataBySystem = {}; // {[systemId]: {imageUrl, pins:[{xPct,yPct,zoneId,type}]}}
+function ensureFireSystemStorage(sys){
+  if(!fireZoneLive[sys.id]) fireZoneLive[sys.id] = sys.zones.map(z=>({id:z.id, status:'offline'}));
+  if(!lastSeenFireZone[sys.id]) lastSeenFireZone[sys.id] = {};
+  if(!fireMapDataBySystem[sys.id]) fireMapDataBySystem[sys.id] = {imageUrl:null, pins:[]};
+}
+fireSystems.forEach(ensureFireSystemStorage);
+let currentFireSystemId = fireSystems[0].id;
+// "نافذة" على المنظومة المختارة حالياً - كل الكود القديم (buildFireZones/renderFireZones/
+// خرائط الحريق...) يشتغل عليها زي ما هو بدون تغيير، وبس نبدلها بالمرجع كل ما تنتقل بين
+// المنظومات (switchFireSystem) - أبسط وأأمن من تعديل كل سطر بالملف يستخدمها
+let fireZones = fireZoneLive[currentFireSystemId];
+let lastSeenFire = lastSeenFireZone[currentFireSystemId];
+let fireMapData = fireMapDataBySystem[currentFireSystemId];
+function currentFireSystem(){ return fireSystems.find(s=>s.id===currentFireSystemId) || fireSystems[0]; }
+function currentZoneCount(){ return currentFireSystem().zones.length; }
 
 // الجهاز يرسل -999 كـ"علامة خطأ/عدم اتصال" (متحسس مو مركّب أو RTD مقطوع) بدل رقم حرارة حقيقي —
 // أي قراءة أوطأ من -500° مستحيل تكون حقيقية بمخزن قمح، فنعتبرها "المتحسس مو مركّب لهسة"
@@ -1417,9 +1537,12 @@ function checkOfflineStations(){
   });
   renderSummary();
 }
-function tickStationAges(){ WAREHOUSES.forEach(w=>updateStationAge(w.id)); checkOfflineStations(); checkFireZonesOffline(); checkGasZonesOffline(); fitWarehouseCards(); }
+function tickStationAges(){ WAREHOUSES.forEach(w=>updateStationAge(w.id)); checkOfflineStations(); checkAllFireSystemsOffline(); checkGasZonesOffline(); fitWarehouseCards(); }
 setInterval(tickStationAges, 15000); // نحدثها كل 15 ثانية - يكفي لعداد دقائق وكشف الانقطاع
-tickStationAges(); // فحص فوري بأول تحميل بدل ما نستنى أول دورة (15 ثا) حتى نكتشف الانقطاع بأسرع وقت
+// فحص فوري بأول تحميل بدل ما نستنى أول دورة (15 ثا) حتى نكتشف الانقطاع بأسرع وقت - نأجله بـ setTimeout(…,0)
+// لأن tickStationAges صار يعتمد على fireZones/gasZones (متغيرات let معرّفة لاحقاً بالملف)، ولو
+// ناديناها مباشرة هنا بمنتصف الملف نطيح بخطأ "Cannot access before initialization" ويوقف كل السكربت
+setTimeout(tickStationAges, 0);
 
 // مخزن (زون) نعتبره "متصل" حالياً لو وصلت منه قراءة حقيقية خلال آخر OFFLINE_THRESHOLD_MS -
 // نحسبها كمنطقة وحدة (زون كامل بكل حساساته)، مو حسب عدد الحساسات الشغالة بداخلها، وإذا
@@ -1632,6 +1755,7 @@ document.addEventListener('webkitfullscreenchange', onFsChange);
 function rebuildDynamic(){
   buildStationCards();
   Object.keys(state).forEach(id=>{ const w = WAREHOUSES.find(x=>x.id===id); if(state[id]) renderStation(w, state[id]); });
+  refreshFireSystemSelectOptions();
   buildFireZones(); renderFireZones();
   buildGasZones(); renderGasZones();
   renderFireMapMain();
@@ -1639,14 +1763,14 @@ function rebuildDynamic(){
 }
 
 /* ==========================================================
-   منظومة إنذار الحريق 1 (8 زون)
+   منظومات إنذار الحريق (متعددة)
    كل زون يبقى "غير متصل" افتراضياً لين توصله قراءة حقيقة من جهاز حقيقي عبر
-   فايربيس (/fireZones/{zoneId})، بنفس مبدأ مخازن الحرارة بالضبط - ما نعرض
-   "طبيعي" أبداً بدون بيانات حقيقة واصلة فعلاً
+   فايربيس (/fireZones/{systemId}/{zoneId})، بنفس مبدأ مخازن الحرارة بالضبط -
+   ما نعرض "طبيعي" أبداً بدون بيانات حقيقة واصلة فعلاً.
+   fireZones/lastSeenFire/fireMapData معرّفة سابقاً بأول الملف كـ"نافذة" على
+   المنظومة المختارة حالياً - نفس المتغيرات هذي، ما نعيد تعريفها هنا
    ========================================================== */
-let fireZones = Array.from({length:FIRE_ZONE_COUNT}, (_,i)=>({id:i+1, status:'offline'}));
-let lastSeenFire = {};
-let fireSilenced = false;
+let fireSilenced = false; // كتم صوت الصفارة - عام لكل المنظومات (سلامة: ما نصلح نخلي كتم منظومة يسكت حريق حقيقي بمنظومة ثانية بصمت)
 
 /* ---- صافرة الإنذار الصوتية (نمط صفارة إنذار الكوارث/الغارات - عواء مستمر صاعد هابط) ---- */
 let audioCtx=null, sirenOsc=null, sirenOsc2=null, sirenMasterGain=null, sirenTimer=null;
@@ -1718,19 +1842,67 @@ function renderFireZones(){
   else if(faultCount>0){ master.className='master-status warn'; master.textContent = t('fireMasterFault'); }
   else if(connectedCount===0){ master.className='master-status offline'; master.textContent = t('fireMasterOffline'); }
   else{ master.className='master-status ok'; master.textContent = t('fireMasterOk'); }
-  if(alarmCount>0 && !fireSilenced){ startSiren(); } else { stopSiren(); }
+  updateGlobalFireSirenAndBadge();
   renderFireMapMain();
 }
-/* ---------- كشف انقطاع الاتصال لكل زون حريق (بدون بيانات جديدة أكثر من OFFLINE_THRESHOLD_MS) ---------- */
-function checkFireZonesOffline(){
-  let changed = false;
-  fireZones.forEach(z=>{
-    const seen = lastSeenFire[z.id];
-    if(!seen) return; // لسا ما وصلت أي بيانات من هذا الزون أصلاً
-    const stale = (Date.now() - seen) > OFFLINE_THRESHOLD_MS;
-    if(stale && z.status!=='offline'){ z.status='offline'; changed = true; }
+/* ---------- الانتقال بين منظومات الحريق (من القائمة المنسدلة أو من الضغط على تنبيه) ----------
+   نبدل مرجع fireZones/lastSeenFire/fireMapData للمنظومة الجديدة - كل كود العرض/الخرائط
+   القديم يشتغل عليها زي ما هو بدون أي تعديل إضافي */
+window.switchFireSystem = function(id){
+  const sys = fireSystems.find(s=>s.id===id); if(!sys) return;
+  currentFireSystemId = id;
+  ensureFireSystemStorage(sys);
+  fireZones = fireZoneLive[id];
+  lastSeenFire = lastSeenFireZone[id];
+  fireMapData = fireMapDataBySystem[id];
+  const sel = document.getElementById('fireSystemSelect');
+  if(sel) sel.value = id;
+  const titleEl = document.getElementById('fireSystemTitle');
+  if(titleEl) titleEl.textContent = sys.name;
+  buildFireZones();
+  renderFireZones();
+};
+let fireAlarmSinceMem = {}; // 'systemId|zoneId' -> أول وقت صار فيه إنذار، لعرض "منذ متى" بقائمة التنبيهات
+/* ---------- فحص عام عبر كل منظومات الحريق (صفارة + شارة التنبيهات) - يشتغل بغض النظر عن
+   المنظومة المعروضة حالياً بالشاشة، لأن حريق حقيقي بمنظومة ثانية لازم يصفر ويبين بالتنبيهات برضو ---------- */
+function computeGlobalFireAlarms(){
+  const activeKeys = new Set();
+  const list = [];
+  fireSystems.forEach(sys=>{
+    (fireZoneLive[sys.id]||[]).forEach(z=>{
+      if(z.status!=='alarm') return;
+      const key = sys.id+'|'+z.id;
+      activeKeys.add(key);
+      if(!fireAlarmSinceMem[key]) fireAlarmSinceMem[key] = Date.now();
+      const zoneDef = sys.zones.find(zz=>zz.id===z.id);
+      list.push({ systemId:sys.id, systemName:sys.name, zoneId:z.id, zoneName: zoneDef?zoneDef.name:(t('zoneWord')+' '+z.id), since: fireAlarmSinceMem[key] });
+    });
   });
-  if(changed) renderFireZones();
+  Object.keys(fireAlarmSinceMem).forEach(k=>{ if(!activeKeys.has(k)) delete fireAlarmSinceMem[k]; });
+  return list;
+}
+function updateGlobalFireSirenAndBadge(){
+  const alarms = computeGlobalFireAlarms();
+  if(alarms.length>0 && !fireSilenced){ startSiren(); } else { stopSiren(); }
+  const badge = document.getElementById('fireAlertsCount');
+  if(badge){ if(alarms.length>0){ badge.style.display='inline-flex'; badge.textContent=alarms.length; } else { badge.style.display='none'; } }
+  const panel = document.getElementById('fireAlertsPanel');
+  if(panel && panel.classList.contains('show')) renderFireAlertsPanelList(alarms);
+}
+/* ---------- كشف انقطاع الاتصال لكل زون بكل منظومات الحريق (مو بس المعروضة حالياً) ---------- */
+function checkAllFireSystemsOffline(){
+  let currentChanged = false;
+  fireSystems.forEach(sys=>{
+    const zones = fireZoneLive[sys.id]; const seenMap = lastSeenFireZone[sys.id];
+    if(!zones || !seenMap) return;
+    zones.forEach(z=>{
+      const seen = seenMap[z.id];
+      if(!seen) return; // لسا ما وصلت أي بيانات من هذا الزون أصلاً
+      const stale = (Date.now() - seen) > OFFLINE_THRESHOLD_MS;
+      if(stale && z.status!=='offline'){ z.status='offline'; if(sys.id===currentFireSystemId) currentChanged=true; }
+    });
+  });
+  if(currentChanged) renderFireZones(); else updateGlobalFireSirenAndBadge();
 }
 window.fireSilence = function(){ fireSilenced = !fireSilenced; renderFireZones(); };
 window.fireReset = function(){ fireZones.forEach(z=>{ z.status = lastSeenFire[z.id] ? 'normal' : 'offline'; }); fireSilenced=false; renderFireZones(); };
@@ -1738,8 +1910,8 @@ window.fireTest = function(){ const z = fireZones[Math.floor(Math.random()*fireZ
 
 /* ==========================================================
    خريطة موقع منظومة الحريق (Site Map + Sensor Placement)
+   fireMapData معرّفة سابقاً بأول الملف كـ"نافذة" على خريطة المنظومة المختارة حالياً
    ========================================================== */
-let fireMapData = { imageUrl:null, pins:[] };
 let dragState = null; // {idx, container, pinEl, moved, x, y}
 
 const SENSOR_TYPES = {
@@ -1752,7 +1924,18 @@ const SENSOR_TYPES = {
 };
 
 function loadFireMapData(){
-  try{ const saved = JSON.parse(localStorage.getItem('qamha_fire_map') || 'null'); if(saved) fireMapData = saved; }catch(e){}
+  try{
+    const savedBySystem = JSON.parse(localStorage.getItem('qamha_fire_map_by_system') || 'null');
+    if(savedBySystem){
+      Object.assign(fireMapDataBySystem, savedBySystem);
+    } else {
+      // ترحيل: خريطة النظام القديم الواحد (لو موجودة) تصير خريطة أول منظومة بالنظام الجديد
+      const oldSingle = JSON.parse(localStorage.getItem('qamha_fire_map') || 'null');
+      if(oldSingle && fireSystems[0]) fireMapDataBySystem[fireSystems[0].id] = oldSingle;
+    }
+  }catch(e){}
+  fireMapData = fireMapDataBySystem[currentFireSystemId] || {imageUrl:null, pins:[]};
+  fireMapDataBySystem[currentFireSystemId] = fireMapData;
 }
 
 /* ---- تموضع دقيق يراعي الفراغ الجانبي (letterbox) عند object-fit:contain ---- */
@@ -1790,7 +1973,15 @@ function ensureMapImage(container, onReady){
   return img;
 }
 
-window.openFireMapAdmin = function(){ renderFireMapAdmin(); document.getElementById('fireMapAdminModal').classList.add('show'); };
+window.openFireMapAdmin = function(){
+  renderFireMapAdmin();
+  // نحدد أقصى رقم زون مسموح بحقول الإدخال حسب عدد زونات المنظومة المختارة حالياً فعلياً (مو 8 ثابتة)
+  const zc = currentZoneCount();
+  ['addPinStartZone','matrixZone','gridStartZone'].forEach(id=>{ const el=document.getElementById(id); if(el) el.max = zc; });
+  const mapTitle = document.getElementById('fireMapAdminModalTitle');
+  if(mapTitle) mapTitle.textContent = '🗺️ ' + t('fireMapAdminTitle') + ' — ' + currentFireSystem().name;
+  document.getElementById('fireMapAdminModal').classList.add('show');
+};
 window.closeFireMapAdmin = function(){
   document.getElementById('fireMapAdminModal').classList.remove('show');
   document.getElementById('addPinConfig').style.display='none';
@@ -1847,7 +2038,7 @@ window.toggleAddPinMode = function(){
 window.cancelBulkAddPins = function(){ document.getElementById('addPinConfig').style.display='none'; };
 window.confirmBulkAdd = function(){
   if(!fireMapData.imageUrl){ alert(t('fireMapUploadFirst')); return; }
-  const zoneId = Math.max(1, Math.min(FIRE_ZONE_COUNT, parseInt(document.getElementById('addPinStartZone').value,10) || 1));
+  const zoneId = Math.max(1, Math.min(currentZoneCount(), parseInt(document.getElementById('addPinStartZone').value,10) || 1));
   const requested = Math.max(1, parseInt(document.getElementById('addPinCount').value,10) || 1);
   const type = document.getElementById('addPinType').value || 'smoke';
   const existing = (fireMapData.pins||[]).filter(p=>p.zoneId===zoneId).length;
@@ -1865,7 +2056,7 @@ window.confirmBulkAdd = function(){
 /* ---- توزيع مصفوفة (صفوف × أعمدة) لمتحسسات زون معين ---- */
 window.matrixDistributeZone = function(){
   if(!fireMapData.imageUrl){ alert(t('fireMapUploadFirst')); return; }
-  const zoneId = Math.max(1, Math.min(FIRE_ZONE_COUNT, parseInt(document.getElementById('matrixZone').value,10)||1));
+  const zoneId = Math.max(1, Math.min(currentZoneCount(), parseInt(document.getElementById('matrixZone').value,10)||1));
   const rows = Math.max(1, parseInt(document.getElementById('matrixRows').value,10)||1);
   const cols = Math.max(1, parseInt(document.getElementById('matrixCols').value,10)||1);
   const zonePins = (fireMapData.pins||[]).filter(p=>p.zoneId===zoneId);
@@ -1884,9 +2075,9 @@ window.gridDistributePins = function(){
   if(!fireMapData.imageUrl){ alert(t('fireMapUploadFirst')); return; }
   const rows = Math.max(1, parseInt(document.getElementById('gridRows').value,10)||1);
   const cols = Math.max(1, parseInt(document.getElementById('gridCols').value,10)||1);
-  const start = Math.max(1, Math.min(FIRE_ZONE_COUNT, parseInt(document.getElementById('gridStartZone').value,10)||1));
+  const start = Math.max(1, Math.min(currentZoneCount(), parseInt(document.getElementById('gridStartZone').value,10)||1));
   let total = rows*cols;
-  const maxCapacity = (FIRE_ZONE_COUNT - start + 1) * MAX_SENSORS_PER_ZONE;
+  const maxCapacity = (currentZoneCount() - start + 1) * MAX_SENSORS_PER_ZONE;
   if(total > maxCapacity){ total = maxCapacity; alert(t('fireMapZoneLimit')); }
   if(total<=0){ return; }
   const pts = computeGridPositions(total, rows, cols);
@@ -1939,7 +2130,7 @@ window.openPinEditPopup = function(idx){
   const px = pctToPx(container, p.xPct, p.yPct);
   const popup = document.createElement('div'); popup.className='zone-pick-popup'; popup.id='pinEditPopup';
   popup.style.left = px.left+'px'; popup.style.top = px.top+'px';
-  let zoneOptions=''; for(let i=1;i<=FIRE_ZONE_COUNT;i++) zoneOptions += `<option value="${i}" ${i===p.zoneId?'selected':''}>${t('zoneWord')} ${i}</option>`;
+  let zoneOptions = currentFireSystem().zones.map(z=>`<option value="${z.id}" ${z.id===p.zoneId?'selected':''}>${z.name}</option>`).join('');
   let typeOptions = Object.keys(SENSOR_TYPES).map(k=>`<option value="${k}" ${k===(p.type||'smoke')?'selected':''}>${SENSOR_TYPES[k].icon} ${t(SENSOR_TYPES[k].key)}</option>`).join('');
   popup.innerHTML = `<div style="display:flex;flex-direction:column;gap:6px;">
       <select id="pinEditSelect">${zoneOptions}</select>
@@ -1997,12 +2188,172 @@ function renderFireMapAdminPins(container){
   });
 }
 window.deleteFireMapPin = function(idx){ window.removePinEditPopup(); fireMapData.pins.splice(idx,1); renderFireMapAdmin(); };
-window.clearFireMap = function(){ fireMapData = {imageUrl:null, pins:[]}; renderFireMapAdmin(); };
+window.clearFireMap = function(){ fireMapData = {imageUrl:null, pins:[]}; fireMapDataBySystem[currentFireSystemId] = fireMapData; renderFireMapAdmin(); };
 window.saveFireMapAdmin = function(){
-  try{ localStorage.setItem('qamha_fire_map', JSON.stringify(fireMapData)); }
+  fireMapDataBySystem[currentFireSystemId] = fireMapData;
+  try{ localStorage.setItem('qamha_fire_map_by_system', JSON.stringify(fireMapDataBySystem)); }
   catch(e){ alert('Could not save map (file may be too large)'); return; }
+  if(fbDb && fbRef && fbSet){ fbSet(fbRef(fbDb, 'fireMapConfig/'+currentFireSystemId), fireMapData).catch(e=>console.warn('sync fire map to Firebase failed', e)); }
   window.closeFireMapAdmin();
   renderFireMapMain();
+};
+
+/* ==========================================================
+   إدارة منظومات الحريق (إنشاء/تعديل/حذف منظومة، وإضافة/حذف/تسمية الزونات بداخلها)
+   ========================================================== */
+let editingFireSysId = null;
+window.openFireSystemsAdmin = function(){
+  editingFireSysId = null;
+  renderFireSystemsList();
+  const n = document.getElementById('newFireSysName'); if(n) n.value = '';
+  const c = document.getElementById('newFireSysZoneCount'); if(c) c.value = 4;
+  document.getElementById('fireSystemsAdminModal').classList.add('show');
+};
+window.closeFireSystemsAdmin = function(){ document.getElementById('fireSystemsAdminModal').classList.remove('show'); };
+function persistFireSystems(){
+  saveFireSystemsLocal();
+  if(fbDb && fbRef && fbSet){ fbSet(fbRef(fbDb, 'fireSystemsConfig'), fireSystems).catch(e=>console.warn('sync fire systems to Firebase failed', e)); }
+}
+function renderFireSystemsList(){
+  const wrap = document.getElementById('fireSystemsList'); if(!wrap) return;
+  wrap.innerHTML = fireSystems.map(sys=>{
+    const isEditing = editingFireSysId === sys.id;
+    if(!isEditing){
+      return `<div class="fire-sys-row">
+        <div><div class="fsr-name">${sys.name}</div><div class="fsr-count">${sys.zones.length} ${t('zoneWord')}</div></div>
+        <div style="display:flex;gap:6px;">
+          <button class="log-btn" onclick="startEditFireSystem('${sys.id}')">✏️ ${t('fireSysEdit')}</button>
+          <button class="log-btn" onclick="deleteFireSystem('${sys.id}')" ${fireSystems.length<=1?'disabled':''}>🗑️</button>
+        </div>
+      </div>`;
+    }
+    const zonesHtml = sys.zones.map(z=>`<div class="fire-sys-zone-row">
+        <input type="text" id="editZoneName-${sys.id}-${z.id}" value="${z.name}">
+        <button class="log-btn" onclick="removeZoneFromSystemDraft('${sys.id}', ${z.id})" ${sys.zones.length<=1?'disabled':''}>✕</button>
+      </div>`).join('');
+    return `<div class="fire-sys-row" style="flex-direction:column;align-items:stretch;">
+      <input type="text" id="editSysName-${sys.id}" value="${sys.name}" style="margin-bottom:10px;padding:8px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid var(--card-border);color:var(--text-0);">
+      <div style="font-size:11px;color:var(--text-1);margin-bottom:6px;">${t('fireSysZonesLabel')}</div>
+      <div id="editZonesWrap-${sys.id}">${zonesHtml}</div>
+      <button class="log-btn" style="margin:6px 0;" onclick="addZoneToSystemDraft('${sys.id}')">➕ ${t('fireSysAddZone')}</button>
+      <div style="display:flex;gap:8px;">
+        <button class="export-btn" style="flex:1;" onclick="saveFireSystemEdits('${sys.id}')">💾 ${t('fireSysSave')}</button>
+        <button class="log-btn" onclick="cancelEditFireSystem()">✕ ${t('fireSysCancel')}</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+window.startEditFireSystem = function(id){ editingFireSysId = id; renderFireSystemsList(); };
+window.cancelEditFireSystem = function(){ editingFireSysId = null; renderFireSystemsList(); };
+window.addZoneToSystemDraft = function(sysId){
+  const sys = fireSystems.find(s=>s.id===sysId); if(!sys) return;
+  const nextId = sys.zones.length ? Math.max(...sys.zones.map(z=>z.id))+1 : 1;
+  sys.zones.push({ id: nextId, name: (currentLang==='ar'?'المنطقة ':'Zone ')+nextId });
+  renderFireSystemsList();
+};
+window.removeZoneFromSystemDraft = function(sysId, zoneId){
+  const sys = fireSystems.find(s=>s.id===sysId); if(!sys || sys.zones.length<=1) return;
+  sys.zones = sys.zones.filter(z=>z.id!==zoneId);
+  renderFireSystemsList();
+};
+window.saveFireSystemEdits = function(sysId){
+  const sys = fireSystems.find(s=>s.id===sysId); if(!sys) return;
+  const nameInput = document.getElementById('editSysName-'+sysId);
+  if(nameInput && nameInput.value.trim()) sys.name = nameInput.value.trim();
+  sys.zones.forEach(z=>{
+    const inp = document.getElementById('editZoneName-'+sysId+'-'+z.id);
+    if(inp && inp.value.trim()) z.name = inp.value.trim();
+  });
+  // نزامن مصفوفة الحالة الحية مع الزونات الجديدة (زون انحذف يزول من التخزين، زون جديد ينضاف "غير متصل")
+  const zoneIds = new Set(sys.zones.map(z=>z.id));
+  const prevLive = fireZoneLive[sys.id] || [];
+  fireZoneLive[sys.id] = sys.zones.map(z=>{
+    const existing = prevLive.find(zz=>zz.id===z.id);
+    return existing || { id:z.id, status:'offline' };
+  });
+  if(!lastSeenFireZone[sys.id]) lastSeenFireZone[sys.id] = {};
+  Object.keys(lastSeenFireZone[sys.id]).forEach(k=>{ if(!zoneIds.has(Number(k))) delete lastSeenFireZone[sys.id][k]; });
+  persistFireSystems();
+  subscribeFireSystemZones(sys);
+  editingFireSysId = null;
+  renderFireSystemsList();
+  refreshFireSystemSelectOptions();
+  if(sysId === currentFireSystemId) window.switchFireSystem(sysId);
+};
+window.addFireSystem = function(){
+  const nameInput = document.getElementById('newFireSysName');
+  const countInput = document.getElementById('newFireSysZoneCount');
+  const name = (nameInput.value||'').trim();
+  if(!name){ alert(t('fireSysNameRequired')); return; }
+  const count = Math.max(1, Math.min(32, parseInt(countInput.value,10)||4));
+  const sys = { id: uid('sys_'), name, zones: Array.from({length:count}, (_,i)=>({id:i+1, name:(currentLang==='ar'?'المنطقة ':'Zone ')+(i+1)})) };
+  fireSystems.push(sys);
+  ensureFireSystemStorage(sys);
+  persistFireSystems();
+  subscribeFireSystemZones(sys);
+  nameInput.value=''; countInput.value=4;
+  renderFireSystemsList();
+  refreshFireSystemSelectOptions();
+};
+window.deleteFireSystem = function(id){
+  if(fireSystems.length<=1) return; // لازم تبقى منظومة وحدة على الأقل
+  if(!confirm(t('fireSysDeleteConfirm'))) return;
+  fireSystems = fireSystems.filter(s=>s.id!==id);
+  delete fireZoneLive[id]; delete lastSeenFireZone[id]; delete fireMapDataBySystem[id];
+  persistFireSystems();
+  if(currentFireSystemId === id) window.switchFireSystem(fireSystems[0].id);
+  renderFireSystemsList();
+  refreshFireSystemSelectOptions();
+};
+function refreshFireSystemSelectOptions(){
+  const sel = document.getElementById('fireSystemSelect'); if(!sel) return;
+  sel.innerHTML = fireSystems.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  sel.value = currentFireSystemId;
+}
+
+/* ---------- لوحة تنبيهات الحريق الجانبية (عبر كل المنظومات) ---------- */
+window.openFireAlertsPanel = function(){
+  renderFireAlertsPanelList(computeGlobalFireAlarms());
+  document.getElementById('fireAlertsOverlay').classList.add('show');
+  document.getElementById('fireAlertsPanel').classList.add('show');
+};
+window.closeFireAlertsPanel = function(){
+  document.getElementById('fireAlertsOverlay').classList.remove('show');
+  document.getElementById('fireAlertsPanel').classList.remove('show');
+};
+function renderFireAlertsPanelList(alarms){
+  const wrap = document.getElementById('fireAlertsList'); if(!wrap) return;
+  if(!alarms || alarms.length===0){ wrap.innerHTML = `<div class="fire-alerts-empty">✅ ${t('fireAlertsNone')}</div>`; return; }
+  wrap.innerHTML = alarms.map(a=>{
+    const since = Math.max(0, Math.round((Date.now()-a.since)/1000));
+    const mins = Math.floor(since/60), secs = since%60;
+    return `<div class="fire-alert-item" onclick="goToFireZone('${a.systemId}', ${a.zoneId})">
+      <div class="fai-sys">${a.systemName}</div>
+      <div class="fai-zone">🔥 ${a.zoneName}</div>
+      <div class="fai-since">${t('fireAlertsSince')} ${mins}${t('minsShort')} ${secs}${t('secsShort')}</div>
+    </div>`;
+  }).join('');
+}
+/* ---------- الانتقال المباشر لزون معين ضمن منظومته (من التنبيه) - يبدل المنظومة المعروضة،
+   يمرر ويومض للزون بالشبكة، ويمرر للخريطة لو عندها دبوس لهذا الزون (يطلع أحمر نابض تلقائياً
+   لأن renderFireMapMainPins أصلاً يلوّن الدبوس حسب حالة الزون الحقيقية) ---------- */
+window.goToFireZone = function(systemId, zoneId){
+  closeFireAlertsPanel();
+  window.switchFireSystem(systemId);
+  if(typeof selectView === 'function') selectView('fire');
+  setTimeout(()=>{
+    const tile = document.getElementById('fireZonesGrid-z'+zoneId);
+    if(tile){
+      tile.classList.add('flash-highlight');
+      setTimeout(()=>tile.classList.remove('flash-highlight'), 2600);
+      try{ tile.scrollIntoView({behavior:'smooth', block:'center'}); }catch(e){}
+    }
+    const hasPin = (fireMapData.pins||[]).some(p=>p.zoneId===zoneId);
+    if(hasPin){
+      const mapContainer = document.getElementById('fireMapMainContainer');
+      if(mapContainer){ try{ mapContainer.scrollIntoView({behavior:'smooth', block:'center'}); }catch(e){} }
+    }
+  }, 120);
 };
 
 function renderFireMapMain(){
@@ -2110,7 +2461,40 @@ function checkGasZonesOffline(){
 window.gasSilence = function(){ gasSilenced = !gasSilenced; renderGasZones(); };
 window.gasReset = function(){ gasZones.forEach(z=>{ if(lastSeenGas[z.id]){ z.status='safe'; z.ppm=50+Math.random()*80; } else { z.status='offline'; z.ppm=null; } }); gasSilenced=false; renderGasZones(); };
 window.gasTest = function(){ const z = gasZones[Math.floor(Math.random()*gasZones.length)]; lastSeenGas[z.id]=Date.now(); z.ppm=520; z.status='danger'; renderGasZones(); };
-let fbDb = null, fbRef = null, fbSet = null, fbQuery = null, fbOrderByKey = null, fbStartAt = null, fbEndAt = null, fbGet = null, fbLimitToLast = null;
+let fbDb = null, fbRef = null, fbSet = null, fbQuery = null, fbOrderByKey = null, fbStartAt = null, fbEndAt = null, fbGet = null, fbLimitToLast = null, fbOnValue = null;
+const NTP_EPOCH_SANITY_MS_ZONES = 1700000000000;
+/* ---------- الاشتراك بقراءات الحريق الحقيقية لمنظومة معينة (كل زوناتها) + خريطتها -
+   دالة عامة مستقلة تنعاد بأمان بأي وقت (منظومة جديدة، أو زون جديد انضاف لمنظومة موجودة) -
+   fireZoneSubsSet يمنع الاشتراك المكرر بنفس الزون أكثر من مرة، بس يسمح بزونات جديدة تنضاف لاحقاً */
+let fireZoneSubsSet = new Set();
+let fireMapSubsSet = new Set();
+function subscribeFireSystemZones(sys){
+  if(!fbDb || !fbOnValue || !fbRef) return;
+  ensureFireSystemStorage(sys);
+  sys.zones.forEach(zoneDef=>{
+    const key = sys.id+'|'+zoneDef.id;
+    if(fireZoneSubsSet.has(key)) return;
+    fireZoneSubsSet.add(key);
+    fbOnValue(fbRef(fbDb, 'fireZones/'+sys.id+'/'+zoneDef.id), (snap)=>{
+      const val = snap.val(); if(!val) return;
+      const ts = (val.timestamp && Number(val.timestamp) > NTP_EPOCH_SANITY_MS_ZONES) ? Number(val.timestamp) : Date.now();
+      if(!lastSeenFireZone[sys.id]) lastSeenFireZone[sys.id] = {};
+      lastSeenFireZone[sys.id][zoneDef.id] = ts;
+      const fresh = (Date.now() - ts) <= OFFLINE_THRESHOLD_MS;
+      const zoneState = (fireZoneLive[sys.id]||[]).find(z=>z.id===zoneDef.id);
+      if(zoneState) zoneState.status = fresh ? (val.status || 'normal') : 'offline';
+      if(sys.id === currentFireSystemId) renderFireZones(); else updateGlobalFireSirenAndBadge();
+    });
+  });
+  if(!fireMapSubsSet.has(sys.id)){
+    fireMapSubsSet.add(sys.id);
+    fbOnValue(fbRef(fbDb, 'fireMapConfig/'+sys.id), (snap)=>{
+      const val = snap.val(); if(!val) return;
+      fireMapDataBySystem[sys.id] = val;
+      if(sys.id === currentFireSystemId){ fireMapData = val; renderFireMapMain(); }
+    });
+  }
+}
 
 async function tryConnectFirebase(){
   if(firebaseConfig.apiKey === "YOUR_API_KEY"){ setConnBadge(false); console.error('Firebase config missing — set firebaseConfig with real project credentials.'); return; }
@@ -2119,23 +2503,27 @@ async function tryConnectFirebase(){
     const { getDatabase, ref, onValue, set, query, orderByKey, startAt, endAt, get, limitToLast } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js");
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    fbDb = db; fbRef = ref; fbSet = set; fbQuery = query; fbOrderByKey = orderByKey; fbStartAt = startAt; fbEndAt = endAt; fbGet = get; fbLimitToLast = limitToLast;
+    fbDb = db; fbRef = ref; fbSet = set; fbQuery = query; fbOrderByKey = orderByKey; fbStartAt = startAt; fbEndAt = endAt; fbGet = get; fbLimitToLast = limitToLast; fbOnValue = onValue;
     setConnBadge(true);
     WAREHOUSES.forEach(w=>{
       onValue(ref(db, 'warehouses/'+w.id), (snap)=>{ const val=snap.val(); if(!val) return; state[w.id]=val; renderStation(w,val); renderSummary(); });
     });
-    // منظومة الحريق: نفس مبدأ مخازن الحرارة تماماً - نعتمد وقت الجهاز الحقيقي (NTP) لتحديد
-    // إذا القراءة حديثة فعلاً أو قديمة/راكدة، مو مجرد وصول أي بيانات لمرة وحدة
-    const NTP_EPOCH_SANITY_MS_ZONES = 1700000000000;
-    fireZones.forEach(z=>{
-      onValue(ref(db, 'fireZones/'+z.id), (snap)=>{
-        const val = snap.val(); if(!val) return;
-        const ts = (val.timestamp && Number(val.timestamp) > NTP_EPOCH_SANITY_MS_ZONES) ? Number(val.timestamp) : Date.now();
-        lastSeenFire[z.id] = ts;
-        const fresh = (Date.now() - ts) <= OFFLINE_THRESHOLD_MS;
-        z.status = fresh ? (val.status || 'normal') : 'offline';
-        renderFireZones();
-      });
+    // منظومات الحريق: تتزامن قائمة المنظومات نفسها (الأسماء وعدد الزونات) من فايربيس أولاً
+    // حتى تنطلع نفس القائمة بكل جهاز يفتح الداشبورد، وبعدها نشترك بقراءات كل زون بكل منظومة -
+    // نفس مبدأ مخازن الحرارة تماماً بالاعتماد على وقت الجهاز الحقيقي (NTP) لتحديد الحداثة
+    onValue(ref(db, 'fireSystemsConfig'), (snap)=>{
+      const val = snap.val();
+      if(val && Array.isArray(val) && val.length){
+        fireSystems = val;
+        fireSystems.forEach(ensureFireSystemStorage);
+        if(!fireSystems.find(s=>s.id===currentFireSystemId)) window.switchFireSystem(fireSystems[0].id);
+        saveFireSystemsLocal();
+        refreshFireSystemSelectOptions();
+        if(typeof renderFireSystemsList === 'function') renderFireSystemsList();
+      } else {
+        set(ref(db, 'fireSystemsConfig'), fireSystems).catch(e=>console.warn('initial fireSystemsConfig push failed', e));
+      }
+      fireSystems.forEach(subscribeFireSystemZones);
     });
     gasZones.forEach(z=>{
       onValue(ref(db, 'gasZones/'+z.id), (snap)=>{
@@ -2185,6 +2573,7 @@ function init(){
   applyStaticI18n();
   buildStationCards();
   loadFireMapData();
+  refreshFireSystemSelectOptions();
   buildFireZones(); renderFireZones();
   buildGasZones(); renderGasZones();
   document.getElementById('fireMapMainContainer').addEventListener('click', ()=> window.removeMapPopup());
