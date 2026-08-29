@@ -591,7 +591,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 1.5.1</div>
+      <div class="brand-version">Ver 1.5.2</div>
     </div>
   </footer>
 </div>
@@ -1037,7 +1037,11 @@ const thresholdBreachState = {};
 let thresholdSirenSilenced = false;
 let tempAlertOsc=null, tempAlertGain=null, tempAlertInterval=null;
 function anyThresholdBreach(){
-  return Object.values(thresholdBreachState).some(s => s && (s.s1 || s.s2));
+  // مخزن انقطع اتصاله نتجاهل آخر حالة تجاوز محفوظة له - صارت قديمة/غير موثوقة (نفس مبدأ عداد التنبيهات)
+  return Object.keys(thresholdBreachState).some(wId => {
+    const s = thresholdBreachState[wId];
+    return s && isWarehouseOnline(wId) && (s.s1 || s.s2);
+  });
 }
 function startTempAlertTone(){
   const ctx = ensureAudioCtx(); if(!ctx || tempAlertOsc) return;
@@ -1624,7 +1628,7 @@ function checkOfflineStations(){
   });
   renderSummary();
 }
-function tickStationAges(){ WAREHOUSES.forEach(w=>updateStationAge(w.id)); checkOfflineStations(); checkAllFireSystemsOffline(); checkGasZonesOffline(); fitWarehouseCards(); }
+function tickStationAges(){ WAREHOUSES.forEach(w=>updateStationAge(w.id)); checkOfflineStations(); checkAllFireSystemsOffline(); checkGasZonesOffline(); fitWarehouseCards(); updateThresholdSiren(); }
 setInterval(tickStationAges, 15000); // نحدثها كل 15 ثانية - يكفي لعداد دقائق وكشف الانقطاع
 // فحص فوري بأول تحميل بدل ما نستنى أول دورة (15 ثا) حتى نكتشف الانقطاع بأسرع وقت - نأجله بـ setTimeout(…,0)
 // لأن tickStationAges صار يعتمد على fireZones/gasZones (متغيرات let معرّفة لاحقاً بالملف)، ولو
