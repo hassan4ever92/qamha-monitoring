@@ -167,6 +167,7 @@
   .rv.status-normal{ color:var(--ok); }
   .rv.status-rising{ color:var(--danger-bright); font-weight:900; animation: thresholdPulse 1s infinite; }
   .rv.status-falling{ color:var(--danger-bright); font-weight:900; animation: thresholdPulse 1s infinite; }
+  .rv.status-na{ color:var(--text-2); font-weight:700; }
 
   .station-foot{ display:flex; align-items:center; justify-content:space-between; gap:8px; border-top:1px dashed var(--card-border); padding-top:10px; margin-top:4px; font-size:11px; color:var(--text-2); }
   .station-foot .live{ display:flex; align-items:center; gap:6px; white-space:nowrap; }
@@ -530,7 +531,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 1.0.5</div>
+      <div class="brand-version">Ver 1.0.6</div>
     </div>
   </footer>
 </div>
@@ -700,7 +701,7 @@ const I18N = {
     diffLabel:'الفرق بين حساسي الحرارة', statusLabel:'حالة الحرارة', humStatusLabel:'حالة الرطوبة', liveData:'بيانات حية', logBtn:'📋 السجل', fwLabel:'نسخة البرنامج المنصّبة بالجهاز (Firmware)',
     rangeLabel:'🎯 الرينج المسموح', toWord:'إلى', rangeParenLabel:'المدى المسموح لدرجة الحرارة من',
     dialLabelTemp:'Temp. °C', dialLabelHum:'Humidity %',
-    chipNormal:'● طبيعي', chipAlert:'⚠ تنبيه', chipOffline:'⛔ غير متصل', statusNormal:'طبيعي', statusRising:'▲ مرتفعة', statusFalling:'▼ منخفضة',
+    chipNormal:'● طبيعي', chipAlert:'⚠ تنبيه', chipOffline:'⛔ غير متصل', statusNormal:'طبيعي', statusRising:'▲ مرتفعة', statusFalling:'▼ منخفضة', statusNa:'--',
     offlineBannerTitle:'⛔ تم قطع الاتصال مع منظومة متحسسات المنطقة', offlineBannerSince:'منذ', labelOffline:'مخازن غير متصلة',
     logTitlePrefix:'سجل الأحداث — ', alertsOnlyLabel:'عرض التنبيهات فقط', exportLabel:'⬇ تصدير Excel',
     logFromLabel:'من', logToLabel:'إلى', clearFilterLabel:'✕ مسح الفلترة', loadingLabel:'جاري التحميل...',
@@ -740,7 +741,7 @@ const I18N = {
     diffLabel:'Temp Sensor Diff', statusLabel:'Temp Status', humStatusLabel:'Humidity Status', liveData:'Live Data', logBtn:'📋 Log', fwLabel:'Firmware version installed on device',
     rangeLabel:'🎯 Allowed Range', toWord:'to', rangeParenLabel:'Allowed temperature range from',
     dialLabelTemp:'Temp. °C', dialLabelHum:'Humidity %',
-    chipNormal:'● Normal', chipAlert:'⚠ Alert', chipOffline:'⛔ Offline', statusNormal:'Normal', statusRising:'▲ High', statusFalling:'▼ Low',
+    chipNormal:'● Normal', chipAlert:'⚠ Alert', chipOffline:'⛔ Offline', statusNormal:'Normal', statusRising:'▲ High', statusFalling:'▼ Low', statusNa:'--',
     offlineBannerTitle:'⛔ Connection lost with the sensor system for this zone', offlineBannerSince:'since', labelOffline:'Offline Warehouses',
     logTitlePrefix:'Event Log — ', alertsOnlyLabel:'Alerts only', exportLabel:'⬇ Export Excel',
     logFromLabel:'From', logToLabel:'To', clearFilterLabel:'✕ Clear filter', loadingLabel:'Loading...',
@@ -822,14 +823,14 @@ function computeTempStatus(wId, avgValue, cfg){
 // بس فيه واحد تحت الحد الأدنى تصير "منخفضة"، وإلا "طبيعي"
 function computeTempStatusFromSensors(s1v, s2v, cfg){
   const vals = [s1v, s2v].filter(v => v!==null && v!==undefined && !isNaN(v));
-  if(vals.length===0) return 'normal';
+  if(vals.length===0) return 'na'; // ما فيه ولا حساس متصل - ما نصلح نقول "طبيعي" لأنه ما فيه شي نتأكد منه أصلاً
   if(vals.some(v => v > cfg.tempMax)) return 'rising';
   if(vals.some(v => v < cfg.tempMin)) return 'falling';
   return 'normal';
 }
 
 function computeHumStatus(wId, humValue, cfg){
-  if(humValue===undefined || humValue===null || isNaN(humValue)) return 'normal';
+  if(humValue===undefined || humValue===null || isNaN(humValue)) return 'na'; // نفس الشي - متحسس الرطوبة غير متصل
   if(humValue > cfg.humMax) return 'rising';
   if(humValue < cfg.humMin) return 'falling';
   return 'normal';
