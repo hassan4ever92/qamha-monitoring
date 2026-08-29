@@ -332,6 +332,33 @@
   body.fs-mode[data-fsview="warehouses"] .read-item{ padding:0.7vh 1vh; }
   body.fs-mode[data-fsview="warehouses"] .read-item .rl{ font-size:1.05vh; margin-bottom:0.25vh; }
   body.fs-mode[data-fsview="warehouses"] .read-item .rv{ font-size:1.35vh; }
+
+  /* نظرة عامة (overview): قائمة مخازن مضغوطة بجانب الحريق والغاز - بدون عقارب دائرية (تتشوه بارتفاع صف صغير) */
+  body.fs-mode[data-fsview="overview"] .grid{ gap:0.5vh; }
+  body.fs-mode[data-fsview="overview"] .station{ padding:0.6vh 1vh; display:flex; flex-direction:column; justify-content:center; overflow:hidden; min-height:0; }
+  body.fs-mode[data-fsview="overview"] .station-head{ margin-bottom:0.2vh; }
+  body.fs-mode[data-fsview="overview"] .station-head h3{ font-size:1.3vh; }
+  body.fs-mode[data-fsview="overview"] .fs-range-inline{ display:none; }
+  body.fs-mode[data-fsview="overview"] .status-chip{ font-size:0.95vh; padding:0.2vh 0.6vh; }
+  body.fs-mode[data-fsview="overview"] .range-badge{ font-size:0.95vh; padding:0.2vh 0.7vh; margin-bottom:0; gap:0.3vh; }
+  body.fs-mode[data-fsview="overview"] .offline-banner{ padding:0.25vh 0.7vh; font-size:0.9vh; margin:0.2vh 0; }
+  body.fs-mode[data-fsview="overview"] .gauge-row{ display:flex; flex-direction:row; align-items:center; gap:1.4vh; flex-wrap:wrap; }
+  body.fs-mode[data-fsview="overview"] .zone-section{ margin-bottom:0; display:flex; align-items:center; gap:0.5vh; flex:0 0 auto; }
+  body.fs-mode[data-fsview="overview"] .zone-section + .zone-section{ padding-inline-start:1.2vh; border-inline-start:1px solid var(--card-border); }
+  body.fs-mode[data-fsview="overview"] .zone-title{ font-size:0.9vh; margin-bottom:0; white-space:nowrap; }
+  body.fs-mode[data-fsview="overview"] .zone-title::after{ display:none; }
+  body.fs-mode[data-fsview="overview"] .gauges{ display:flex; flex-direction:row; gap:0.7vh; margin:0; }
+  body.fs-mode[data-fsview="overview"] .gauge-box{ display:flex; align-items:center; gap:0.3vh; text-align:start; }
+  body.fs-mode[data-fsview="overview"] .gauge-wrap{ display:none; }
+  body.fs-mode[data-fsview="overview"] .gauge-digital-panel{ display:inline-block; padding:0.1vh 0.5vh; margin:0; }
+  body.fs-mode[data-fsview="overview"] .gauge-digital{ font-size:1.05vh; }
+  body.fs-mode[data-fsview="overview"] .gauge-digital.g-pending{ font-size:0.78vh; white-space:nowrap; }
+  body.fs-mode[data-fsview="overview"] .gauge-unit{ font-size:0.75vh; margin:0; }
+  body.fs-mode[data-fsview="overview"] .gauge-label{ font-size:0.75vh; max-width:9vh; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin:0; }
+  body.fs-mode[data-fsview="overview"] .pending-badge{ display:none; }
+  body.fs-mode[data-fsview="overview"] .readings{ display:none; }
+  body.fs-mode[data-fsview="overview"] .station-foot{ display:none; }
+
   body.fs-mode .station{ padding:8px 10px; display:flex; flex-direction:column; justify-content:flex-start; overflow:hidden; min-height:0; }
   body.fs-mode .station-head{ margin-bottom:5px; flex:0 0 auto; }
   body.fs-mode .station-head h3{ font-size:12px; }
