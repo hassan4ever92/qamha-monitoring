@@ -294,6 +294,22 @@
   .map-pin-chip{ background: rgba(255,255,255,0.04); border:1px solid var(--card-border); border-radius:8px; padding:4px 8px; font-size:11px; display:flex; align-items:center; gap:6px; }
   .map-pin-chip button{ background:none; border:none; color:var(--danger); cursor:pointer; font-size:12px; }
 
+  /* ---- بطاقات/أيقونات الخرائط (تصفح عادي) - كل خريطة تظهر كبطاقة صغيرة، والضغط عليها يفتحها بالحجم الكامل ---- */
+  .fire-map-block > .map-container{ display:none; } /* الحاوية الحية القديمة تبقى مخصصة لوضع الكشك (fs-mode) فقط */
+  .map-cards-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(140px,1fr)); gap:12px; }
+  .map-card{ position:relative; border:1px solid var(--card-border); border-radius:12px; overflow:hidden; cursor:pointer; background: rgba(255,255,255,.03); transition: transform .15s ease, border-color .15s ease; display:flex; flex-direction:column; }
+  .map-card:hover{ transform:translateY(-3px); border-color: var(--accent); }
+  .map-card .mc-thumb{ height:88px; background: repeating-conic-gradient(#0d1626 0% 25%, #0a1220 0% 50%) 50%/16px 16px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .map-card .mc-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .map-card .mc-thumb .mc-placeholder{ font-size:30px; opacity:.4; }
+  .map-card .mc-info{ padding:8px 10px; display:flex; flex-direction:column; gap:2px; }
+  .map-card .mc-name{ font-size:12px; font-weight:800; color:var(--text-0); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .map-card .mc-meta{ font-size:10px; color:var(--text-2); }
+  .map-card.has-alarm{ border-color: var(--danger); animation: zoneAlarm .9s ease-in-out infinite; }
+  .map-card .mc-alarm-badge{ position:absolute; top:6px; inset-inline-end:6px; background:var(--danger-bright); color:#fff; font-size:10px; font-weight:800; border-radius:999px; padding:2px 7px; display:none; align-items:center; gap:3px; z-index:2; }
+  .map-card.has-alarm .mc-alarm-badge{ display:inline-flex; }
+  .fire-map-filter-note{ font-size:10px; color:var(--danger); font-weight:700; cursor:pointer; text-decoration:underline; }
+
   footer{ text-align:center; color:var(--text-2); font-size:11px; margin-top:26px; }
   .brand-footer{ margin-top:14px; padding-top:14px; border-top:1px solid var(--card-border); display:flex; flex-direction:column; align-items:center; gap:5px; }
   .brand-version{ font-size:9.5px; color:var(--text-2); opacity:.55; letter-spacing:.3px; direction:ltr; }
@@ -428,7 +444,9 @@
   body.fs-mode #section-fire .zones-grid{ display:none; }
   body.fs-mode .fire-map-block{ display:flex; flex-direction:column; flex:1 1 0; min-height:0; margin-top:6px; }
   body.fs-mode .fire-map-block > .zone-title{ display:none; }
-  body.fs-mode .fire-map-block .map-container{ flex:1; min-height:0; }
+  /* وضع الكشك (fullscreen) يعرض الخريطة الحية المدمجة مباشرة بدل بطاقات الأيقونات - أوضح لشاشة عرض ثابتة */
+  body.fs-mode .fire-map-block .map-cards-grid{ display:none; }
+  body.fs-mode .fire-map-block > .map-container{ display:block; flex:1; min-height:0; }
   body.fs-mode .fire-map-block .map-container img{ width:100%; height:100%; object-fit:contain; display:block; }
   body.fs-mode .fire-map-block .map-pin{ width:22px; height:22px; font-size:9px; border-width:2px; }
   body.fs-mode .fire-map-block .map-pin .pin-num{ font-size:7px; }
@@ -535,8 +553,9 @@
       <div class="fire-map-block" style="margin-top:18px;">
         <div class="zone-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
           <span>🗺️ <span data-i18n="fireMapSectionTitle">خريطة الموقع</span></span>
-          <select class="mini-select" id="fireMapMainSelect" onchange="switchFireMap(this.value)" style="max-width:200px;"></select>
+          <span class="fire-map-filter-note" id="fireMapFilterNote" style="display:none;"></span>
         </div>
+        <div class="map-cards-grid" id="fireMapCardsGrid"></div>
         <div class="map-container" id="fireMapMainContainer">
           <div class="map-empty" id="fireMapMainEmpty" data-i18n="fireMapEmptyMain">لا توجد خريطة مرفوعة بعد — أضفها من ⚙️ الإدارة</div>
         </div>
@@ -565,7 +584,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 1.3.0</div>
+      <div class="brand-version">Ver 1.4.0</div>
     </div>
   </footer>
 </div>
@@ -692,6 +711,14 @@
     </div>
     <div class="map-pins-list" id="fireMapPinsList"></div>
     <button class="export-btn" style="margin-top:14px;width:100%;" onclick="saveFireMapAdmin()" data-i18n="fireMapSave">💾 حفظ الخريطة</button>
+  </div>
+</div>
+
+<!-- ===== Fire Map View (تنفتح بالضغط على أي بطاقة/أيقونة خريطة - تعرض الزونات الحية عليها) ===== -->
+<div class="modal-overlay" id="fireMapViewModal">
+  <div class="modal-box" style="max-width:96vw;width:auto;padding:14px;">
+    <div class="modal-head"><h3 id="fireMapViewModalTitle" data-i18n="fireMapViewModalTitle">🗺️ عرض الخريطة</h3><button class="modal-close" onclick="closeFireMapView()">✕</button></div>
+    <div class="map-container" id="fireMapViewContainer" style="min-height:50vh;"></div>
   </div>
 </div>
 
@@ -824,6 +851,9 @@ const I18N = {
     fireMapDeleteMap:'حذف هذه الخريطة', fireMapNewMapPrompt:'اسم الخريطة الجديدة (مثلاً: الطابق الأول):',
     fireMapRenamePrompt:'الاسم الجديد لهذه الخريطة:', fireMapNameRequired:'الرجاء إدخال اسم للخريطة',
     fireMapCannotDeleteLast:'لازم تبقى خريطة وحدة على الأقل بكل منظومة', fireMapDeleteConfirm:'هل أنت متأكد من حذف هذه الخريطة وكل متحسساتها؟',
+    fireMapViewModalTitle:'🗺️ عرض الخريطة', fireMapSensorsCountLabel:'متحسس',
+    fireMapFilteredAlarmNote:'معروض فقط الخرائط الي فيها إنذار حريق نشط', fireMapShowAll:'عرض كل الخرائط',
+    fireMapShowingAllDuringAlarm:'معروض كل الخرائط رغم وجود إنذار نشط', fireMapShowAlarmedOnly:'عرض خرائط الإنذار فقط',
     gasTitle:'منظومة مراقبة تسرب الغاز', gasMasterOk:'✅ لا يوجد تسرب', gasMasterAlarm:'🚨 تسرب غاز!', gasMasterFault:'⚠ يوجد عطل', gasMasterOffline:'⛔ لا توجد أجهزة متصلة',
     gasStatusSafe:'آمن', gasStatusWarning:'تحذير', gasStatusDanger:'خطر تسرب', gasStatusFault:'عطل', gasStatusOffline:'⛔ غير متصل',
     footerLine1:'منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز',
@@ -876,6 +906,9 @@ const I18N = {
     fireMapDeleteMap:'Delete This Map', fireMapNewMapPrompt:'New map name (e.g. First Floor):',
     fireMapRenamePrompt:'New name for this map:', fireMapNameRequired:'Please enter a name for the map',
     fireMapCannotDeleteLast:'Each system must keep at least one map', fireMapDeleteConfirm:'Delete this map and all its sensors?',
+    fireMapViewModalTitle:'🗺️ Map View', fireMapSensorsCountLabel:'sensors',
+    fireMapFilteredAlarmNote:'Showing only maps with an active fire alarm', fireMapShowAll:'Show all maps',
+    fireMapShowingAllDuringAlarm:'Showing all maps despite an active alarm', fireMapShowAlarmedOnly:'Show alarmed maps only',
     gasTitle:'Gas Leak Monitoring System', gasMasterOk:'✅ No Leak Detected', gasMasterAlarm:'🚨 Gas Leak!', gasMasterFault:'⚠ Fault Present', gasMasterOffline:'⛔ No Devices Connected',
     gasStatusSafe:'Safe', gasStatusWarning:'Warning', gasStatusDanger:'Danger', gasStatusFault:'Fault', gasStatusOffline:'⛔ Offline',
     footerLine1:'Internal platform for monitoring warehouses, fire and gas systems',
@@ -1893,6 +1926,7 @@ function renderFireZones(){
 window.switchFireSystem = function(id, preferMapId){
   const sys = fireSystems.find(s=>s.id===id); if(!sys) return;
   currentFireSystemId = id;
+  fireMapShowAllOverride = false; // نرجع للسلوك الافتراضي (فلترة تلقائية بوقت الإنذار) كل ما نبدل منظومة
   ensureFireSystemStorage(sys);
   fireZones = fireZoneLive[id];
   lastSeenFire = lastSeenFireZone[id];
@@ -1921,13 +1955,81 @@ window.switchFireMap = function(mapId){
   if(adminModal && adminModal.classList.contains('show')) renderFireMapAdmin();
 };
 function refreshFireMapSelectOptions(){
+  // القائمة المنسدلة الآن موجودة بس داخل نافذة إدارة الخريطة (fireMapAdminSelect) - التصفح
+  // العادي بالداشبورد صار عن طريق بطاقات/أيقونات الخرائط (renderFireMapCardsGrid) مو Select
   const maps = fireMapsBySystem[currentFireSystemId] || [];
   const optsHtml = maps.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
-  const mainSel = document.getElementById('fireMapMainSelect');
-  if(mainSel){ mainSel.innerHTML = optsHtml; mainSel.value = currentFireMapId || (maps[0] && maps[0].id) || ''; }
   const adminSel = document.getElementById('fireMapAdminSelect');
   if(adminSel){ adminSel.innerHTML = optsHtml; adminSel.value = currentFireMapId || (maps[0] && maps[0].id) || ''; }
 }
+let fireMapShowAllOverride = false; // يصير true إذا المستخدم ضغط "عرض كل الخرائط" أثناء وجود فلترة إنذار نشط
+function mapHasActiveAlarm(map){
+  return (map.pins||[]).some(p=>{
+    const z = fireZones.find(zz=>zz.id===p.zoneId);
+    return z && z.status==='alarm';
+  });
+}
+/* ---------- شبكة بطاقات/أيقونات خرائط المنظومة الحالية (التصفح العادي خارج وضع الكشك) -
+   بوضوح افتراضي تعرض كل الخرائط؛ لو صار إنذار حقيقي بأي خريطة تتفلتر تلقائياً لعرض خرائط
+   الإنذار فقط (بالإضافة لقائمة التنبيهات الجانبية)، مع رابط لعرض الكل يدوياً لو احتاج المستخدم ---------- */
+function renderFireMapCardsGrid(){
+  const grid = document.getElementById('fireMapCardsGrid'); if(!grid) return;
+  const note = document.getElementById('fireMapFilterNote');
+  const allMaps = currentFireMaps();
+  const alarmedMaps = allMaps.filter(mapHasActiveAlarm);
+  let mapsToShow = allMaps;
+  if(alarmedMaps.length>0 && !fireMapShowAllOverride){
+    mapsToShow = alarmedMaps;
+    if(note){
+      note.style.display='inline';
+      note.textContent = '🚨 ' + t('fireMapFilteredAlarmNote') + ' — ' + t('fireMapShowAll');
+      note.onclick = ()=>{ fireMapShowAllOverride = true; renderFireMapCardsGrid(); };
+    }
+  } else {
+    if(note){
+      if(alarmedMaps.length>0 && fireMapShowAllOverride){
+        note.style.display='inline';
+        note.textContent = '👁 ' + t('fireMapShowingAllDuringAlarm') + ' — ' + t('fireMapShowAlarmedOnly');
+        note.onclick = ()=>{ fireMapShowAllOverride = false; renderFireMapCardsGrid(); };
+      } else {
+        note.style.display='none';
+        note.onclick = null;
+      }
+    }
+  }
+  grid.innerHTML = mapsToShow.map(m=>{
+    const hasAlarm = mapHasActiveAlarm(m);
+    const pinCount = (m.pins||[]).length;
+    const thumb = m.imageUrl ? `<img src="${m.imageUrl}" alt="">` : `<span class="mc-placeholder">🗺️</span>`;
+    return `<div class="map-card ${hasAlarm?'has-alarm':''}" onclick="openFireMapView('${currentFireSystemId}','${m.id}')">
+      <span class="mc-alarm-badge">🔥 ${t('fireStatusAlarm')}</span>
+      <div class="mc-thumb">${thumb}</div>
+      <div class="mc-info"><div class="mc-name">${m.name}</div><div class="mc-meta">${pinCount} ${t('fireMapSensorsCountLabel')}</div></div>
+    </div>`;
+  }).join('');
+}
+/* ---------- فتح خريطة معينة بالحجم الكامل (من الضغط على بطاقتها، أو تلقائياً من goToFireZone) ---------- */
+window.openFireMapView = function(systemId, mapId){
+  if(systemId !== currentFireSystemId || mapId !== currentFireMapId){
+    window.switchFireSystem(systemId, mapId);
+  }
+  const map = fireMapData;
+  const titleEl = document.getElementById('fireMapViewModalTitle');
+  if(titleEl) titleEl.textContent = '🗺️ ' + currentFireSystem().name + (map && map.name ? (' — ' + map.name) : '');
+  const container = document.getElementById('fireMapViewContainer');
+  if(container){
+    container.querySelectorAll('.map-pin, img, .map-empty').forEach(el=>el.remove());
+    window.removeMapPopup();
+    if(map && map.imageUrl){
+      ensureMapImage(container, ()=> renderFireMapMainPins(container));
+    } else {
+      const empty = document.createElement('div'); empty.className='map-empty'; empty.textContent = t('fireMapEmpty');
+      container.appendChild(empty);
+    }
+  }
+  document.getElementById('fireMapViewModal').classList.add('show');
+};
+window.closeFireMapView = function(){ document.getElementById('fireMapViewModal').classList.remove('show'); window.removeMapPopup(); };
 let fireAlarmSinceMem = {}; // 'systemId|zoneId' -> أول وقت صار فيه إنذار، لعرض "منذ متى" بقائمة التنبيهات
 /* ---------- فحص عام عبر كل منظومات الحريق (صفارة + شارة التنبيهات) - يشتغل بغض النظر عن
    المنظومة المعروضة حالياً بالشاشة، لأن حريق حقيقي بمنظومة ثانية لازم يصفر ويبين بالتنبيهات برضو ---------- */
@@ -2493,9 +2595,10 @@ window.goToFireZone = function(systemId, zoneId){
       setTimeout(()=>tile.classList.remove('flash-highlight'), 2600);
       try{ tile.scrollIntoView({behavior:'smooth', block:'center'}); }catch(e){}
     }
-    // لو المنظومة عندها خريطة موقع، ننقل المستخدم لها ونومض دبوس الزون بالتحديد (يطلع أحمر
-    // نابض أصلاً من renderFireMapMainPins لأنه فعلاً بحالة إنذار، وهنا نزيد تمييزه أكثر)
-    if(fireMapData && fireMapData.imageUrl){
+    if(!fireMapData || !fireMapData.imageUrl) return;
+    const isKiosk = document.body.classList.contains('fs-mode');
+    if(isKiosk){
+      // وضع الكشك (fullscreen) - الخريطة الحية مدمجة مباشرة بالشاشة زي ما كانت، نفس السلوك السابق
       const mapContainer = document.getElementById('fireMapMainContainer');
       const pinEl = mapContainer ? mapContainer.querySelector('.map-pin[data-zone-id="'+zoneId+'"]') : null;
       const scrollTarget = pinEl || mapContainer;
@@ -2504,19 +2607,44 @@ window.goToFireZone = function(systemId, zoneId){
         pinEl.classList.add('flash-highlight');
         setTimeout(()=>pinEl.classList.remove('flash-highlight'), 2600);
       }
+    } else if(targetMap){
+      // التصفح العادي (بطاقات/أيقونات الخرائط) - نفتح نافذة عرض الخريطة تلقائياً على الخريطة
+      // الصح بالتحديد، ونومض دبوس الزون المحترق فيها (يطلع أحمر نابض أصلاً من renderFireMapMainPins)
+      window.openFireMapView(systemId, targetMap.id);
+      setTimeout(()=>{
+        const viewContainer = document.getElementById('fireMapViewContainer');
+        const pinEl = viewContainer ? viewContainer.querySelector('.map-pin[data-zone-id="'+zoneId+'"]') : null;
+        if(pinEl){
+          pinEl.classList.add('flash-highlight');
+          setTimeout(()=>pinEl.classList.remove('flash-highlight'), 2600);
+          try{ pinEl.scrollIntoView({behavior:'smooth', block:'center'}); }catch(e){}
+        }
+      }, 150);
     }
   }, 120);
 };
 
 function renderFireMapMain(){
+  // الحاوية الحية القديمة (fireMapMainContainer) صارت مخصصة بس لوضع الكشك (fs-mode) - التصفح
+  // العادي يشوف بطاقات/أيقونات الخرائط (renderFireMapCardsGrid) بدلها
   const container = document.getElementById('fireMapMainContainer'); const emptyMsg = document.getElementById('fireMapMainEmpty');
-  if(!container) return;
-  if(!fireMapData.imageUrl){
-    container.querySelectorAll('.map-pin, img').forEach(el=>el.remove());
-    if(emptyMsg) emptyMsg.style.display='block'; return;
+  if(container){
+    if(!fireMapData.imageUrl){
+      container.querySelectorAll('.map-pin, img').forEach(el=>el.remove());
+      if(emptyMsg) emptyMsg.style.display='block';
+    } else {
+      if(emptyMsg) emptyMsg.style.display='none';
+      ensureMapImage(container, ()=> renderFireMapMainPins(container));
+    }
   }
-  if(emptyMsg) emptyMsg.style.display='none';
-  ensureMapImage(container, ()=> renderFireMapMainPins(container));
+  renderFireMapCardsGrid();
+  // لو نافذة عرض الخريطة الكبيرة مفتوحة حالياً على نفس الخريطة، نحدّث دبابيسها حية (بدون
+  // إعادة تحميل الصورة) حتى انذار حقيقي جديد يبين فوراً وهو المستخدم فاتحها
+  const viewModal = document.getElementById('fireMapViewModal');
+  if(viewModal && viewModal.classList.contains('show')){
+    const viewContainer = document.getElementById('fireMapViewContainer');
+    if(viewContainer && fireMapData.imageUrl && viewContainer.querySelector('img')) renderFireMapMainPins(viewContainer);
+  }
 }
 function renderFireMapMainPins(container){
   container.querySelectorAll('.map-pin').forEach(el=>el.remove());
@@ -2549,8 +2677,10 @@ window.removeMapPopup = function(){ const el=document.getElementById('mapPopup')
 function repositionMapPinsOnResize(){
   const admin = document.getElementById('fireMapAdminContainer');
   const main = document.getElementById('fireMapMainContainer');
+  const view = document.getElementById('fireMapViewContainer');
   if(admin && fireMapData.imageUrl && admin.querySelector('img')) renderFireMapAdminPins(admin);
   if(main && fireMapData.imageUrl && main.querySelector('img')) renderFireMapMainPins(main);
+  if(view && fireMapData.imageUrl && view.querySelector('img')) renderFireMapMainPins(view);
 }
 window.addEventListener('resize', ()=> repositionMapPinsOnResize());
 function initMapResizeObserver(){
@@ -2558,8 +2688,10 @@ function initMapResizeObserver(){
   const ro = new ResizeObserver(()=> repositionMapPinsOnResize());
   const admin = document.getElementById('fireMapAdminContainer');
   const main = document.getElementById('fireMapMainContainer');
+  const view = document.getElementById('fireMapViewContainer');
   if(admin) ro.observe(admin);
   if(main) ro.observe(main);
+  if(view) ro.observe(view);
 }
 
 /* ==========================================================
@@ -2739,6 +2871,7 @@ function init(){
   buildFireZones(); renderFireZones();
   buildGasZones(); renderGasZones();
   document.getElementById('fireMapMainContainer').addEventListener('click', ()=> window.removeMapPopup());
+  document.getElementById('fireMapViewContainer').addEventListener('click', ()=> window.removeMapPopup());
   initMapResizeObserver();
   tryConnectFirebase();
   if('Notification' in window && Notification.permission==='granted' && localStorage.getItem('qamha_fcm_token')){
