@@ -114,6 +114,7 @@
   .station-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
   .station-head h3{ font-size:16px; font-weight:700; display:flex; align-items:center; gap:8px; }
   .station-head h3 .ic{ color: var(--wheat); }
+  .fs-range-inline{ display:none; }
   .status-chip{ font-size:11px; font-weight:700; padding:5px 12px; border-radius:999px; }
   .status-chip.normal{ background: rgba(46,230,166,0.1); color:var(--ok); border:1px solid rgba(46,230,166,0.35); }
   .status-chip.alert{ background: rgba(255,20,20,0.14); color:var(--danger-bright); border:1px solid rgba(255,20,20,0.45); font-weight:800; }
@@ -303,11 +304,13 @@
 
   body.fs-mode .grid{ display:grid; grid-template-columns:1fr; grid-auto-rows:minmax(0,1fr); gap:8px; height:100%; min-height:0; overflow-y:auto; }
   body.fs-mode[data-fsview="warehouses"] .grid{ display:grid; grid-template-columns:repeat(3,1fr); grid-auto-rows:minmax(0,1fr); gap:1.4vh 1.1vw; height:100%; overflow:hidden; align-content:stretch; align-items:stretch; }
-  body.fs-mode[data-fsview="warehouses"] .station{ padding:1.6vh 1.2vw; overflow:hidden; height:100%; width:100%; box-sizing:border-box; border:1.5px solid var(--card-border); border-radius:1.2vh; display:flex; flex-direction:column; justify-content:center; min-height:0; min-width:0; }
-  body.fs-mode[data-fsview="warehouses"] .station-head{ margin-bottom:0.8vh; flex:0 0 auto; }
-  body.fs-mode[data-fsview="warehouses"] .station-head h3{ font-size:1.9vh; }
-  body.fs-mode[data-fsview="warehouses"] .status-chip{ font-size:1.3vh; padding:0.5vh 1vh; }
-  body.fs-mode[data-fsview="warehouses"] .range-badge{ font-size:1.3vh; padding:0.5vh 1.2vh; margin-bottom:1vh; gap:0.5vh; }
+  body.fs-mode[data-fsview="warehouses"] .station{ padding:1.5vh 1.2vw; overflow:hidden; height:100%; width:100%; box-sizing:border-box; border:1.5px solid var(--card-border); border-radius:1.2vh; display:flex; flex-direction:column; justify-content:flex-start; min-height:0; min-width:0; }
+  body.fs-mode[data-fsview="warehouses"] .station-head{ margin-bottom:0.7vh; flex:0 0 auto; flex-wrap:wrap; row-gap:0.3vh; }
+  body.fs-mode[data-fsview="warehouses"] .station-head h3{ font-size:1.65vh; flex-wrap:wrap; row-gap:0.2vh; line-height:1.35; }
+  body.fs-mode[data-fsview="warehouses"] .status-chip{ font-size:1.15vh; padding:0.4vh 0.9vh; }
+  body.fs-mode[data-fsview="warehouses"] .fs-range-inline{ display:inline; font-weight:600; color:var(--text-2); }
+  body.fs-mode[data-fsview="warehouses"] .range-badge{ display:none; }
+  body.fs-mode[data-fsview="warehouses"] .station-foot{ display:none; }
   /* الحرارة والرطوبة بصف أفقي وحد (3 متحسسات) مع خط فاصل خفيف بينهن ما يوصل لحافة البوكس */
   body.fs-mode[data-fsview="warehouses"] .gauge-row{ display:flex; flex-direction:row; align-items:flex-start; gap:0; flex:0 0 auto; }
   body.fs-mode[data-fsview="warehouses"] .gauge-row .zone-section{ flex:0 0 auto; margin-bottom:0; min-width:0; position:relative; }
@@ -329,8 +332,6 @@
   body.fs-mode[data-fsview="warehouses"] .read-item{ padding:0.7vh 1vh; }
   body.fs-mode[data-fsview="warehouses"] .read-item .rl{ font-size:1.05vh; margin-bottom:0.25vh; }
   body.fs-mode[data-fsview="warehouses"] .read-item .rv{ font-size:1.35vh; }
-  body.fs-mode[data-fsview="warehouses"] .station-foot{ padding-top:0.9vh; margin-top:1vh; font-size:1.05vh; flex:0 0 auto; }
-  body.fs-mode[data-fsview="warehouses"] .log-btn{ font-size:1.05vh; padding:0.3vh 1vh; }
   body.fs-mode .station{ padding:8px 10px; display:flex; flex-direction:column; justify-content:flex-start; overflow:hidden; min-height:0; }
   body.fs-mode .station-head{ margin-bottom:5px; flex:0 0 auto; }
   body.fs-mode .station-head h3{ font-size:12px; }
@@ -665,7 +666,7 @@ const I18N = {
     secWarehousesTitle:'مراقبة حرارة ورطوبة المخازن',
     zoneTemp:'🌡️ الحرارة', zoneHum:'💧 الرطوبة', sensor1Label:'حساس 1', sensor2Label:'حساس 2', humidityLabel:'الرطوبة',
     diffLabel:'الفرق بين حساسي الحرارة', statusLabel:'حالة الحرارة', humStatusLabel:'حالة الرطوبة', liveData:'بيانات حية', logBtn:'📋 السجل', fwLabel:'نسخة البرنامج المنصّبة بالجهاز (Firmware)',
-    rangeLabel:'🎯 الرينج المسموح', toWord:'إلى',
+    rangeLabel:'🎯 الرينج المسموح', toWord:'إلى', rangeParenLabel:'المدى المسموح لدرجة الحرارة من',
     dialLabelTemp:'Temp. °C', dialLabelHum:'Humidity %',
     chipNormal:'● طبيعي', chipAlert:'⚠ تنبيه', chipOffline:'⛔ غير متصل', statusNormal:'طبيعي', statusRising:'▲ مرتفعة', statusFalling:'▼ منخفضة',
     offlineBannerTitle:'⛔ تم قطع الاتصال مع منظومة متحسسات المنطقة', offlineBannerSince:'منذ', labelOffline:'مخازن غير متصلة',
@@ -705,7 +706,7 @@ const I18N = {
     secWarehousesTitle:'Warehouse Temp & Humidity Monitoring',
     zoneTemp:'🌡️ Temperature', zoneHum:'💧 Humidity', sensor1Label:'Sensor 1', sensor2Label:'Sensor 2', humidityLabel:'Humidity',
     diffLabel:'Temp Sensor Diff', statusLabel:'Temp Status', humStatusLabel:'Humidity Status', liveData:'Live Data', logBtn:'📋 Log', fwLabel:'Firmware version installed on device',
-    rangeLabel:'🎯 Allowed Range', toWord:'to',
+    rangeLabel:'🎯 Allowed Range', toWord:'to', rangeParenLabel:'Allowed temperature range from',
     dialLabelTemp:'Temp. °C', dialLabelHum:'Humidity %',
     chipNormal:'● Normal', chipAlert:'⚠ Alert', chipOffline:'⛔ Offline', statusNormal:'Normal', statusRising:'▲ High', statusFalling:'▼ Low',
     offlineBannerTitle:'⛔ Connection lost with the sensor system for this zone', offlineBannerSince:'since', labelOffline:'Offline Warehouses',
@@ -982,7 +983,7 @@ function buildStationCards(){
     el.className='station'; el.id='st-'+w.id; el.style.animationDelay=(i*0.1)+'s';
     const cfg = adminSettings[w.id] || DEFAULT_RANGE;
     el.innerHTML = `
-      <div class="station-head"><h3><span class="ic">🌾</span> ${whName(i)}</h3><div class="status-chip normal" id="chip-${w.id}">${t('chipNormal')}</div></div>
+      <div class="station-head"><h3><span class="ic">🌾</span> ${whName(i)}<span class="fs-range-inline" id="rangeParen-${w.id}"> (${t('rangeParenLabel')} ${fmtRange(cfg)})</span></h3><div class="status-chip normal" id="chip-${w.id}">${t('chipNormal')}</div></div>
       <div class="offline-banner" id="offlineban-${w.id}"><span class="ob-title">${t('offlineBannerTitle')}</span><span id="offlinesince-${w.id}"></span></div>
       <div class="range-badge"><span class="rb-title">${t('rangeLabel')}</span><span class="rb-val" id="range-${w.id}">${fmtRange(cfg)}</span></div>
       <div class="gauge-row">
@@ -1187,6 +1188,8 @@ window.saveAdmin = function(){
   WAREHOUSES.forEach(w=>{
     const badge = document.getElementById('range-'+w.id);
     if(badge) badge.textContent = fmtRange(adminSettings[w.id]);
+    const paren = document.getElementById('rangeParen-'+w.id);
+    if(paren) paren.textContent = ` (${t('rangeParenLabel')} ${fmtRange(adminSettings[w.id])})`;
   });
   closeAdmin();
 };
@@ -2050,7 +2053,10 @@ async function tryConnectFirebase(){
       if(val){
         WAREHOUSES.forEach(w=>{ if(val[w.id]) adminSettings[w.id] = Object.assign({}, adminSettings[w.id], val[w.id]); });
         localStorage.setItem('qamha_admin_settings', JSON.stringify(adminSettings));
-        WAREHOUSES.forEach(w=>{ const badge = document.getElementById('range-'+w.id); if(badge) badge.textContent = fmtRange(adminSettings[w.id]); });
+        WAREHOUSES.forEach(w=>{
+          const badge = document.getElementById('range-'+w.id); if(badge) badge.textContent = fmtRange(adminSettings[w.id]);
+          const paren = document.getElementById('rangeParen-'+w.id); if(paren) paren.textContent = ` (${t('rangeParenLabel')} ${fmtRange(adminSettings[w.id])})`;
+        });
       } else {
         set(ref(db, 'adminSettings'), adminSettings).catch(e=>console.warn('initial adminSettings push failed', e));
       }
