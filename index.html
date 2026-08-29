@@ -120,6 +120,7 @@
   .status-chip.normal{ background: rgba(46,230,166,0.1); color:var(--ok); border:1px solid rgba(46,230,166,0.35); }
   .status-chip.alert{ background: rgba(255,20,20,0.14); color:var(--danger-bright); border:1px solid rgba(255,20,20,0.45); font-weight:800; }
   .status-chip.offline{ background: rgba(140,140,150,0.18); color:#9aa0ac; border:1px solid rgba(154,160,172,0.5); font-weight:800; }
+  .status-chip.pending{ background: rgba(140,140,150,0.12); color:#9aa0ac; border:1px solid rgba(154,160,172,0.4); font-weight:700; }
   .station.is-offline{ border-color:#8a8f9a; box-shadow:0 0 0 1px rgba(154,160,172,0.35); }
   .offline-banner{ display:none !important; }
   .offline-banner .ob-title{ font-weight:800; color:#e6e9ee; display:block; margin-bottom:3px; }
@@ -532,7 +533,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 1.0.7</div>
+      <div class="brand-version">Ver 1.0.8</div>
     </div>
   </footer>
 </div>
@@ -702,7 +703,7 @@ const I18N = {
     diffLabel:'الفرق بين حساسي الحرارة', statusLabel:'حالة الحرارة', humStatusLabel:'حالة الرطوبة', liveData:'بيانات حية', logBtn:'📋 السجل', fwLabel:'نسخة البرنامج المنصّبة بالجهاز (Firmware)',
     rangeLabel:'🎯 الرينج المسموح', toWord:'إلى', rangeParenLabel:'المدى المسموح لدرجة الحرارة من',
     dialLabelTemp:'Temp. °C', dialLabelHum:'Humidity %',
-    chipNormal:'● طبيعي', chipAlert:'⚠ تنبيه', chipOffline:'⛔ غير متصل', statusNormal:'طبيعي', statusRising:'▲ مرتفعة', statusFalling:'▼ منخفضة', statusNa:'--',
+    chipNormal:'● طبيعي', chipAlert:'⚠ تنبيه', chipOffline:'⛔ غير متصل', chipPending:'-- ما وصلت بيانات', statusNormal:'طبيعي', statusRising:'▲ مرتفعة', statusFalling:'▼ منخفضة', statusNa:'--',
     offlineBannerTitle:'⛔ تم قطع الاتصال مع منظومة متحسسات المنطقة', offlineBannerSince:'منذ', labelOffline:'مخازن غير متصلة',
     logTitlePrefix:'سجل الأحداث — ', alertsOnlyLabel:'عرض التنبيهات فقط', exportLabel:'⬇ تصدير Excel',
     logFromLabel:'من', logToLabel:'إلى', clearFilterLabel:'✕ مسح الفلترة', loadingLabel:'جاري التحميل...',
@@ -742,7 +743,7 @@ const I18N = {
     diffLabel:'Temp Sensor Diff', statusLabel:'Temp Status', humStatusLabel:'Humidity Status', liveData:'Live Data', logBtn:'📋 Log', fwLabel:'Firmware version installed on device',
     rangeLabel:'🎯 Allowed Range', toWord:'to', rangeParenLabel:'Allowed temperature range from',
     dialLabelTemp:'Temp. °C', dialLabelHum:'Humidity %',
-    chipNormal:'● Normal', chipAlert:'⚠ Alert', chipOffline:'⛔ Offline', statusNormal:'Normal', statusRising:'▲ High', statusFalling:'▼ Low', statusNa:'--',
+    chipNormal:'● Normal', chipAlert:'⚠ Alert', chipOffline:'⛔ Offline', chipPending:'-- No Data', statusNormal:'Normal', statusRising:'▲ High', statusFalling:'▼ Low', statusNa:'--',
     offlineBannerTitle:'⛔ Connection lost with the sensor system for this zone', offlineBannerSince:'since', labelOffline:'Offline Warehouses',
     logTitlePrefix:'Event Log — ', alertsOnlyLabel:'Alerts only', exportLabel:'⬇ Export Excel',
     logFromLabel:'From', logToLabel:'To', clearFilterLabel:'✕ Clear filter', loadingLabel:'Loading...',
@@ -812,13 +813,6 @@ loadAdminSettings();
 function isValidSensorReading(v){
   return v!==undefined && v!==null && !isNaN(v) && Number(v) > -500;
 }
-function computeTempStatus(wId, avgValue, cfg){
-  if(avgValue===undefined || avgValue===null || isNaN(avgValue)) return 'normal';
-  if(avgValue > cfg.tempMax) return 'rising';
-  if(avgValue < cfg.tempMin) return 'falling';
-  return 'normal';
-}
-
 // حالة الحرارة العامة للبطاقة: تفحص كل متحسس لحاله، مو المعدل بينهم —
 // أي متحسس واحد يطلع فوق الحد الأعلى تصير الحالة "مرتفعة"، وإذا ماكو متحسس فوق الحد
 // بس فيه واحد تحت الحد الأدنى تصير "منخفضة"، وإلا "طبيعي"
@@ -1018,7 +1012,7 @@ function buildStationCards(){
     const cfg = adminSettings[w.id] || DEFAULT_RANGE;
     el.innerHTML = `
       <div class="station-inner">
-      <div class="station-head"><h3><span class="ic">🌾</span> ${whName(i)}<span class="fs-range-inline" id="rangeParen-${w.id}"> (${t('rangeParenLabel')} ${fmtRange(cfg)})</span></h3><div class="status-chip normal" id="chip-${w.id}">${t('chipNormal')}</div></div>
+      <div class="station-head"><h3><span class="ic">🌾</span> ${whName(i)}<span class="fs-range-inline" id="rangeParen-${w.id}"> (${t('rangeParenLabel')} ${fmtRange(cfg)})</span></h3><div class="status-chip pending" id="chip-${w.id}">${t('chipPending')}</div></div>
       <div class="offline-banner" id="offlineban-${w.id}"><span class="ob-title">${t('offlineBannerTitle')}</span><span id="offlinesince-${w.id}"></span></div>
       <div class="range-badge"><span class="rb-title">${t('rangeLabel')}</span><span class="rb-val" id="range-${w.id}">${fmtRange(cfg)}</span></div>
       <div class="gauge-row">
@@ -1293,6 +1287,8 @@ function renderStation(w, data){
   const humBreach = humPresent && data.humStatus !== 'normal';
   // حالة التنبيه العامة للبطاقة (الشارة + الإطار) تعتمد على تجاوز رينج الحرارة أو الرطوبة، مو بس فرق الحساسين اللي يرسله الجهاز
   const alertFlag = !!data.alert || s1Breach || s2Breach || humBreach;
+  // ما وصلت ولا قراءة حقيقة واحدة (لا حرارة ولا رطوبة) - ما نصلح نقول "طبيعي" لأنه ما فيه شي نتأكد منه أصلاً
+  const anyRealData = s1Present || s2Present || humPresent;
   if(alertFlag && !alertSinceMem[w.id]) alertSinceMem[w.id] = Date.now();
   if(!alertFlag) delete alertSinceMem[w.id];
 
@@ -1351,8 +1347,13 @@ function renderStation(w, data){
   if(fwEl) fwEl.textContent = data.fw ? ('FW ' + data.fw) : '';
 
   const chip = document.getElementById('chip-'+w.id);
-  chip.className = 'status-chip ' + (alertFlag?'alert':'normal');
-  chip.textContent = alertFlag ? t('chipAlert') : t('chipNormal');
+  if(!anyRealData){
+    chip.className = 'status-chip pending';
+    chip.textContent = t('chipPending');
+  } else {
+    chip.className = 'status-chip ' + (alertFlag?'alert':'normal');
+    chip.textContent = alertFlag ? t('chipAlert') : t('chipNormal');
+  }
 
   pushLog(w.id, data);
   if(currentLogWarehouse===w.id) window.renderLogTable();
