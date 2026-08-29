@@ -4,8 +4,8 @@
    - يستقبل إشعارات Push حتى إذا المتصفح/التطبيق مسكر (عن طريق Firebase Cloud Messaging)
    ========================================================== */
 
-const CACHE_NAME = 'qamha-scada-v1';
-const CACHE_FILES = ['./index.html', './manifest.json', './icon.svg'];
+const CACHE_NAME = 'qamha-scada-v2';
+const CACHE_FILES = ['./index.html', './manifest.json', './icon.svg', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
