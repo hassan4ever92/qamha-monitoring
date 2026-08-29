@@ -304,13 +304,14 @@
 
   body.fs-mode .grid{ display:grid; grid-template-columns:1fr; grid-auto-rows:minmax(0,1fr); gap:8px; height:100%; min-height:0; overflow-y:auto; }
   body.fs-mode[data-fsview="warehouses"] .grid{ display:grid; grid-template-columns:repeat(3,1fr); grid-auto-rows:minmax(0,1fr); gap:1.4vh 1.1vw; height:100%; overflow:hidden; align-content:stretch; align-items:stretch; }
-  body.fs-mode[data-fsview="warehouses"] .station{ padding:1.5vh 1.2vw; overflow:hidden; height:100%; width:100%; box-sizing:border-box; border:1.5px solid var(--card-border); border-radius:1.2vh; display:flex; flex-direction:column; justify-content:flex-start; min-height:0; min-width:0; }
-  body.fs-mode[data-fsview="warehouses"] .station-head{ margin-bottom:0.7vh; flex:0 0 auto; flex-wrap:wrap; row-gap:0.3vh; }
-  body.fs-mode[data-fsview="warehouses"] .station-head h3{ font-size:1.65vh; flex-wrap:wrap; row-gap:0.2vh; line-height:1.35; }
-  body.fs-mode[data-fsview="warehouses"] .status-chip{ font-size:1.15vh; padding:0.4vh 0.9vh; }
+  body.fs-mode[data-fsview="warehouses"] .station{ padding:0.9vh 1.2vw; overflow:hidden; height:100%; width:100%; box-sizing:border-box; border:1.5px solid var(--card-border); border-radius:1.2vh; display:flex; flex-direction:column; justify-content:flex-start; min-height:0; min-width:0; }
+  body.fs-mode[data-fsview="warehouses"] .station-head{ margin-bottom:0.3vh; flex:0 0 auto; flex-wrap:wrap; row-gap:0.2vh; }
+  body.fs-mode[data-fsview="warehouses"] .station-head h3{ font-size:1.4vh; flex-wrap:wrap; row-gap:0.15vh; line-height:1.25; }
+  body.fs-mode[data-fsview="warehouses"] .status-chip{ font-size:1vh; padding:0.35vh 0.8vh; }
   body.fs-mode[data-fsview="warehouses"] .fs-range-inline{ display:inline; font-weight:600; color:var(--text-2); }
   body.fs-mode[data-fsview="warehouses"] .range-badge{ display:none; }
   body.fs-mode[data-fsview="warehouses"] .station-foot{ display:none; }
+  body.fs-mode[data-fsview="warehouses"] .offline-banner{ padding:0.4vh 0.9vh; font-size:0.95vh; margin-bottom:0.3vh; }
   /* الحرارة والرطوبة بصف أفقي وحد (3 متحسسات) مع خط فاصل خفيف بينهن ما يوصل لحافة البوكس */
   body.fs-mode[data-fsview="warehouses"] .gauge-row{ display:flex; flex-direction:row; align-items:flex-start; gap:0; flex:0 0 auto; }
   body.fs-mode[data-fsview="warehouses"] .gauge-row .zone-section{ flex:0 0 auto; margin-bottom:0; min-width:0; position:relative; }
@@ -319,19 +320,19 @@
     content:''; position:absolute; inset-inline-start:0; top:6px; bottom:6px; width:1px;
     background: var(--card-border);
   }
-  body.fs-mode[data-fsview="warehouses"] .zone-title{ display:flex; font-size:1.25vh; margin-bottom:0.7vh; }
+  body.fs-mode[data-fsview="warehouses"] .zone-title{ display:flex; font-size:0.95vh; margin-bottom:0.3vh; }
   body.fs-mode[data-fsview="warehouses"] .gauges{ gap:1vh; justify-content:flex-start; }
-  body.fs-mode[data-fsview="warehouses"] .gauge-wrap{ width:7.6vh; height:7.6vh; margin-bottom:0.4vh; }
-  body.fs-mode[data-fsview="warehouses"] .gauge-digital-panel{ padding:0.2vh 0.8vh; margin-top:0; }
-  body.fs-mode[data-fsview="warehouses"] .gauge-digital{ font-size:1.85vh; }
-  body.fs-mode[data-fsview="warehouses"] .gauge-digital.g-pending{ font-size:0.85vh; letter-spacing:0; white-space:nowrap; }
-  body.fs-mode[data-fsview="warehouses"] .gauge-unit{ font-size:1vh; }
-  body.fs-mode[data-fsview="warehouses"] .gauge-label{ font-size:1.05vh; line-height:1.3; }
-  body.fs-mode[data-fsview="warehouses"] .pending-badge{ font-size:0.9vh; padding:0.2vh 0.7vh; margin-top:0.3vh; }
-  body.fs-mode[data-fsview="warehouses"] .readings{ gap:0.8vh; margin:1vh 0 0; flex:0 0 auto; }
-  body.fs-mode[data-fsview="warehouses"] .read-item{ padding:0.7vh 1vh; }
-  body.fs-mode[data-fsview="warehouses"] .read-item .rl{ font-size:1.05vh; margin-bottom:0.25vh; }
-  body.fs-mode[data-fsview="warehouses"] .read-item .rv{ font-size:1.35vh; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-wrap{ width:4.8vh; height:4.8vh; margin-bottom:0.2vh; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-digital-panel{ padding:0.1vh 0.5vh; margin-top:0; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-digital{ font-size:1.35vh; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-digital.g-pending{ font-size:0.68vh; letter-spacing:0; white-space:nowrap; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-unit{ font-size:0.8vh; margin-top:1px; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-label{ font-size:0.8vh; line-height:1.2; margin-top:1px; max-width:10vh; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  body.fs-mode[data-fsview="warehouses"] .pending-badge{ display:none; }
+  body.fs-mode[data-fsview="warehouses"] .readings{ gap:0.5vh; margin:0.4vh 0 0; flex:0 0 auto; }
+  body.fs-mode[data-fsview="warehouses"] .read-item{ padding:0.45vh 0.8vh; }
+  body.fs-mode[data-fsview="warehouses"] .read-item .rl{ font-size:0.85vh; margin-bottom:0.15vh; }
+  body.fs-mode[data-fsview="warehouses"] .read-item .rv{ font-size:1.05vh; }
 
   /* نظرة عامة (overview): قائمة مخازن مضغوطة بجانب الحريق والغاز - بدون عقارب دائرية (تتشوه بارتفاع صف صغير) */
   body.fs-mode[data-fsview="overview"] .grid{ gap:0.5vh; }
@@ -1296,11 +1297,24 @@ function renderStation(w, data){
   humStatusEl.className = 'rv status-' + data.humStatus;
   humStatusEl.textContent = t('status'+cap(data.humStatus));
 
-  // ملاحظة: data.timestamp اللي يرسله الجهاز هو millis() (وقت التشغيل الداخلي للجهاز)
-  // مو ساعة حقيقية، فما نصلح نقارنه بالوقت الفعلي - نسجل وقت وصول البيانات للمتصفح بدالها
-  // ونعرضه كعداد حي بالدقائق (يتحدث لحاله عن طريق tickStationAges حتى بين التحديثات)
-  lastSeenLocal[w.id] = Date.now();
-  if(isOfflineLocal[w.id]) setStationOffline(w.id, false); // وصلت بيانات جديدة = رجع الاتصال
+  // مهم: onValue() بفايربيس يشتغل فوراً بأول اشتراك بآخر قيمة مخزنة بالسيرفر حتى لو قديمة
+  // (مثلاً الجهاز مطفي من ساعات وآخر قراءة وصلت وقتها لسا محفوظة) - فلو اعتمدنا وقت "وصول
+  // البيانات للمتصفح" بس، كل ما نفتح الداشبورد من جديد يعطينا 3 دقائق سماح وهمية حتى لو
+  // الجهاز مقطوع فعلياً من زمان. لهذا نستخدم data.timestamp (وقت حقيقي مزامن NTP يرسله
+  // الجهاز نفسه) لمعرفة عمر القراءة الفعلي، ونرجع لوقت الوصول بالمتصفح بس لو الجهاز لسا
+  // ما زامن وقته الحقيقي (قيمة صغيرة/صفر قبل نجاح NTP).
+  const NTP_EPOCH_SANITY_MS = 1700000000000; // أي رقم أقل من هذا يعني وقت الجهاز مو مزامن حقيقي بعد
+  if(data.timestamp && Number(data.timestamp) > NTP_EPOCH_SANITY_MS){
+    lastSeenLocal[w.id] = Number(data.timestamp);
+  } else {
+    lastSeenLocal[w.id] = Date.now();
+  }
+  // نحدد "متصل/منقطع" حسب عمر القراءة الفعلي (مو بس مجرد إن renderStation انسدت) - حتى
+  // أول قراءة توصل لصفحة مفتوحة حديثاً ممكن تكون هي نفسها قديمة (آخر قيمة محفوظة بفايربيس
+  // من قبل ما ينقطع الجهاز)، فما نصلح نعتبرها "رجع الاتصال" إلا لو فعلاً حديثة
+  const isFreshNow = (Date.now() - lastSeenLocal[w.id]) <= OFFLINE_THRESHOLD_MS;
+  if(isFreshNow && isOfflineLocal[w.id]) setStationOffline(w.id, false); // وصلت بيانات حديثة فعلاً = رجع الاتصال
+  else if(!isFreshNow && !isOfflineLocal[w.id]) setStationOffline(w.id, true); // القراءة قديمة من أول ما وصلت = منقطع فعلاً
   updateStationAge(w.id);
   const fwEl = document.getElementById('fw-'+w.id);
   if(fwEl) fwEl.textContent = data.fw ? ('FW ' + data.fw) : '';
@@ -1370,6 +1384,7 @@ function checkOfflineStations(){
 }
 function tickStationAges(){ WAREHOUSES.forEach(w=>updateStationAge(w.id)); checkOfflineStations(); }
 setInterval(tickStationAges, 15000); // نحدثها كل 15 ثانية - يكفي لعداد دقائق وكشف الانقطاع
+tickStationAges(); // فحص فوري بأول تحميل بدل ما نستنى أول دورة (15 ثا) حتى نكتشف الانقطاع بأسرع وقت
 
 function renderSummary(){
   const vals = Object.values(state);
