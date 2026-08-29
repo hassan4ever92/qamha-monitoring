@@ -271,7 +271,7 @@
   .brand-footer{ margin-top:14px; padding-top:14px; border-top:1px solid var(--card-border); display:flex; flex-direction:column; align-items:center; gap:5px; }
   .brand-version{ font-size:9.5px; color:var(--text-2); opacity:.55; letter-spacing:.3px; direction:ltr; }
   .brand-logo{ font-size:15px; font-weight:900; background: linear-gradient(135deg, var(--wheat), var(--accent)); -webkit-background-clip:text; background-clip:text; color:transparent; letter-spacing:.6px; }
-  .brand-owner{ font-size:10px; color:var(--text-2); }
+  .brand-owner{ font-size:10px; color:var(--text-2); direction:ltr; }
 
   @media (max-width: 700px){ .summary{ grid-template-columns: 1fr; } }
 
@@ -436,7 +436,7 @@
     <div class="header-toolbar">
       <div class="toolbar-group">
         <div class="clock"><div class="time" id="clockTime">--:--:--</div><div class="date" id="clockDate">--/--/----</div></div>
-        <div class="conn-badge" id="connBadge"><span class="dot"></span><span id="connText">Demo</span></div>
+        <div class="conn-badge offline" id="connBadge"><span class="dot"></span><span id="connText">...</span></div>
       </div>
       <div class="toolbar-group">
         <button class="icon-btn" id="thresholdSilenceBtn" onclick="silenceThresholdAlert()" title="Silence" style="display:none;color:var(--danger);">🔇</button>
@@ -524,11 +524,10 @@
   </div>
 
   <footer>
-    <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز — تعمل حالياً ببيانات تجريبية</div>
+    <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
-      <div class="brand-logo">🔗 روابط الإبداع</div>
-      <div class="brand-owner" data-i18n="companyOwnership">جميع حقوق هذا البرنامج مملوكة لشركة روابط الإبداع</div>
-      <div class="brand-version">By Creativity Linkers — Ver 1.0.1</div>
+      <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
+      <div class="brand-version">Ver 1.0.1</div>
     </div>
   </footer>
 </div>
@@ -729,8 +728,8 @@ const I18N = {
     fireMapGridNote:'كل 18 متحسس ينحطون بنفس الزون بالتسلسل، وبعدها ينتقل تلقائياً للزون التالي.',
     gasTitle:'منظومة مراقبة تسرب الغاز', gasMasterOk:'✅ لا يوجد تسرب', gasMasterAlarm:'🚨 تسرب غاز!', gasMasterFault:'⚠ يوجد عطل',
     gasStatusSafe:'آمن', gasStatusWarning:'تحذير', gasStatusDanger:'خطر تسرب', gasStatusFault:'عطل',
-    footerLine1:'منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز — تعمل حالياً ببيانات تجريبية',
-    companyOwnership:'جميع حقوق هذا البرنامج مملوكة لشركة روابط الإبداع', optDark:'🌙 داكن', optLight:'☀️ فاتح', warehouseWord:'مخزن' },
+    footerLine1:'منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز',
+    optDark:'🌙 داكن', optLight:'☀️ فاتح', warehouseWord:'مخزن' },
   en:{ title:'Qamha Scada System', navOverview:'🏭 Overview', navWarehouses:'🌡️ Warehouse Temps', navFire:'🔥 Fire Alarm', navGas:'🛢️ Gas Leak',
     labelActive:'Active Systems', labelLastUpdate:'Last Update', labelAlerts:'Active Alerts (click for details)',
     secWarehousesTitle:'Warehouse Temp & Humidity Monitoring',
@@ -769,8 +768,8 @@ const I18N = {
     fireMapGridNote:'Every 18 sensors are assigned to the same zone in sequence, then it automatically moves to the next zone.',
     gasTitle:'Gas Leak Monitoring System', gasMasterOk:'✅ No Leak Detected', gasMasterAlarm:'🚨 Gas Leak!', gasMasterFault:'⚠ Fault Present',
     gasStatusSafe:'Safe', gasStatusWarning:'Warning', gasStatusDanger:'Danger', gasStatusFault:'Fault',
-    footerLine1:'Internal platform for monitoring warehouses, fire and gas systems — currently running demo data',
-    companyOwnership:'All rights of this software belong to Rawabet Al-Ibda Company', optDark:'🌙 Dark', optLight:'☀️ Light', warehouseWord:'Warehouse' }
+    footerLine1:'Internal platform for monitoring warehouses, fire and gas systems',
+    optDark:'🌙 Dark', optLight:'☀️ Light', warehouseWord:'Warehouse' }
 };
 function t(k){ return (I18N[currentLang] && I18N[currentLang][k]) || k; }
 function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
@@ -1082,7 +1081,7 @@ function toDatetimeLocalValue(d){
 // يجيب سجل الأحداث الدائم من Firebase (/logs/{warehouse_id}) للفترة المحددة (من/إلى) -
 // هذا السجل يبقى محفوظ بقاعدة البيانات لأشهر، مو مرتبط بذاكرة المتصفح المؤقتة
 async function fetchLogRowsFromFirebase(wId){
-  if(!fbDb || !fbRef){ return []; } // وضع تجريبي (Demo) بدون Firebase حقيقي - ماكو سجل دائم
+  if(!fbDb || !fbRef){ return []; } // فايربيس مو متصل - ماكو سجل دائم متوفر
   const fromVal = document.getElementById('logFromInput').value;
   const toVal = document.getElementById('logToInput').value;
   const logRef = fbRef(fbDb, 'logs/'+wId);
@@ -1998,11 +1997,6 @@ function initMapResizeObserver(){
   if(main) ro.observe(main);
 }
 
-function tickFireDemo(){
-  fireZones.forEach(z=>{ if(Math.random()<0.015){ const r=Math.random(); z.status = r<0.6?'normal':(r<0.85?'fault':'alarm'); } });
-  renderFireZones();
-}
-
 /* ==========================================================
    منظومة مراقبة تسرب الغاز (16 زون - محاكاة)
    ========================================================== */
@@ -2039,47 +2033,10 @@ function renderGasZones(){
 window.gasSilence = function(){ gasSilenced = !gasSilenced; renderGasZones(); };
 window.gasReset = function(){ gasZones.forEach(z=>{ z.status='safe'; z.ppm=50+Math.random()*80; }); gasSilenced=false; renderGasZones(); };
 window.gasTest = function(){ const z = gasZones[Math.floor(Math.random()*gasZones.length)]; z.ppm=520; z.status='danger'; renderGasZones(); };
-function tickGasDemo(){
-  gasZones.forEach(z=>{
-    if(z.status!=='fault'){
-      z.ppm = Math.max(20, z.ppm + (Math.random()-0.5)*30);
-      if(Math.random()<0.01) z.ppm += 300;
-      z.status = gasStatusFromPpm(z.ppm);
-    }
-    if(Math.random()<0.005) z.status='fault';
-  });
-  renderGasZones();
-}
-
-/* ==========================================================
-   وضع العرض التجريبي للمخازن (Demo)
-   ========================================================== */
-function seedDemo(){
-  WAREHOUSES.forEach((w,i)=>{
-    const base = 20 + i*8;
-    state[w.id] = { sensor1:base+Math.random()*2, sensor2:base+Math.random()*2, average:base, diff:Math.random()*1.2, alert:false, humidity:40+Math.random()*20, timestamp:Date.now() };
-  });
-}
-function tickDemo(){
-  WAREHOUSES.forEach((w,i)=>{
-    const d = state[w.id];
-    d.sensor1 = clamp(d.sensor1 + (Math.random()-0.5)*1.4, TEMP_MIN, TEMP_MAX);
-    d.sensor2 = clamp(d.sensor2 + (Math.random()-0.5)*(i===1?3.2:1.4), TEMP_MIN, TEMP_MAX);
-    d.average = (d.sensor1+d.sensor2)/2;
-    d.diff = Math.abs(d.sensor1-d.sensor2);
-    d.alert = d.diff > ALERT_DIFF;
-    d.humidity = clamp(d.humidity + (Math.random()-0.5)*2, 20, 80);
-    d.timestamp = Date.now();
-    renderStation(w, d);
-  });
-  renderSummary();
-}
-function clamp(v,mn,mx){ return Math.max(mn, Math.min(mx, v)); }
-
 let fbDb = null, fbRef = null, fbSet = null, fbQuery = null, fbOrderByKey = null, fbStartAt = null, fbEndAt = null, fbGet = null, fbLimitToLast = null;
 
 async function tryConnectFirebase(){
-  if(firebaseConfig.apiKey === "YOUR_API_KEY"){ startDemo(); return; }
+  if(firebaseConfig.apiKey === "YOUR_API_KEY"){ setConnBadge(false); console.error('Firebase config missing — set firebaseConfig with real project credentials.'); return; }
   try{
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
     const { getDatabase, ref, onValue, set, query, orderByKey, startAt, endAt, get, limitToLast } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js");
@@ -2105,20 +2062,10 @@ async function tryConnectFirebase(){
         set(ref(db, 'adminSettings'), adminSettings).catch(e=>console.warn('initial adminSettings push failed', e));
       }
     });
-  }catch(e){ console.warn('Firebase connect failed, demo mode:', e); startDemo(); }
+  }catch(e){ console.error('Firebase connect failed:', e); setConnBadge(false); }
 }
-function startDemo(){
-  setConnBadge(false, true);
-  seedDemo();
-  Object.keys(state).forEach(id=>{ const w=WAREHOUSES.find(x=>x.id===id); renderStation(w, state[id]); });
-  renderSummary();
-  setInterval(tickDemo, 3000);
-  setInterval(tickFireDemo, 4000);
-  setInterval(tickGasDemo, 3500);
-}
-function setConnBadge(online, demo){
+function setConnBadge(online){
   const badge=document.getElementById('connBadge'), text=document.getElementById('connText');
-  if(demo){ badge.classList.remove('offline'); text.textContent='Demo'; return; }
   badge.classList.toggle('offline', !online); text.textContent = online ? 'Live' : 'Offline';
 }
 
