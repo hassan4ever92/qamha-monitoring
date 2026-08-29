@@ -210,6 +210,9 @@
   .zone-tile.disabled .zstatus{ color:var(--text-2); }
   .zone-tile.offline{ border-color: rgba(154,160,172,.35); background: rgba(140,140,150,.06); opacity:.7; }
   .zone-tile.offline .zstatus{ color:#9aa0ac; }
+  /* زونات الحريق فقط قابلة للضغط (تودي لمكانها بالخريطة) - زونات الغاز ماعندها خرائط فتبقى بدون تأثير هوفر */
+  #fireZonesGrid .zone-tile{ cursor:pointer; }
+  #fireZonesGrid .zone-tile:hover{ border-color: var(--accent); transform: translateY(-2px); }
   .zone-tile.alarm, .zone-tile.danger{ border-color: rgba(255,59,92,.8); background: rgba(255,59,92,.1); animation: zoneAlarm .9s ease-in-out infinite; }
   .zone-tile.alarm .zstatus, .zone-tile.danger .zstatus{ color:var(--danger); font-weight:900; }
   .zone-tile.alarm .zicon, .zone-tile.danger .zicon{ animation: zoneShake .4s ease-in-out infinite; }
@@ -282,6 +285,10 @@
   }
   .map-pin.alarm::after{ animation-delay:.55s; }
   @keyframes pinRipple{ 0%{ transform:scale(1); opacity:.9; } 100%{ transform:scale(3.4); opacity:0; } }
+  /* إطار هندسي منظم يحيط بكل متحسسات الزون المحدد على الخريطة (يظهر مؤقتاً عند الضغط على أي زون) -
+     لون محايد (accent) مو أحمر حتى ما يوحي بإنذار وهمي لزون سليم تم الضغط عليه فقط للتنقل */
+  .zone-bound-box{ position:absolute; border:2px dashed var(--accent); border-radius:14px; pointer-events:none; z-index:6; box-sizing:border-box; animation: zoneBoundPulse 1s ease-in-out infinite; }
+  @keyframes zoneBoundPulse{ 0%,100%{ opacity:.5; } 50%{ opacity:1; } }
   .map-pin .pin-del{ position:absolute; top:-9px; left:-9px; width:16px; height:16px; border-radius:50%; background:var(--danger); color:#fff; font-size:10px; display:flex; align-items:center; justify-content:center; line-height:1; }
   .map-popup{ position:absolute; background: var(--bg-2); border:1px solid var(--card-border); border-radius:10px; padding:10px 14px; font-size:11px; box-shadow:0 10px 26px rgba(0,0,0,.55); z-index:30; min-width:140px; transform:translate(-50%,-115%); }
   .map-popup .mp-close{ position:absolute; top:5px; left:6px; cursor:pointer; color:var(--text-2); font-size:11px; }
@@ -584,7 +591,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 1.4.0</div>
+      <div class="brand-version">Ver 1.5.0</div>
     </div>
   </footer>
 </div>
@@ -1893,9 +1900,12 @@ function stopSiren(){
 }
 function buildFireZones(){
   const grid = document.getElementById('fireZonesGrid'); grid.innerHTML='';
+  const sysIdAtBuildTime = currentFireSystemId; // نثبتها بوقت البناء حتى الضغط يودي لنفس الزون بنفس المنظومة الصح دائماً
   fireZones.forEach(z=>{
     const tile = document.createElement('div'); tile.className='zone-tile offline'; tile.id='fireZonesGrid-z'+z.id;
     tile.innerHTML = `<div class="zn">${t('zoneWord')} ${z.id}</div><div class="zicon">⛔</div><div class="zstatus">${t('fireStatusOffline')}</div>`;
+    // أي زون (سواء بحالة إنذار أو طبيعي أو غير متصل) قابل للضغط - يودي مباشرة لمكانه بالخريطة
+    tile.onclick = ()=> window.goToFireZone(sysIdAtBuildTime, z.id);
     grid.appendChild(tile);
   });
 }
@@ -2018,7 +2028,7 @@ window.openFireMapView = function(systemId, mapId){
   if(titleEl) titleEl.textContent = '🗺️ ' + currentFireSystem().name + (map && map.name ? (' — ' + map.name) : '');
   const container = document.getElementById('fireMapViewContainer');
   if(container){
-    container.querySelectorAll('.map-pin, img, .map-empty').forEach(el=>el.remove());
+    container.querySelectorAll('.map-pin, img, .map-empty, .zone-bound-box').forEach(el=>el.remove());
     window.removeMapPopup();
     if(map && map.imageUrl){
       ensureMapImage(container, ()=> renderFireMapMainPins(container));
@@ -2577,9 +2587,34 @@ function renderFireAlertsPanelList(alarms){
     </div>`;
   }).join('');
 }
-/* ---------- الانتقال المباشر لزون معين ضمن منظومته (من التنبيه) - يبدل المنظومة المعروضة،
-   يمرر ويومض للزون بالشبكة، ويمرر للخريطة لو عندها دبوس لهذا الزون (يطلع أحمر نابض تلقائياً
-   لأن renderFireMapMainPins أصلاً يلوّن الدبوس حسب حالة الزون الحقيقية) ---------- */
+/* ---------- تمييز كل متحسسات زون معين على الخريطة بطريقة هندسية منظمة: كل الدبابيس الي تخص
+   هذا الزون (ممكن تكون أكثر من متحسس بمواقع مختلفة) توضّها بالوميض، وننزل إطار متقطع منظم
+   (مستطيل محيط) حول أصغر مساحة تغطي كل هذه الدبابيس، حتى العين توصل لحدود الزون بسرعة وبوضوح ---------- */
+function highlightZoneOnMap(container, zoneId){
+  if(!container) return;
+  const old = container.querySelector('.zone-bound-box'); if(old) old.remove();
+  const pins = Array.from(container.querySelectorAll('.map-pin[data-zone-id="'+zoneId+'"]'));
+  if(pins.length===0) return null;
+  pins.forEach(p=>{
+    p.classList.add('flash-highlight');
+    setTimeout(()=>p.classList.remove('flash-highlight'), 2600);
+  });
+  const xs = pins.map(p=>parseFloat(p.style.left)||0);
+  const ys = pins.map(p=>parseFloat(p.style.top)||0);
+  const pad = 24;
+  const minX = Math.min(...xs)-pad, maxX = Math.max(...xs)+pad;
+  const minY = Math.min(...ys)-pad, maxY = Math.max(...ys)+pad;
+  const box = document.createElement('div');
+  box.className = 'zone-bound-box';
+  box.style.left = minX+'px'; box.style.top = minY+'px';
+  box.style.width = Math.max(20, maxX-minX)+'px'; box.style.height = Math.max(20, maxY-minY)+'px';
+  container.appendChild(box);
+  setTimeout(()=>{ if(box.parentNode) box.remove(); }, 3200);
+  return pins[0];
+}
+/* ---------- الانتقال المباشر لزون معين ضمن منظومته (من الضغط على تنبيه، أو من الضغط على أي
+   زون بالشبكة سواء بإنذار أو طبيعي أو غير متصل) - يبدل المنظومة المعروضة، يمرر ويومض للزون
+   بالشبكة، وينقلنا مباشرة لمكانه على الخريطة الصح ويحدده بإطار منظم (highlightZoneOnMap) ---------- */
 window.goToFireZone = function(systemId, zoneId){
   closeFireAlertsPanel();
   // نلاقي أي خريطة (من عدة خرائط ممكنة لهذي المنظومة) فيها دبوس لهذا الزون بالتحديد، ونفتحها
@@ -2595,30 +2630,22 @@ window.goToFireZone = function(systemId, zoneId){
       setTimeout(()=>tile.classList.remove('flash-highlight'), 2600);
       try{ tile.scrollIntoView({behavior:'smooth', block:'center'}); }catch(e){}
     }
-    if(!fireMapData || !fireMapData.imageUrl) return;
+    if(!targetMap || !fireMapData || !fireMapData.imageUrl) return;
     const isKiosk = document.body.classList.contains('fs-mode');
     if(isKiosk){
       // وضع الكشك (fullscreen) - الخريطة الحية مدمجة مباشرة بالشاشة زي ما كانت، نفس السلوك السابق
       const mapContainer = document.getElementById('fireMapMainContainer');
-      const pinEl = mapContainer ? mapContainer.querySelector('.map-pin[data-zone-id="'+zoneId+'"]') : null;
+      const pinEl = highlightZoneOnMap(mapContainer, zoneId);
       const scrollTarget = pinEl || mapContainer;
       if(scrollTarget){ try{ scrollTarget.scrollIntoView({behavior:'smooth', block:'center'}); }catch(e){} }
-      if(pinEl){
-        pinEl.classList.add('flash-highlight');
-        setTimeout(()=>pinEl.classList.remove('flash-highlight'), 2600);
-      }
-    } else if(targetMap){
+    } else {
       // التصفح العادي (بطاقات/أيقونات الخرائط) - نفتح نافذة عرض الخريطة تلقائياً على الخريطة
-      // الصح بالتحديد، ونومض دبوس الزون المحترق فيها (يطلع أحمر نابض أصلاً من renderFireMapMainPins)
+      // الصح بالتحديد، ونحدد كل متحسسات هذا الزون فيها بإطار منظم وميض واضح
       window.openFireMapView(systemId, targetMap.id);
       setTimeout(()=>{
         const viewContainer = document.getElementById('fireMapViewContainer');
-        const pinEl = viewContainer ? viewContainer.querySelector('.map-pin[data-zone-id="'+zoneId+'"]') : null;
-        if(pinEl){
-          pinEl.classList.add('flash-highlight');
-          setTimeout(()=>pinEl.classList.remove('flash-highlight'), 2600);
-          try{ pinEl.scrollIntoView({behavior:'smooth', block:'center'}); }catch(e){}
-        }
+        const pinEl = highlightZoneOnMap(viewContainer, zoneId);
+        if(pinEl){ try{ pinEl.scrollIntoView({behavior:'smooth', block:'center'}); }catch(e){} }
       }, 150);
     }
   }, 120);
@@ -2630,7 +2657,7 @@ function renderFireMapMain(){
   const container = document.getElementById('fireMapMainContainer'); const emptyMsg = document.getElementById('fireMapMainEmpty');
   if(container){
     if(!fireMapData.imageUrl){
-      container.querySelectorAll('.map-pin, img').forEach(el=>el.remove());
+      container.querySelectorAll('.map-pin, img, .zone-bound-box').forEach(el=>el.remove());
       if(emptyMsg) emptyMsg.style.display='block';
     } else {
       if(emptyMsg) emptyMsg.style.display='none';
