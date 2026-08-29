@@ -189,6 +189,7 @@
   .master-status.warn{ color:var(--warn); border-color:rgba(255,176,32,.4); background:rgba(255,176,32,.1); }
   .master-status.danger{ color:var(--danger); border-color:rgba(255,59,92,.5); background:rgba(255,59,92,.12); animation: masterFlash 1s infinite; }
   .master-status.danger.silenced{ animation:none; }
+  .master-status.offline{ color:#9aa0ac; border-color:rgba(154,160,172,.4); background:rgba(140,140,150,.1); }
   @keyframes masterFlash{ 0%,100%{opacity:1} 50%{opacity:.55} }
   .panel-toolbar{ display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
   .ctrl-btn{ background: rgba(255,255,255,0.04); border:1px solid var(--card-border); color:var(--text-1); font-size:12px; font-weight:700; padding:8px 14px; border-radius:10px; cursor:pointer; transition:.2s; }
@@ -207,6 +208,8 @@
   .zone-tile.warning .zstatus{ color:var(--warn); }
   .zone-tile.disabled{ opacity:.4; }
   .zone-tile.disabled .zstatus{ color:var(--text-2); }
+  .zone-tile.offline{ border-color: rgba(154,160,172,.35); background: rgba(140,140,150,.06); opacity:.7; }
+  .zone-tile.offline .zstatus{ color:#9aa0ac; }
   .zone-tile.alarm, .zone-tile.danger{ border-color: rgba(255,59,92,.8); background: rgba(255,59,92,.1); animation: zoneAlarm .9s ease-in-out infinite; }
   .zone-tile.alarm .zstatus, .zone-tile.danger .zstatus{ color:var(--danger); font-weight:900; }
   .zone-tile.alarm .zicon, .zone-tile.danger .zicon{ animation: zoneShake .4s ease-in-out infinite; }
@@ -533,7 +536,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 1.0.8</div>
+      <div class="brand-version">Ver 1.0.9</div>
     </div>
   </footer>
 </div>
@@ -716,8 +719,8 @@ const I18N = {
     tempRangeLabel:'الحرارة °م', humRangeLabel:'الرطوبة %', minLabel:'من', maxLabel:'إلى', adminSave:'💾 حفظ الإعدادات',
     sensorPendingShort:'⛔ غير متصل', sensorPendingBadge:'غير متصل — بانتظار وصول قراءة', diffPendingLabel:'—',
     silenceThresholdBtn:'🔇 كتم تنبيه الحرارة',
-    fireTitle:'منظومة إنذار الحريق 1', zoneWord:'المنطقة', fireMasterOk:'✅ النظام سليم', fireMasterAlarm:'🚨 إنذار نشط', fireMasterFault:'⚠ يوجد عطل',
-    fireStatusNormal:'طبيعي', fireStatusAlarm:'حريق!', fireStatusFault:'عطل', fireStatusDisabled:'معطّل',
+    fireTitle:'منظومة إنذار الحريق 1', zoneWord:'المنطقة', fireMasterOk:'✅ النظام سليم', fireMasterAlarm:'🚨 إنذار نشط', fireMasterFault:'⚠ يوجد عطل', fireMasterOffline:'⛔ لا توجد أجهزة متصلة',
+    fireStatusNormal:'طبيعي', fireStatusAlarm:'حريق!', fireStatusFault:'عطل', fireStatusDisabled:'معطّل', fireStatusOffline:'⛔ غير متصل',
     btnSilence:'🔇 كتم', btnReset:'🔁 إعادة تعيين', btnTest:'🧪 اختبار',
     fireMapAdminBtn:'إدارة خريطة منظومة الحريق', fireMapAdminTitle:'🗺️ خريطة منظومة الحريق',
     fireMapNote:'ارفع صورة أو ملف PDF لمخطط الموقع، وحدد مكان كل متحسس بالضغط على الخريطة. ملفات الأوتوكاد (DWG/DXF) غير مدعومة مباشرة — صدّرها كـ PDF أو صورة من برنامج الأوتوكاد أولاً.',
@@ -732,8 +735,8 @@ const I18N = {
     sensorTypeSmoke:'متحسس دخان', sensorTypeHeat:'متحسس حرارة', sensorTypeCombo:'متحسس مزدوج', sensorTypeFlame:'متحسس لهب', sensorTypeSiren:'صافرة إنذار', sensorTypeGlass:'كسر زجاج',
     fireMapMatrixZone:'الزون', fireMapMatrixBtn:'توزيع مصفوفة لهذا الزون', fireMapNoSensorsInZone:'لا يوجد متحسسات بهذا الزون بعد',
     fireMapGridNote:'كل 18 متحسس ينحطون بنفس الزون بالتسلسل، وبعدها ينتقل تلقائياً للزون التالي.',
-    gasTitle:'منظومة مراقبة تسرب الغاز', gasMasterOk:'✅ لا يوجد تسرب', gasMasterAlarm:'🚨 تسرب غاز!', gasMasterFault:'⚠ يوجد عطل',
-    gasStatusSafe:'آمن', gasStatusWarning:'تحذير', gasStatusDanger:'خطر تسرب', gasStatusFault:'عطل',
+    gasTitle:'منظومة مراقبة تسرب الغاز', gasMasterOk:'✅ لا يوجد تسرب', gasMasterAlarm:'🚨 تسرب غاز!', gasMasterFault:'⚠ يوجد عطل', gasMasterOffline:'⛔ لا توجد أجهزة متصلة',
+    gasStatusSafe:'آمن', gasStatusWarning:'تحذير', gasStatusDanger:'خطر تسرب', gasStatusFault:'عطل', gasStatusOffline:'⛔ غير متصل',
     footerLine1:'منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز',
     optDark:'🌙 داكن', optLight:'☀️ فاتح', warehouseWord:'مخزن' },
   en:{ title:'Qamha Scada System', navOverview:'🏭 Overview', navWarehouses:'🌡️ Warehouse Temps', navFire:'🔥 Fire Alarm', navGas:'🛢️ Gas Leak',
@@ -756,8 +759,8 @@ const I18N = {
     tempRangeLabel:'Temp °C', humRangeLabel:'Humidity %', minLabel:'Min', maxLabel:'Max', adminSave:'💾 Save Settings',
     sensorPendingShort:'⛔ Offline', sensorPendingBadge:'Offline — waiting for a reading', diffPendingLabel:'—',
     silenceThresholdBtn:'🔇 Silence Temp Alert',
-    fireTitle:'Fire Alarm System 1', zoneWord:'Zone', fireMasterOk:'✅ System Normal', fireMasterAlarm:'🚨 Active Alarm', fireMasterFault:'⚠ Fault Present',
-    fireStatusNormal:'Normal', fireStatusAlarm:'Fire!', fireStatusFault:'Fault', fireStatusDisabled:'Disabled',
+    fireTitle:'Fire Alarm System 1', zoneWord:'Zone', fireMasterOk:'✅ System Normal', fireMasterAlarm:'🚨 Active Alarm', fireMasterFault:'⚠ Fault Present', fireMasterOffline:'⛔ No Devices Connected',
+    fireStatusNormal:'Normal', fireStatusAlarm:'Fire!', fireStatusFault:'Fault', fireStatusDisabled:'Disabled', fireStatusOffline:'⛔ Offline',
     btnSilence:'🔇 Silence', btnReset:'🔁 Reset', btnTest:'🧪 Test',
     fireMapAdminBtn:'Manage Fire System Map', fireMapAdminTitle:'🗺️ Fire System Site Map',
     fireMapNote:'Upload an image or PDF site plan, then click the map to place each sensor. AutoCAD files (DWG/DXF) are not supported directly — export as PDF or image from AutoCAD first.',
@@ -772,8 +775,8 @@ const I18N = {
     sensorTypeSmoke:'Smoke Detector', sensorTypeHeat:'Heat Detector', sensorTypeCombo:'Combo Detector', sensorTypeFlame:'Flame Detector', sensorTypeSiren:'Alarm Siren', sensorTypeGlass:'Glass Break',
     fireMapMatrixZone:'Zone', fireMapMatrixBtn:'Matrix distribute this zone', fireMapNoSensorsInZone:'No sensors in this zone yet',
     fireMapGridNote:'Every 18 sensors are assigned to the same zone in sequence, then it automatically moves to the next zone.',
-    gasTitle:'Gas Leak Monitoring System', gasMasterOk:'✅ No Leak Detected', gasMasterAlarm:'🚨 Gas Leak!', gasMasterFault:'⚠ Fault Present',
-    gasStatusSafe:'Safe', gasStatusWarning:'Warning', gasStatusDanger:'Danger', gasStatusFault:'Fault',
+    gasTitle:'Gas Leak Monitoring System', gasMasterOk:'✅ No Leak Detected', gasMasterAlarm:'🚨 Gas Leak!', gasMasterFault:'⚠ Fault Present', gasMasterOffline:'⛔ No Devices Connected',
+    gasStatusSafe:'Safe', gasStatusWarning:'Warning', gasStatusDanger:'Danger', gasStatusFault:'Fault', gasStatusOffline:'⛔ Offline',
     footerLine1:'Internal platform for monitoring warehouses, fire and gas systems',
     optDark:'🌙 Dark', optLight:'☀️ Light', warehouseWord:'Warehouse' }
 };
@@ -1414,7 +1417,7 @@ function checkOfflineStations(){
   });
   renderSummary();
 }
-function tickStationAges(){ WAREHOUSES.forEach(w=>updateStationAge(w.id)); checkOfflineStations(); fitWarehouseCards(); }
+function tickStationAges(){ WAREHOUSES.forEach(w=>updateStationAge(w.id)); checkOfflineStations(); checkFireZonesOffline(); checkGasZonesOffline(); fitWarehouseCards(); }
 setInterval(tickStationAges, 15000); // نحدثها كل 15 ثانية - يكفي لعداد دقائق وكشف الانقطاع
 tickStationAges(); // فحص فوري بأول تحميل بدل ما نستنى أول دورة (15 ثا) حتى نكتشف الانقطاع بأسرع وقت
 
@@ -1636,9 +1639,13 @@ function rebuildDynamic(){
 }
 
 /* ==========================================================
-   منظومة إنذار الحريق 1 (8 زون - محاكاة)
+   منظومة إنذار الحريق 1 (8 زون)
+   كل زون يبقى "غير متصل" افتراضياً لين توصله قراءة حقيقة من جهاز حقيقي عبر
+   فايربيس (/fireZones/{zoneId})، بنفس مبدأ مخازن الحرارة بالضبط - ما نعرض
+   "طبيعي" أبداً بدون بيانات حقيقة واصلة فعلاً
    ========================================================== */
-let fireZones = Array.from({length:FIRE_ZONE_COUNT}, (_,i)=>({id:i+1, status:'normal'}));
+let fireZones = Array.from({length:FIRE_ZONE_COUNT}, (_,i)=>({id:i+1, status:'offline'}));
+let lastSeenFire = {};
 let fireSilenced = false;
 
 /* ---- صافرة الإنذار الصوتية (نمط صفارة إنذار الكوارث/الغارات - عواء مستمر صاعد هابط) ---- */
@@ -1688,33 +1695,46 @@ function stopSiren(){
 function buildFireZones(){
   const grid = document.getElementById('fireZonesGrid'); grid.innerHTML='';
   fireZones.forEach(z=>{
-    const tile = document.createElement('div'); tile.className='zone-tile normal'; tile.id='fireZonesGrid-z'+z.id;
-    tile.innerHTML = `<div class="zn">${t('zoneWord')} ${z.id}</div><div class="zicon">●</div><div class="zstatus">${t('fireStatusNormal')}</div>`;
+    const tile = document.createElement('div'); tile.className='zone-tile offline'; tile.id='fireZonesGrid-z'+z.id;
+    tile.innerHTML = `<div class="zn">${t('zoneWord')} ${z.id}</div><div class="zicon">⛔</div><div class="zstatus">${t('fireStatusOffline')}</div>`;
     grid.appendChild(tile);
   });
 }
 function renderFireZones(){
-  let alarmCount=0, faultCount=0;
-  const iconMap={normal:'●',alarm:'🔥',fault:'🛠️',disabled:'—'};
-  const keyMap={normal:'fireStatusNormal',alarm:'fireStatusAlarm',fault:'fireStatusFault',disabled:'fireStatusDisabled'};
+  let alarmCount=0, faultCount=0, connectedCount=0;
+  const iconMap={offline:'⛔',normal:'●',alarm:'🔥',fault:'🛠️',disabled:'—'};
+  const keyMap={offline:'fireStatusOffline',normal:'fireStatusNormal',alarm:'fireStatusAlarm',fault:'fireStatusFault',disabled:'fireStatusDisabled'};
   fireZones.forEach(z=>{
     const tile = document.getElementById('fireZonesGrid-z'+z.id); if(!tile) return;
     tile.className = 'zone-tile ' + z.status;
     tile.querySelector('.zicon').textContent = iconMap[z.status];
     tile.querySelector('.zstatus').textContent = t(keyMap[z.status]);
+    if(z.status!=='offline') connectedCount++;
     if(z.status==='alarm') alarmCount++;
     if(z.status==='fault') faultCount++;
   });
   const master = document.getElementById('fireMasterStatus');
   if(alarmCount>0){ master.className='master-status '+(fireSilenced?'danger silenced':'danger'); master.textContent = t('fireMasterAlarm')+' ('+alarmCount+')'; }
   else if(faultCount>0){ master.className='master-status warn'; master.textContent = t('fireMasterFault'); }
+  else if(connectedCount===0){ master.className='master-status offline'; master.textContent = t('fireMasterOffline'); }
   else{ master.className='master-status ok'; master.textContent = t('fireMasterOk'); }
   if(alarmCount>0 && !fireSilenced){ startSiren(); } else { stopSiren(); }
   renderFireMapMain();
 }
+/* ---------- كشف انقطاع الاتصال لكل زون حريق (بدون بيانات جديدة أكثر من OFFLINE_THRESHOLD_MS) ---------- */
+function checkFireZonesOffline(){
+  let changed = false;
+  fireZones.forEach(z=>{
+    const seen = lastSeenFire[z.id];
+    if(!seen) return; // لسا ما وصلت أي بيانات من هذا الزون أصلاً
+    const stale = (Date.now() - seen) > OFFLINE_THRESHOLD_MS;
+    if(stale && z.status!=='offline'){ z.status='offline'; changed = true; }
+  });
+  if(changed) renderFireZones();
+}
 window.fireSilence = function(){ fireSilenced = !fireSilenced; renderFireZones(); };
-window.fireReset = function(){ fireZones.forEach(z=>z.status='normal'); fireSilenced=false; renderFireZones(); };
-window.fireTest = function(){ const z = fireZones[Math.floor(Math.random()*fireZones.length)]; z.status='alarm'; renderFireZones(); };
+window.fireReset = function(){ fireZones.forEach(z=>{ z.status = lastSeenFire[z.id] ? 'normal' : 'offline'; }); fireSilenced=false; renderFireZones(); };
+window.fireTest = function(){ const z = fireZones[Math.floor(Math.random()*fireZones.length)]; lastSeenFire[z.id]=Date.now(); z.status='alarm'; renderFireZones(); };
 
 /* ==========================================================
    خريطة موقع منظومة الحريق (Site Map + Sensor Placement)
@@ -2039,29 +2059,33 @@ function initMapResizeObserver(){
 }
 
 /* ==========================================================
-   منظومة مراقبة تسرب الغاز (16 زون - محاكاة)
+   منظومة مراقبة تسرب الغاز (8 زون)
+   نفس مبدأ الحريق: كل زون "غير متصل" افتراضياً لين توصله قراءة حقيقة
+   من متحسس MQ-2 حقيقي عبر فايربيس (/gasZones/{zoneId})
    ========================================================== */
-let gasZones = Array.from({length:GAS_ZONE_COUNT}, (_,i)=>({id:i+1, status:'safe', ppm: 50+Math.random()*80}));
+let gasZones = Array.from({length:GAS_ZONE_COUNT}, (_,i)=>({id:i+1, status:'offline', ppm:null}));
+let lastSeenGas = {};
 let gasSilenced = false;
 function buildGasZones(){
   const grid = document.getElementById('gasZonesGrid'); grid.innerHTML='';
   gasZones.forEach(z=>{
-    const tile = document.createElement('div'); tile.className='zone-tile safe'; tile.id='gasZonesGrid-z'+z.id;
-    tile.innerHTML = `<div class="zn">${t('zoneWord')} ${z.id}</div><div class="zicon">●</div><div class="zstatus">${t('gasStatusSafe')}</div><div class="zval">-- ppm</div>`;
+    const tile = document.createElement('div'); tile.className='zone-tile offline'; tile.id='gasZonesGrid-z'+z.id;
+    tile.innerHTML = `<div class="zn">${t('zoneWord')} ${z.id}</div><div class="zicon">⛔</div><div class="zstatus">${t('gasStatusOffline')}</div><div class="zval">--</div>`;
     grid.appendChild(tile);
   });
 }
 function gasStatusFromPpm(ppm){ if(ppm<200) return 'safe'; if(ppm<450) return 'warning'; return 'danger'; }
 function renderGasZones(){
-  let dangerCount=0, warnCount=0, faultCount=0;
-  const iconMap={safe:'●',warning:'🟡',danger:'💨',fault:'🛠️'};
-  const keyMap={safe:'gasStatusSafe',warning:'gasStatusWarning',danger:'gasStatusDanger',fault:'gasStatusFault'};
+  let dangerCount=0, warnCount=0, faultCount=0, connectedCount=0;
+  const iconMap={offline:'⛔',safe:'●',warning:'🟡',danger:'💨',fault:'🛠️'};
+  const keyMap={offline:'gasStatusOffline',safe:'gasStatusSafe',warning:'gasStatusWarning',danger:'gasStatusDanger',fault:'gasStatusFault'};
   gasZones.forEach(z=>{
     const tile = document.getElementById('gasZonesGrid-z'+z.id); if(!tile) return;
     tile.className = 'zone-tile ' + z.status;
     tile.querySelector('.zicon').textContent = iconMap[z.status];
     tile.querySelector('.zstatus').textContent = t(keyMap[z.status]);
-    tile.querySelector('.zval').textContent = z.status==='fault' ? '--' : z.ppm.toFixed(0)+' ppm';
+    tile.querySelector('.zval').textContent = (z.status==='offline' || z.status==='fault' || z.ppm==null) ? '--' : z.ppm.toFixed(0)+' ppm';
+    if(z.status!=='offline') connectedCount++;
     if(z.status==='danger') dangerCount++;
     if(z.status==='warning') warnCount++;
     if(z.status==='fault') faultCount++;
@@ -2069,11 +2093,23 @@ function renderGasZones(){
   const master = document.getElementById('gasMasterStatus');
   if(dangerCount>0){ master.className='master-status '+(gasSilenced?'danger silenced':'danger'); master.textContent = t('gasMasterAlarm')+' ('+dangerCount+')'; }
   else if(warnCount>0 || faultCount>0){ master.className='master-status warn'; master.textContent = t('gasMasterFault'); }
+  else if(connectedCount===0){ master.className='master-status offline'; master.textContent = t('gasMasterOffline'); }
   else{ master.className='master-status ok'; master.textContent = t('gasMasterOk'); }
 }
+/* ---------- كشف انقطاع الاتصال لكل زون غاز ---------- */
+function checkGasZonesOffline(){
+  let changed = false;
+  gasZones.forEach(z=>{
+    const seen = lastSeenGas[z.id];
+    if(!seen) return;
+    const stale = (Date.now() - seen) > OFFLINE_THRESHOLD_MS;
+    if(stale && z.status!=='offline'){ z.status='offline'; z.ppm=null; changed = true; }
+  });
+  if(changed) renderGasZones();
+}
 window.gasSilence = function(){ gasSilenced = !gasSilenced; renderGasZones(); };
-window.gasReset = function(){ gasZones.forEach(z=>{ z.status='safe'; z.ppm=50+Math.random()*80; }); gasSilenced=false; renderGasZones(); };
-window.gasTest = function(){ const z = gasZones[Math.floor(Math.random()*gasZones.length)]; z.ppm=520; z.status='danger'; renderGasZones(); };
+window.gasReset = function(){ gasZones.forEach(z=>{ if(lastSeenGas[z.id]){ z.status='safe'; z.ppm=50+Math.random()*80; } else { z.status='offline'; z.ppm=null; } }); gasSilenced=false; renderGasZones(); };
+window.gasTest = function(){ const z = gasZones[Math.floor(Math.random()*gasZones.length)]; lastSeenGas[z.id]=Date.now(); z.ppm=520; z.status='danger'; renderGasZones(); };
 let fbDb = null, fbRef = null, fbSet = null, fbQuery = null, fbOrderByKey = null, fbStartAt = null, fbEndAt = null, fbGet = null, fbLimitToLast = null;
 
 async function tryConnectFirebase(){
@@ -2087,6 +2123,34 @@ async function tryConnectFirebase(){
     setConnBadge(true);
     WAREHOUSES.forEach(w=>{
       onValue(ref(db, 'warehouses/'+w.id), (snap)=>{ const val=snap.val(); if(!val) return; state[w.id]=val; renderStation(w,val); renderSummary(); });
+    });
+    // منظومة الحريق: نفس مبدأ مخازن الحرارة تماماً - نعتمد وقت الجهاز الحقيقي (NTP) لتحديد
+    // إذا القراءة حديثة فعلاً أو قديمة/راكدة، مو مجرد وصول أي بيانات لمرة وحدة
+    const NTP_EPOCH_SANITY_MS_ZONES = 1700000000000;
+    fireZones.forEach(z=>{
+      onValue(ref(db, 'fireZones/'+z.id), (snap)=>{
+        const val = snap.val(); if(!val) return;
+        const ts = (val.timestamp && Number(val.timestamp) > NTP_EPOCH_SANITY_MS_ZONES) ? Number(val.timestamp) : Date.now();
+        lastSeenFire[z.id] = ts;
+        const fresh = (Date.now() - ts) <= OFFLINE_THRESHOLD_MS;
+        z.status = fresh ? (val.status || 'normal') : 'offline';
+        renderFireZones();
+      });
+    });
+    gasZones.forEach(z=>{
+      onValue(ref(db, 'gasZones/'+z.id), (snap)=>{
+        const val = snap.val(); if(!val) return;
+        const ts = (val.timestamp && Number(val.timestamp) > NTP_EPOCH_SANITY_MS_ZONES) ? Number(val.timestamp) : Date.now();
+        lastSeenGas[z.id] = ts;
+        const fresh = (Date.now() - ts) <= OFFLINE_THRESHOLD_MS;
+        if(fresh){
+          z.ppm = (val.ppm!==undefined && val.ppm!==null && !isNaN(val.ppm)) ? Number(val.ppm) : null;
+          z.status = val.status || (z.ppm!==null ? gasStatusFromPpm(z.ppm) : 'fault');
+        } else {
+          z.status = 'offline'; z.ppm = null;
+        }
+        renderGasZones();
+      });
     });
     // مزامنة حدود الرينج مع فايربيس حتى يقدر Cloud Function يقرأها هو الثاني (مو بس المتصفح بالـlocalStorage)
     // ويطلع نفس الحدود بكل جهاز يفتح الداشبورد، مو بس الجهاز الي عدلها
