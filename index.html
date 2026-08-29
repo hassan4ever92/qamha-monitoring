@@ -304,10 +304,14 @@
 
   body.fs-mode .grid{ display:grid; grid-template-columns:1fr; grid-auto-rows:minmax(0,1fr); gap:8px; height:100%; min-height:0; overflow-y:auto; }
   body.fs-mode[data-fsview="warehouses"] .grid{ display:grid; grid-template-columns:repeat(3,1fr); grid-auto-rows:minmax(0,1fr); gap:1.4vh 1.1vw; height:100%; overflow:hidden; align-content:stretch; align-items:stretch; }
-  body.fs-mode[data-fsview="warehouses"] .station{ padding:0.9vh 1.2vw; overflow:hidden; height:100%; width:100%; box-sizing:border-box; border:1.5px solid var(--card-border); border-radius:1.2vh; display:flex; flex-direction:column; justify-content:flex-start; min-height:0; min-width:0; }
-  body.fs-mode[data-fsview="warehouses"] .station-head{ margin-bottom:0.3vh; flex:0 0 auto; flex-wrap:wrap; row-gap:0.2vh; }
-  body.fs-mode[data-fsview="warehouses"] .station-head h3{ font-size:1.4vh; flex-wrap:wrap; row-gap:0.15vh; line-height:1.25; }
-  body.fs-mode[data-fsview="warehouses"] .status-chip{ font-size:1vh; padding:0.35vh 0.8vh; }
+  /* .station صار مجرد إطار (overflow:hidden + توسيط)، والمحتوى الحقيقي بداخل .station-inner
+     بحجمه "الطبيعي" المريح للعين، وجافاسكربت (fitWarehouseCards) يصغّره بـ transform:scale
+     بس لو ما كفت المساحة فعلاً - فيصير الحجم أكبر ما يمكن دون ما ينقص أي جزء ولا يصير سكرول */
+  body.fs-mode[data-fsview="warehouses"] .station{ padding:0; overflow:hidden; height:100%; width:100%; box-sizing:border-box; border:1.5px solid var(--card-border); border-radius:1.2vh; display:flex; align-items:center; justify-content:center; min-height:0; min-width:0; }
+  body.fs-mode[data-fsview="warehouses"] .station-inner{ width:100%; box-sizing:border-box; padding:1.5vh 1.2vw; display:flex; flex-direction:column; justify-content:flex-start; transform-origin:center center; }
+  body.fs-mode[data-fsview="warehouses"] .station-head{ margin-bottom:0.7vh; flex:0 0 auto; flex-wrap:wrap; row-gap:0.3vh; }
+  body.fs-mode[data-fsview="warehouses"] .station-head h3{ font-size:1.65vh; flex-wrap:wrap; row-gap:0.2vh; line-height:1.35; }
+  body.fs-mode[data-fsview="warehouses"] .status-chip{ font-size:1.15vh; padding:0.4vh 0.9vh; }
   body.fs-mode[data-fsview="warehouses"] .fs-range-inline{ display:inline; font-weight:600; color:var(--text-2); }
   body.fs-mode[data-fsview="warehouses"] .range-badge{ display:none; }
   body.fs-mode[data-fsview="warehouses"] .station-foot{ display:none; }
@@ -320,19 +324,19 @@
     content:''; position:absolute; inset-inline-start:0; top:6px; bottom:6px; width:1px;
     background: var(--card-border);
   }
-  body.fs-mode[data-fsview="warehouses"] .zone-title{ display:flex; font-size:0.95vh; margin-bottom:0.3vh; }
+  body.fs-mode[data-fsview="warehouses"] .zone-title{ display:flex; font-size:1.25vh; margin-bottom:0.7vh; }
   body.fs-mode[data-fsview="warehouses"] .gauges{ gap:1vh; justify-content:flex-start; }
-  body.fs-mode[data-fsview="warehouses"] .gauge-wrap{ width:4.8vh; height:4.8vh; margin-bottom:0.2vh; }
-  body.fs-mode[data-fsview="warehouses"] .gauge-digital-panel{ padding:0.1vh 0.5vh; margin-top:0; }
-  body.fs-mode[data-fsview="warehouses"] .gauge-digital{ font-size:1.35vh; }
-  body.fs-mode[data-fsview="warehouses"] .gauge-digital.g-pending{ font-size:0.68vh; letter-spacing:0; white-space:nowrap; }
-  body.fs-mode[data-fsview="warehouses"] .gauge-unit{ font-size:0.8vh; margin-top:1px; }
-  body.fs-mode[data-fsview="warehouses"] .gauge-label{ font-size:0.8vh; line-height:1.2; margin-top:1px; max-width:10vh; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-wrap{ width:7.6vh; height:7.6vh; margin-bottom:0.4vh; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-digital-panel{ padding:0.2vh 0.8vh; margin-top:0; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-digital{ font-size:1.85vh; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-digital.g-pending{ font-size:0.85vh; letter-spacing:0; white-space:nowrap; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-unit{ font-size:1vh; }
+  body.fs-mode[data-fsview="warehouses"] .gauge-label{ font-size:1.05vh; line-height:1.3; max-width:14vh; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   body.fs-mode[data-fsview="warehouses"] .pending-badge{ display:none; }
-  body.fs-mode[data-fsview="warehouses"] .readings{ gap:0.5vh; margin:0.4vh 0 0; flex:0 0 auto; }
-  body.fs-mode[data-fsview="warehouses"] .read-item{ padding:0.45vh 0.8vh; }
-  body.fs-mode[data-fsview="warehouses"] .read-item .rl{ font-size:0.85vh; margin-bottom:0.15vh; }
-  body.fs-mode[data-fsview="warehouses"] .read-item .rv{ font-size:1.05vh; }
+  body.fs-mode[data-fsview="warehouses"] .readings{ gap:0.8vh; margin:1vh 0 0; flex:0 0 auto; }
+  body.fs-mode[data-fsview="warehouses"] .read-item{ padding:0.7vh 1vh; }
+  body.fs-mode[data-fsview="warehouses"] .read-item .rl{ font-size:1.05vh; margin-bottom:0.25vh; }
+  body.fs-mode[data-fsview="warehouses"] .read-item .rv{ font-size:1.35vh; }
 
   /* نظرة عامة (overview): قائمة مخازن مضغوطة بجانب الحريق والغاز - بدون عقارب دائرية (تتشوه بارتفاع صف صغير) */
   body.fs-mode[data-fsview="overview"] .grid{ gap:0.5vh; }
@@ -1011,6 +1015,7 @@ function buildStationCards(){
     el.className='station'; el.id='st-'+w.id; el.style.animationDelay=(i*0.1)+'s';
     const cfg = adminSettings[w.id] || DEFAULT_RANGE;
     el.innerHTML = `
+      <div class="station-inner">
       <div class="station-head"><h3><span class="ic">🌾</span> ${whName(i)}<span class="fs-range-inline" id="rangeParen-${w.id}"> (${t('rangeParenLabel')} ${fmtRange(cfg)})</span></h3><div class="status-chip normal" id="chip-${w.id}">${t('chipNormal')}</div></div>
       <div class="offline-banner" id="offlineban-${w.id}"><span class="ob-title">${t('offlineBannerTitle')}</span><span id="offlinesince-${w.id}"></span></div>
       <div class="range-badge"><span class="rb-title">${t('rangeLabel')}</span><span class="rb-val" id="range-${w.id}">${fmtRange(cfg)}</span></div>
@@ -1033,13 +1038,37 @@ function buildStationCards(){
       </div>
       </div>
       <div class="station-foot"><span class="live"><span class="dot" style="color:var(--ok)"></span> ${t('liveData')}</span>
-        <span class="foot-right"><span class="fw-badge" id="fw-${w.id}" title="${t('fwLabel')}"></span><button class="log-btn" onclick="openLog('${w.id}')">${t('logBtn')}</button><span id="ts-${w.id}">--</span></span></div>`;
+        <span class="foot-right"><span class="fw-badge" id="fw-${w.id}" title="${t('fwLabel')}"></span><button class="log-btn" onclick="openLog('${w.id}')">${t('logBtn')}</button><span id="ts-${w.id}">--</span></span></div>
+      </div>`;
     grid.appendChild(el);
     buildGauge('gaugewrap-s1-'+w.id, TEMP_ZONES, TEMP_MIN, TEMP_MAX, {unit:'°', bezelTint:'warm', needleColor:'#ff5a36', dialLabel:t('dialLabelTemp')});
     buildGauge('gaugewrap-s2-'+w.id, TEMP_ZONES, TEMP_MIN, TEMP_MAX, {unit:'°', bezelTint:'warm', needleColor:'#ff5a36', dialLabel:t('dialLabelTemp')});
     buildGauge('gaugewrap-hum-'+w.id, HUM_ZONES, HUM_MIN, HUM_MAX, {unit:'%', bezelTint:'cool', needleColor:'#1ea7c9', dialLabel:t('dialLabelHum')});
   });
+  setTimeout(fitWarehouseCards, 60);
 }
+
+// يكبّر/يصغّر محتوى كل كرت مخزن (بوضع فول سكرين - تبويب المخازن) بأكبر حجم ممكن يضمن عدم
+// قص أو تشوه أي جزء، مهما كان حجم/دقة الشاشة - يقيس الحجم "الطبيعي" المريح للمحتوى
+// (.station-inner) ويصغّره فقط لو المساحة المتوفرة فعلاً أقل منه، بدل تخمين أرقام ثابتة
+function fitWarehouseCards(){
+  if(!(document.body.classList.contains('fs-mode') && document.body.getAttribute('data-fsview')==='warehouses')) return;
+  document.querySelectorAll('#stationsGrid .station').forEach(st=>{
+    const inner = st.querySelector('.station-inner');
+    if(!inner) return;
+    inner.style.transform = 'none';
+    const availH = st.clientHeight, availW = st.clientWidth;
+    const naturalH = inner.scrollHeight, naturalW = inner.scrollWidth;
+    if(!availH || !naturalH) return;
+    const scale = Math.min(1, availH/naturalH, availW/naturalW);
+    inner.style.transform = scale < 0.999 ? `scale(${scale})` : 'none';
+  });
+}
+let fitWarehouseCardsTimer = null;
+window.addEventListener('resize', ()=>{
+  clearTimeout(fitWarehouseCardsTimer);
+  fitWarehouseCardsTimer = setTimeout(fitWarehouseCards, 120);
+});
 
 /* ---------- السجل ---------- */
 function pushLog(wId, data){
@@ -1382,19 +1411,27 @@ function checkOfflineStations(){
   });
   renderSummary();
 }
-function tickStationAges(){ WAREHOUSES.forEach(w=>updateStationAge(w.id)); checkOfflineStations(); }
+function tickStationAges(){ WAREHOUSES.forEach(w=>updateStationAge(w.id)); checkOfflineStations(); fitWarehouseCards(); }
 setInterval(tickStationAges, 15000); // نحدثها كل 15 ثانية - يكفي لعداد دقائق وكشف الانقطاع
 tickStationAges(); // فحص فوري بأول تحميل بدل ما نستنى أول دورة (15 ثا) حتى نكتشف الانقطاع بأسرع وقت
 
+// مخزن (زون) نعتبره "متصل" حالياً لو وصلت منه قراءة حقيقية خلال آخر OFFLINE_THRESHOLD_MS -
+// نحسبها كمنطقة وحدة (زون كامل بكل حساساته)، مو حسب عدد الحساسات الشغالة بداخلها، وإذا
+// المخزن ما وصلت منه أي بيانات إطلاقاً (state[id] ما انبنى نهائياً) يُحسب "غير متصل" هو الثاني
+function isWarehouseOnline(wId){
+  const seen = lastSeenLocal[wId];
+  return !!seen && (Date.now() - seen) <= OFFLINE_THRESHOLD_MS;
+}
 function renderSummary(){
   const vals = Object.values(state);
-  document.getElementById('sumActive').textContent = vals.length + ' / ' + WAREHOUSES.length;
+  const activeCount = WAREHOUSES.filter(w=>isWarehouseOnline(w.id)).length;
+  document.getElementById('sumActive').textContent = activeCount + ' / ' + WAREHOUSES.length;
   const alertsCount = vals.filter(d=>d.alert).length;
   document.getElementById('sumAlerts').textContent = alertsCount;
   document.getElementById('sumAlertCard').classList.toggle('danger', true);
   const offEl = document.getElementById('sumOffline');
   if(offEl){
-    const offlineCount = WAREHOUSES.filter(w=>isOfflineLocal[w.id]).length;
+    const offlineCount = WAREHOUSES.length - activeCount;
     offEl.textContent = offlineCount;
     const card = document.getElementById('sumOfflineCard');
     if(card) card.classList.toggle('danger', offlineCount>0);
@@ -1439,6 +1476,7 @@ function selectView(view){
     whSection.style.display='none'; fireGasCol.style.display='';
     fireSection.style.display='none'; gasSection.style.display='';
   }
+  setTimeout(fitWarehouseCards, 60);
 }
 document.querySelectorAll('.tab').forEach(tabEl=>{
   tabEl.addEventListener('click', ()=> selectView(tabEl.dataset.view));
@@ -1580,6 +1618,7 @@ function onFsChange(){
   document.body.classList.toggle('fs-mode', isFs);
   const btn = document.getElementById('fullscreenBtn');
   if(btn) btn.textContent = isFs ? '⤢' : '⛶';
+  setTimeout(fitWarehouseCards, 60);
 }
 document.addEventListener('fullscreenchange', onFsChange);
 document.addEventListener('webkitfullscreenchange', onFsChange);
