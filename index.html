@@ -1018,7 +1018,7 @@ function isValidSensorReading(v){
 // أي متحسس واحد يطلع فوق الحد الأعلى تصير الحالة "مرتفعة"، وإذا ماكو متحسس فوق الحد
 // بس فيه واحد تحت الحد الأدنى تصير "منخفضة"، وإلا "طبيعي"
 function computeTempStatusFromSensors(s1v, s2v, cfg){
-  const vals = [s1v, s2v].filter(v => v!==null && v!==undefined && !isNaN(v));
+  const vals = [s1v, s2v].filter(v => isValidSensorReading(v));
   if(vals.length===0) return 'na'; // ما فيه ولا حساس متصل - ما نصلح نقول "طبيعي" لأنه ما فيه شي نتأكد منه أصلاً
   if(vals.some(v => v > cfg.tempMax)) return 'rising';
   if(vals.some(v => v < cfg.tempMin)) return 'falling';
@@ -1373,7 +1373,9 @@ window.exportLogExcel = async function(){
 window.openAlertsModal = function(){
   const tbody = document.getElementById('alertTableBody'); const empty = document.getElementById('alertEmpty');
   tbody.innerHTML='';
-  const activeList = WAREHOUSES.filter(w=> state[w.id] && state[w.id].alert);
+  // مخزن انقطع اتصاله (مافيش قراءة حديثة) ما نعتبره "تنبيه نشط" حتى لو آخر قيمة وصلت منه كانت تنبيه -
+  // هذي القيمة صارت قديمة/غير موثوقة، والانقطاع نفسه له بانر/عداد منفصل بالداشبورد
+  const activeList = WAREHOUSES.filter(w=> isWarehouseOnline(w.id) && state[w.id] && state[w.id].alert);
   if(activeList.length===0){ empty.style.display='block'; }
   else{
     empty.style.display='none';
@@ -1381,7 +1383,11 @@ window.openAlertsModal = function(){
       const idx = WAREHOUSES.indexOf(w); const d = state[w.id];
       const since = alertSinceMem[w.id] ? Math.max(0, Math.round((Date.now()-alertSinceMem[w.id])/1000)) : 0;
       const tr=document.createElement('tr'); tr.className='alert-row';
-      tr.innerHTML = `<td>${whName(idx)}</td><td>${num(d.sensor1)}</td><td>${num(d.sensor2)}</td><td>${num(d.diff)}</td><td>${since}</td>`;
+      // حساس/فرق غير متصل فعلياً (قيمة -999 الوهمية أو NaN) نعرضه كـ"--" مو كرقم حرارة حقيقي مضلل
+      const s1Txt = isValidSensorReading(d.sensor1) ? num(d.sensor1) : '--';
+      const s2Txt = isValidSensorReading(d.sensor2) ? num(d.sensor2) : '--';
+      const diffTxt = (isValidSensorReading(d.sensor1) && isValidSensorReading(d.sensor2)) ? num(d.diff) : '--';
+      tr.innerHTML = `<td>${whName(idx)}</td><td>${s1Txt}</td><td>${s2Txt}</td><td>${diffTxt}</td><td>${since}</td>`;
       tbody.appendChild(tr);
     });
   }
@@ -1636,7 +1642,7 @@ function renderSummary(){
   const vals = Object.values(state);
   const activeCount = WAREHOUSES.filter(w=>isWarehouseOnline(w.id)).length;
   document.getElementById('sumActive').textContent = activeCount + ' / ' + WAREHOUSES.length;
-  const alertsCount = vals.filter(d=>d.alert).length;
+  const alertsCount = WAREHOUSES.filter(w=> isWarehouseOnline(w.id) && state[w.id] && state[w.id].alert).length;
   document.getElementById('sumAlerts').textContent = alertsCount;
   document.getElementById('sumAlertCard').classList.toggle('danger', true);
   const offEl = document.getElementById('sumOffline');
