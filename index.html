@@ -1516,8 +1516,12 @@ function renderStation(w, data){
   thresholdBreachState[w.id] = { s1: s1Breach, s2: s2Breach };
 
   const whIdx = WAREHOUSES.findIndex(x=>x.id===w.id);
-  if(s1Present) maybeShowTempPopup(w.id, whIdx, 1, data.sensor1, s1Breach);
-  if(s2Present) maybeShowTempPopup(w.id, whIdx, 2, data.sensor2, s2Breach);
+  // نطلع البوب-اب بس لو المخزن أونلاين فعلاً الحين - وإلا هذي قيمة قديمة محفوظة
+  // بفايربيس من آخر مرة كان متصل بيها (الجهاز مطفي/مقطوع حالياً)، مو قراءة حية
+  if(isWarehouseOnline(w.id)){
+    if(s1Present) maybeShowTempPopup(w.id, whIdx, 1, data.sensor1, s1Breach);
+    if(s2Present) maybeShowTempPopup(w.id, whIdx, 2, data.sensor2, s2Breach);
+  }
   updateThresholdSiren();
 
   // فرق الحساسين ما إله معنى إلا لو الاثنين متصلين فعلاً ويرسلون قراءة حقيقية - نعرض شرطة غير جيه
