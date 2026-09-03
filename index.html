@@ -12,6 +12,9 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
@@ -30,7 +33,7 @@
   }
   *{ box-sizing:border-box; margin:0; padding:0; }
   body{
-    font-family:'Segoe UI',Tahoma,Arial,sans-serif;
+    font-family:'Cairo','Segoe UI',Tahoma,Arial,sans-serif; font-weight:500;
     background:
       radial-gradient(circle at 15% 10%, rgba(124,92,255,0.10), transparent 40%),
       radial-gradient(circle at 85% 0%, rgba(0,229,255,0.08), transparent 45%),
@@ -63,7 +66,7 @@
   .brand-center .we{ font-size:30px; filter: drop-shadow(var(--wheat-glow)); }
   .brand-center h1{
     font-size:32px; font-weight:900; letter-spacing:3px; text-transform:uppercase;
-    font-family:'Segoe UI', Tahoma, Arial, sans-serif;
+    font-family:'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif;
     background: linear-gradient(135deg, var(--wheat) 5%, var(--wheat-2) 45%, var(--accent) 100%);
     -webkit-background-clip:text; background-clip:text; color:transparent;
     text-shadow: 0 0 34px rgba(227,168,60,0.28);
@@ -283,6 +286,134 @@
   .login-submit{ width:100%; padding:11px; }
   .login-loading{ font-size:12px; color:var(--text-2); margin-top:14px; display:none; }
   #currentUserLabel{ font-size:11px; color:var(--text-2); align-self:center; margin-inline-end:2px; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* ===== شاشة الدخول - تصميم Split-Screen صناعي ===== */
+  .login-screen{
+    display:flex; flex-direction:row; align-items:stretch; justify-content:stretch; padding:0;
+    background:var(--bg-0); overflow:hidden;
+  }
+  .login-hero{
+    position:relative; flex:1 1 55%; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:
+      radial-gradient(circle at 28% 18%, rgba(0,229,255,0.20), transparent 46%),
+      radial-gradient(circle at 78% 82%, rgba(227,168,60,0.16), transparent 50%),
+      linear-gradient(160deg, #0a1220 0%, #0d1a2e 55%, #0a1220 100%);
+    overflow:hidden; padding:40px 30px;
+  }
+  .login-hero-grid{
+    position:absolute; inset:0; pointer-events:none; z-index:0;
+    background-image: linear-gradient(rgba(0,229,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.07) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse at center, black 0%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 0%, transparent 75%);
+    animation: gridDrift 45s linear infinite;
+  }
+  .login-hero-scan{
+    position:absolute; left:0; right:0; height:2px; z-index:0; top:8%;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    box-shadow: 0 0 24px 4px rgba(0,229,255,0.6);
+    animation: loginScan 5.5s ease-in-out infinite;
+  }
+  @keyframes loginScan{
+    0%{ top:8%; opacity:0; } 8%{ opacity:1; } 92%{ opacity:1; } 100%{ top:92%; opacity:0; }
+  }
+
+  .login-radar{ position:relative; width:270px; height:270px; margin-bottom:24px; display:flex; align-items:center; justify-content:center; z-index:1; }
+  .login-radar .ring-track{ position:absolute; inset:0; border-radius:50%; border:1px solid rgba(0,229,255,0.18); }
+  .login-radar .ring-track:nth-child(2){ inset:26px; }
+  .login-radar .ring-track:nth-child(3){ inset:52px; }
+  .login-radar-sweep{
+    position:absolute; inset:0; border-radius:50%;
+    background: conic-gradient(from 0deg, rgba(0,229,255,0.55), transparent 32%, transparent 100%);
+    animation: radarSpin 4s linear infinite;
+    -webkit-mask-image: radial-gradient(circle, transparent 46%, black 47%, black 100%);
+    mask-image: radial-gradient(circle, transparent 46%, black 47%, black 100%);
+  }
+  @keyframes radarSpin{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
+  .login-radar-core{
+    position:relative; z-index:1; width:104px; height:104px; border-radius:50%;
+    background: radial-gradient(circle, rgba(227,168,60,0.22), rgba(10,18,32,0.9) 70%);
+    border:1px solid rgba(227,168,60,0.4);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 0 50px rgba(227,168,60,0.25);
+  }
+  .login-radar-core .we{ font-size:46px; filter: drop-shadow(0 0 16px rgba(227,168,60,0.7)); }
+  .login-radar-dot{ position:absolute; width:8px; height:8px; border-radius:50%; background:var(--accent); box-shadow:0 0 10px var(--accent); top:4px; inset-inline-start:50%; margin-inline-start:-4px; animation: loginPulseDot 1.6s ease-in-out infinite; }
+  @keyframes loginPulseDot{ 0%,100%{ opacity:1; } 50%{ opacity:.25; } }
+
+  /* عقد الحساسات الموزعة داخل دائرة الرادار */
+  .login-sensor-node{
+    position:absolute; width:34px; height:34px; border-radius:50%; z-index:2;
+    background:rgba(10,18,32,0.94); border:1px solid rgba(0,229,255,0.4);
+    display:flex; align-items:center; justify-content:center; font-size:15px;
+    box-shadow:0 0 10px rgba(0,229,255,0.25); transform:translate(-50%,-50%);
+    animation: sensorNodePulse 2.4s ease-in-out infinite;
+  }
+  @keyframes sensorNodePulse{ 0%,100%{ box-shadow:0 0 10px rgba(0,229,255,0.22); } 50%{ box-shadow:0 0 18px rgba(0,229,255,0.55); } }
+  .login-sensor-node.sn-1{ top:9%; left:50%; animation-delay:0s; }
+  .login-sensor-node.sn-2{ top:38%; left:88%; animation-delay:.4s; }
+  .login-sensor-node.sn-3{ top:82%; left:74%; animation-delay:.8s; }
+  .login-sensor-node.sn-4{ top:82%; left:26%; animation-delay:1.2s; }
+  .login-sensor-node.sn-5{ top:38%; left:12%; animation-delay:1.6s; }
+
+  .login-hero-title{ position:relative; z-index:1; font-size:36px; font-weight:900; text-align:center; margin:0 0 4px; letter-spacing:.01em; text-transform:uppercase;
+    background:linear-gradient(90deg, var(--accent), var(--text-0) 45%, var(--wheat)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .login-hero-sub{ position:relative; z-index:1; font-family:Consolas,monospace; font-size:12px; letter-spacing:.22em; color:var(--accent); opacity:.85; text-transform:uppercase; text-align:center; }
+
+  /* موصل الإشارة (كيبل + واير لس) بين الرادار وشاشة الدخول - نسخة أفخم وأكبر */
+  .login-connector{ flex:0 0 150px; display:none; flex-direction:column; align-items:center; justify-content:center; gap:16px; position:relative; z-index:1; background:var(--bg-1); }
+  @media (min-width:901px){ .login-connector{ display:flex; } }
+  .login-connector-wifi{ font-size:36px; opacity:.95; filter: drop-shadow(0 0 14px var(--accent)) drop-shadow(0 0 26px rgba(227,168,60,0.4)); animation: loginPulseDot 1.4s ease-in-out infinite; }
+  .login-connector-line{ position:relative; width:100px; height:3px; border-radius:3px; background: repeating-linear-gradient(90deg, var(--accent) 0 9px, transparent 9px 19px); animation: cableFlow 1s linear infinite; box-shadow:0 0 12px rgba(0,229,255,0.55); }
+  @keyframes cableFlow{ from{ background-position:0 0; } to{ background-position:-28px 0; } }
+  .login-connector-dot{ position:absolute; top:50%; inset-inline-start:50%; width:13px; height:13px; margin:-6.5px; border-radius:50%; background:radial-gradient(circle, #fff, var(--accent)); box-shadow:0 0 18px var(--accent); animation: loginPulseDot 1s ease-in-out infinite; }
+  .login-connector-label{ font-family:Consolas,monospace; font-size:10px; font-weight:800; letter-spacing:.18em; color:var(--accent); text-transform:uppercase; text-align:center; padding:6px 14px; border:1px solid rgba(0,229,255,0.4); border-radius:999px; background:rgba(0,229,255,0.07); box-shadow:0 0 16px rgba(0,229,255,0.18); white-space:nowrap; }
+
+  .login-form-panel{
+    flex:0 0 500px; max-width:100%; display:flex; align-items:center; justify-content:center; position:relative; z-index:1;
+    background: var(--bg-1); border-inline-start:1px solid var(--card-border); padding:34px; box-sizing:border-box;
+  }
+  .login-monitor{
+    position:relative; width:100%; max-width:420px; background: linear-gradient(180deg, #0d1a2e 0%, #0a1220 100%);
+    border:1px solid rgba(227,168,60,0.3); border-radius:20px; overflow:hidden;
+    box-shadow: 0 0 0 1px rgba(0,229,255,0.05), 0 30px 80px rgba(0,0,0,0.55), 0 0 60px rgba(227,168,60,0.12), 0 0 90px rgba(0,229,255,0.06);
+  }
+  .login-monitor::before{ content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg, var(--accent), var(--wheat), var(--accent)); background-size:200% 100%; animation: topBarShimmer 5s linear infinite; }
+  @keyframes topBarShimmer{ 0%{ background-position:0% 0; } 100%{ background-position:-200% 0; } }
+  .login-monitor-bar{ display:flex; align-items:center; justify-content:flex-end; gap:10px; padding:14px 24px; border-bottom:1px solid rgba(227,168,60,0.18); background:rgba(227,168,60,0.04); }
+  .login-monitor-bar .dot3{ width:8px; height:8px; border-radius:50%; background:var(--ok); box-shadow:0 0 10px var(--ok); animation: loginPulseDot 1.4s ease-in-out infinite; }
+  .login-monitor-bar .lbl{ font-family:Consolas,monospace; font-size:11px; letter-spacing:.18em; color:var(--text-1); text-transform:uppercase; }
+  .login-monitor-readout{ display:flex; flex-wrap:wrap; justify-content:center; gap:8px 18px; padding:13px 24px; font-family:Consolas,monospace; font-size:13px; font-weight:700; border-bottom:1px dashed rgba(255,255,255,0.1); }
+  .login-monitor-readout .r-temp{ color:#2ee6a6; }
+  .login-monitor-readout .r-pow{ color:var(--accent); }
+  .login-monitor-readout .r-gas{ color:#ffb020; }
+  .login-monitor-body{ padding:34px 32px 30px; }
+  .login-card-clean{ width:100%; }
+  .login-form-head{ text-align:center; margin-bottom:30px; }
+  .login-form-head .we-mini{ font-size:32px; margin-bottom:8px; display:block; filter: drop-shadow(0 0 14px rgba(227,168,60,0.55)); }
+  .login-card-clean h1{ font-size:24px; margin:0 0 6px; letter-spacing:.01em; font-weight:900;
+    background:linear-gradient(90deg, var(--text-0), var(--wheat)); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+  .login-card-clean .sub{ font-size:13px; color:var(--text-2); margin-bottom:0; }
+  .login-card-clean .login-field{ margin-bottom:18px; }
+  .login-card-clean .login-field label{ font-family:Consolas,monospace; letter-spacing:.08em; text-transform:uppercase; font-size:11px; color:var(--text-1); font-weight:700; }
+  .login-card-clean .login-field input{ padding:16px 18px; font-size:16.5px; border-radius:12px; background:rgba(255,255,255,.045); border:1px solid rgba(227,168,60,0.22); transition:box-shadow .2s, border-color .2s; }
+  .login-card-clean .login-field input:focus{ outline:none; border-color:var(--wheat); box-shadow:0 0 0 4px rgba(227,168,60,0.16); }
+  .login-card-clean .login-submit{ margin-top:8px; padding:17px; font-size:15px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; border-radius:12px; box-shadow:0 14px 38px rgba(227,168,60,0.4); }
+  .login-footer-tech{ margin-top:22px; text-align:center; font-family:Consolas,monospace; font-size:9.5px; letter-spacing:.14em; color:var(--text-2); text-transform:uppercase; opacity:.65; }
+
+  @media (max-width:900px){
+    .login-screen{ flex-direction:column; overflow-y:auto; }
+    .login-hero{ flex:0 0 auto; padding:30px 20px; min-height:340px; }
+    .login-radar{ width:190px; height:190px; margin-bottom:14px; }
+    .login-radar-core{ width:78px; height:78px; }
+    .login-radar-core .we{ font-size:32px; }
+    .login-sensor-node{ width:26px; height:26px; font-size:12px; }
+    .login-hero-title{ font-size:24px; }
+    .login-hero-sub{ font-size:10px; }
+    .login-form-panel{ flex:1 1 auto; border-inline-start:none; border-top:1px solid var(--card-border); padding:26px; }
+    .login-monitor-body{ padding:26px 22px 22px; }
+    .login-card-clean h1{ font-size:20px; }
+  }
 
   /* ===== لوحة إدارة المستخدمين والصلاحيات ===== */
   .user-row{ padding:12px; border:1px solid var(--card-border); border-radius:10px; margin-bottom:10px; background:rgba(255,255,255,0.02); }
@@ -534,28 +665,76 @@
 </style>
 </head>
 <body>
-<!-- ===== شاشة تسجيل الدخول ===== -->
+<!-- ===== شاشة تسجيل الدخول - تصميم SCADA صناعي عملاق ===== -->
 <div class="login-screen" id="loginScreen">
-  <div class="login-card">
-    <div class="we">🌾</div>
-    <h1 data-i18n="title">Qamha Scada System</h1>
-    <div class="sub" data-i18n="loginSubtitle">تسجيل الدخول للوصول إلى لوحة المراقبة</div>
-    <div class="login-field">
-      <label data-i18n="loginEmailLabel">البريد الإلكتروني</label>
-      <input type="email" id="loginEmail" autocomplete="username" onkeydown="if(event.key==='Enter'){ document.getElementById('loginPassword').focus(); }">
+  <div class="login-hero">
+    <div class="login-hero-grid"></div>
+    <div class="login-hero-scan"></div>
+
+    <div class="login-radar">
+      <div class="ring-track"></div>
+      <div class="ring-track"></div>
+      <div class="ring-track"></div>
+      <div class="login-radar-sweep"></div>
+      <div class="login-radar-dot"></div>
+      <div class="login-radar-core"><span class="we">🌾</span></div>
+      <div class="login-sensor-node sn-1" title="Warehouses">🌡️</div>
+      <div class="login-sensor-node sn-2" title="Fire">🔥</div>
+      <div class="login-sensor-node sn-3" title="Gas">🛢️</div>
+      <div class="login-sensor-node sn-4" title="Motion">🚶</div>
+      <div class="login-sensor-node sn-5" title="Power">⚡</div>
     </div>
-    <div class="login-field">
-      <label data-i18n="loginPasswordLabel">كلمة المرور</label>
-      <input type="password" id="loginPassword" autocomplete="current-password" onkeydown="if(event.key==='Enter'){ doLogin(); }">
+
+    <h1 class="login-hero-title" data-i18n="title">Qamha Scada System</h1>
+    <div class="login-hero-sub">SUPERVISORY CONTROL &amp; DATA ACQUISITION</div>
+  </div>
+
+  <div class="login-connector">
+    <div class="login-connector-wifi">📶</div>
+    <div class="login-connector-line"><span class="login-connector-dot"></span></div>
+    <div class="login-connector-label">LIVE LINK</div>
+  </div>
+
+  <div class="login-form-panel">
+    <div class="login-monitor">
+      <div class="login-monitor-bar">
+        <span class="dot3"></span>
+        <span class="lbl">DATA TAP — LIVE FEED</span>
+      </div>
+      <div class="login-monitor-readout">
+        <span class="r-temp">24.6°C · 61%RH</span>
+        <span class="r-pow">230V · 50.0Hz</span>
+        <span class="r-gas">GAS 0.4ppm — OK</span>
+      </div>
+      <div class="login-monitor-body">
+        <div class="login-card login-card-clean">
+          <div class="login-form-head">
+            <span class="we-mini">🔐</span>
+            <h1 data-i18n="loginPanelTitle">تسجيل الدخول</h1>
+            <div class="sub" data-i18n="loginSubtitle">تسجيل الدخول للوصول إلى لوحة المراقبة</div>
+          </div>
+
+          <div class="login-field">
+            <label data-i18n="loginEmailLabel">البريد الإلكتروني</label>
+            <input type="email" id="loginEmail" autocomplete="username" onkeydown="if(event.key==='Enter'){ document.getElementById('loginPassword').focus(); }">
+          </div>
+          <div class="login-field">
+            <label data-i18n="loginPasswordLabel">كلمة المرور</label>
+            <input type="password" id="loginPassword" autocomplete="current-password" onkeydown="if(event.key==='Enter'){ doLogin(); }">
+          </div>
+          <div class="login-remember-row">
+            <label><input type="checkbox" id="loginRemember"> <span data-i18n="loginRememberLabel">تذكرني</span></label>
+            <button type="button" class="login-forgot-link" onclick="doForgotPassword()" data-i18n="loginForgotLink">نسيت كلمة المرور؟</button>
+          </div>
+          <div class="login-error" id="loginError"></div>
+          <div class="login-info" id="loginInfo"></div>
+          <button class="export-btn login-submit" onclick="doLogin()" id="loginSubmitBtn" data-i18n="loginSubmit">دخول</button>
+          <div class="login-loading" id="loginLoading" data-i18n="loginChecking">جارٍ التحقق...</div>
+
+          <div class="login-footer-tech">QAMHA INDUSTRIAL MONITORING PLATFORM</div>
+        </div>
+      </div>
     </div>
-    <div class="login-remember-row">
-      <label><input type="checkbox" id="loginRemember"> <span data-i18n="loginRememberLabel">تذكرني</span></label>
-      <button type="button" class="login-forgot-link" onclick="doForgotPassword()" data-i18n="loginForgotLink">نسيت كلمة المرور؟</button>
-    </div>
-    <div class="login-error" id="loginError"></div>
-    <div class="login-info" id="loginInfo"></div>
-    <button class="export-btn login-submit" onclick="doLogin()" id="loginSubmitBtn" data-i18n="loginSubmit">دخول</button>
-    <div class="login-loading" id="loginLoading" data-i18n="loginChecking">جارٍ التحقق...</div>
   </div>
 </div>
 <div class="wrap" style="display:none;">
@@ -733,7 +912,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 1.9.3</div>
+      <div class="brand-version">Ver 2.0.2</div>
     </div>
   </footer>
 </div>
@@ -1125,6 +1304,7 @@ const I18N = {
     powerTotalLoadLabel:'الحمل الكلي', powerThresholdsTitle:'⚡ حدود الطاقة الكهربائية',
     powerVMinLabel:'أدنى فولتية مقبولة', powerVMaxLabel:'أعلى فولتية مقبولة', powerHzMinLabel:'أدنى تردد مقبول', powerHzMaxLabel:'أعلى تردد مقبول',
     powerLLLabel:'فولتية بين الفيزات (خط-خط)', powerVLLMinLabel:'أدنى فولتية خط-خط مقبولة', powerVLLMaxLabel:'أعلى فولتية خط-خط مقبولة',
+    loginPanelTitle:'تسجيل الدخول',
     loginSubtitle:'تسجيل الدخول للوصول إلى لوحة المراقبة', loginEmailLabel:'البريد الإلكتروني', loginPasswordLabel:'كلمة المرور',
     loginSubmit:'دخول', loginChecking:'جارٍ التحقق...', loginMissingFields:'أدخل البريد الإلكتروني وكلمة المرور',
     loginBadCreds:'البريد الإلكتروني أو كلمة المرور غير صحيحة', loginBadEmail:'صيغة البريد الإلكتروني غير صحيحة',
@@ -1216,6 +1396,7 @@ const I18N = {
     powerTotalLoadLabel:'Total Load', powerThresholdsTitle:'⚡ Electrical Power Limits',
     powerVMinLabel:'Min acceptable voltage', powerVMaxLabel:'Max acceptable voltage', powerHzMinLabel:'Min acceptable frequency', powerHzMaxLabel:'Max acceptable frequency',
     powerLLLabel:'Line-to-Line Voltage', powerVLLMinLabel:'Min acceptable line-to-line voltage', powerVLLMaxLabel:'Max acceptable line-to-line voltage',
+    loginPanelTitle:'Sign In',
     loginSubtitle:'Sign in to access the monitoring dashboard', loginEmailLabel:'Email', loginPasswordLabel:'Password',
     loginSubmit:'Sign In', loginChecking:'Checking...', loginMissingFields:'Enter your email and password',
     loginBadCreds:'Incorrect email or password', loginBadEmail:'Invalid email format',
