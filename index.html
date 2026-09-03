@@ -415,6 +415,37 @@
     .login-card-clean h1{ font-size:20px; }
   }
 
+  /* ===== صفحة لوحة تحكم الإدارة الاحترافية (Admin Console) ===== */
+  .admin-home-screen{
+    display:none; position:fixed; inset:0; z-index:150; overflow-y:auto;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(0,229,255,0.08), transparent 45%),
+      radial-gradient(circle at 85% 100%, rgba(227,168,60,0.08), transparent 45%),
+      var(--bg-0);
+  }
+  .admin-home-screen.show{ display:block; }
+  .admin-home-inner{ max-width:1180px; margin:0 auto; padding:26px 22px 60px; }
+  .admin-home-header{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:26px; padding-bottom:18px; border-bottom:1px solid var(--card-border); }
+  .admin-home-heading{ display:flex; align-items:center; gap:12px; }
+  .admin-home-heading .ahi{ font-size:28px; filter: drop-shadow(0 0 12px rgba(227,168,60,0.4)); }
+  .admin-home-heading h2{ font-size:21px; font-weight:900; margin:0; }
+  .admin-home-heading .sub{ font-size:11.5px; color:var(--text-2); margin-top:2px; }
+  .admin-home-back{ background:rgba(255,255,255,.05); border:1px solid var(--card-border); color:var(--text-1); font-size:12.5px; font-weight:700; padding:9px 18px; border-radius:10px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:.2s; }
+  .admin-home-back:hover{ background:rgba(255,255,255,.09); color:var(--text-0); }
+  .admin-cards-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:18px; }
+  .admin-card{ background:var(--bg-2); border:1px solid var(--card-border); border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:12px; box-shadow:0 12px 34px rgba(0,0,0,0.25); transition:.2s; }
+  .admin-card:hover{ border-color:rgba(0,229,255,0.35); box-shadow:0 16px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,229,255,0.08); transform:translateY(-2px); }
+  .admin-card-head{ display:flex; align-items:center; gap:12px; }
+  .admin-card-icon{ width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; background:rgba(227,168,60,0.1); border:1px solid rgba(227,168,60,0.3); flex:0 0 auto; }
+  .admin-card-title{ font-size:15px; font-weight:800; color:var(--text-0); }
+  .admin-card-desc{ font-size:11.5px; color:var(--text-2); line-height:1.7; }
+  .admin-card-actions{ display:flex; flex-direction:column; gap:8px; margin-top:auto; }
+  .admin-card-btn{ display:flex; align-items:center; justify-content:space-between; gap:8px; background:rgba(255,255,255,.03); border:1px solid var(--card-border); color:var(--text-1); font-size:12px; font-weight:700; padding:10px 14px; border-radius:10px; cursor:pointer; text-align:start; transition:.2s; width:100%; }
+  .admin-card-btn:hover{ background:rgba(0,229,255,0.08); border-color:rgba(0,229,255,0.35); color:var(--text-0); }
+  .admin-card-btn .arrow{ opacity:.6; }
+  .admin-card-btn.primary{ background:linear-gradient(135deg, var(--wheat), var(--wheat-2)); border:none; color:#241a05; }
+  .admin-card-btn.primary:hover{ filter:brightness(1.06); }
+
   /* ===== لوحة إدارة المستخدمين والصلاحيات ===== */
   .user-row{ padding:12px; border:1px solid var(--card-border); border-radius:10px; margin-bottom:10px; background:rgba(255,255,255,0.02); }
   .user-row-head{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
@@ -737,6 +768,79 @@
     </div>
   </div>
 </div>
+
+<!-- ===== صفحة لوحة تحكم الإدارة الاحترافية (Admin Console) ===== -->
+<div class="admin-home-screen" id="adminHomeScreen">
+  <div class="admin-home-inner">
+    <div class="admin-home-header">
+      <div class="admin-home-heading">
+        <span class="ahi">⚙️</span>
+        <div>
+          <h2 data-i18n="adminHomeTitle">لوحة تحكم الإدارة</h2>
+          <div class="sub" data-i18n="adminHomeSubtitle">من هنا تقدر تعدّل كل تفاصيل النظام — اليوزرات، الرينجات، الخرائط، ومنظومات الحريق</div>
+        </div>
+      </div>
+      <button class="admin-home-back" onclick="closeAdminHome()">→ <span data-i18n="adminHomeBack">رجوع للوحة الرئيسية</span></button>
+    </div>
+
+    <div class="admin-cards-grid">
+      <div class="admin-card">
+        <div class="admin-card-head">
+          <span class="admin-card-icon">👥</span>
+          <div>
+            <div class="admin-card-title" data-i18n="adminCardUsersTitle">المستخدمين والصلاحيات</div>
+          </div>
+        </div>
+        <div class="admin-card-desc" data-i18n="adminCardUsersDesc">إنشاء وتعديل حسابات المستخدمين، تحديد الصفحات المسموحة لكل واحد، تفعيل/تعطيل الحسابات ومنح صلاحية الأدمن الكاملة.</div>
+        <div class="admin-card-actions">
+          <button class="admin-card-btn primary" onclick="openUsersAdmin()"><span data-i18n="adminCardOpenUsers">👥 فتح إدارة المستخدمين</span> <span class="arrow">←</span></button>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-card-head">
+          <span class="admin-card-icon">🎚️</span>
+          <div>
+            <div class="admin-card-title" data-i18n="adminCardRangesTitle">الرينجات والحدود المسموحة</div>
+          </div>
+        </div>
+        <div class="admin-card-desc" data-i18n="adminCardRangesDesc">حدود الحرارة والرطوبة المسموحة لكل مخزن، وحدود الفولتية والتردد لجميع مصادر الطاقة الكهربائية.</div>
+        <div class="admin-card-actions">
+          <button class="admin-card-btn primary" onclick="openAdmin()"><span data-i18n="adminCardOpenRanges">🎚️ فتح إعدادات الرينجات</span> <span class="arrow">←</span></button>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-card-head">
+          <span class="admin-card-icon">🗺️</span>
+          <div>
+            <div class="admin-card-title" data-i18n="adminCardMapsTitle">الخرائط وتفاصيلها</div>
+          </div>
+        </div>
+        <div class="admin-card-desc" data-i18n="adminCardMapsDesc">رفع مخططات الموقع وتحديد أماكن المتحسسات على الخريطة لكل منظومة على حدة.</div>
+        <div class="admin-card-actions">
+          <button class="admin-card-btn" onclick="openFireMapAdmin()"><span data-i18n="adminCardOpenFireMap">🔥 خريطة منظومة الحريق</span> <span class="arrow">←</span></button>
+          <button class="admin-card-btn" onclick="openSimpleMapAdmin('gas')"><span data-i18n="adminCardOpenGasMap">🛢️ خريطة منظومة الغاز</span> <span class="arrow">←</span></button>
+          <button class="admin-card-btn" onclick="openSimpleMapAdmin('motion')"><span data-i18n="adminCardOpenMotionMap">🚶 خريطة منظومة الحركة</span> <span class="arrow">←</span></button>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-card-head">
+          <span class="admin-card-icon">🔥</span>
+          <div>
+            <div class="admin-card-title" data-i18n="adminCardFireSysTitle">منظومات الحريق</div>
+          </div>
+        </div>
+        <div class="admin-card-desc" data-i18n="adminCardFireSysDesc">إضافة أو تعديل أو حذف منظومات الحريق المستقلة (لكل منظومة زوناتها وحساساتها الخاصة).</div>
+        <div class="admin-card-actions">
+          <button class="admin-card-btn primary" onclick="openFireSystemsAdmin()"><span data-i18n="adminCardOpenFireSys">🔥 فتح إدارة منظومات الحريق</span> <span class="arrow">←</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="wrap" style="display:none;">
 
   <header>
@@ -760,8 +864,7 @@
         <button class="icon-btn" id="installBtn" onclick="installApp()" title="Install App" style="display:none;">📲</button>
         <button class="icon-btn" id="fullscreenBtn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
         <span id="currentUserLabel"></span>
-        <button class="icon-btn" id="usersAdminBtn" onclick="openUsersAdmin()" title="Users" style="display:none;">👥</button>
-        <button class="icon-btn" id="adminBtn" onclick="openAdmin()" title="Admin" style="display:none;">⚙️</button>
+        <button class="icon-btn" id="adminBtn" onclick="openAdminHome()" title="Admin" style="display:none;">⚙️</button>
         <button class="icon-btn" id="logoutBtn" onclick="doLogout()" title="Logout" style="width:auto;display:inline-flex;align-items:center;gap:4px;padding:0 10px;">🚪 <span data-i18n="logoutBtnLabel">خروج</span></button>
         <select class="mini-select" id="themeSelect" onchange="setTheme(this.value)">
           <option value="dark" data-i18n="optDark">🌙 داكن</option>
@@ -825,6 +928,7 @@
         <button class="ctrl-btn" onclick="fireSilence()">🔇 <span data-i18n="btnSilence">كتم</span></button>
         <button class="ctrl-btn" onclick="fireReset()">🔁 <span data-i18n="btnReset">إعادة تعيين</span></button>
         <button class="ctrl-btn" onclick="fireTest()">🧪 <span data-i18n="btnTest">اختبار</span></button>
+        <button class="ctrl-btn" onclick="openSystemLog('fire')">📜 <span data-i18n="btnLog">السجل</span></button>
       </div>
       <div class="zones-grid" id="fireZonesGrid"></div>
       <div class="fire-map-block" style="margin-top:18px;">
@@ -850,6 +954,7 @@
         <button class="ctrl-btn" onclick="gasSilence()">🔇 <span data-i18n="btnSilence">كتم</span></button>
         <button class="ctrl-btn" onclick="gasReset()">🔁 <span data-i18n="btnReset">إعادة تعيين</span></button>
         <button class="ctrl-btn" onclick="gasTest()">🧪 <span data-i18n="btnTest">اختبار</span></button>
+        <button class="ctrl-btn" onclick="openSystemLog('gas')">📜 <span data-i18n="btnLog">السجل</span></button>
       </div>
       <div class="zones-grid" id="gasZonesGrid"></div>
       <div class="fire-map-block" style="margin-top:18px;">
@@ -875,6 +980,7 @@
         <button class="ctrl-btn" onclick="motionSilence()">🔇 <span data-i18n="btnSilence">كتم</span></button>
         <button class="ctrl-btn" onclick="motionReset()">🔁 <span data-i18n="btnReset">إعادة تعيين</span></button>
         <button class="ctrl-btn" onclick="motionTest()">🧪 <span data-i18n="btnTest">اختبار</span></button>
+        <button class="ctrl-btn" onclick="openSystemLog('motion')">📜 <span data-i18n="btnLog">السجل</span></button>
       </div>
       <div class="zones-grid" id="motionZonesGrid"></div>
       <div class="fire-map-block" style="margin-top:18px;">
@@ -900,6 +1006,7 @@
         <button class="ctrl-btn" onclick="powerSilence()">🔇 <span data-i18n="btnSilence">كتم</span></button>
         <button class="ctrl-btn" onclick="powerReset()">🔁 <span data-i18n="btnReset">إعادة تعيين</span></button>
         <button class="ctrl-btn" onclick="powerTest()">🧪 <span data-i18n="btnTest">اختبار</span></button>
+        <button class="ctrl-btn" onclick="openSystemLog('power')">📜 <span data-i18n="btnLog">السجل</span></button>
       </div>
       <div id="powerActiveStrip" style="font-size:12px;color:var(--text-1);margin:6px 0 14px;font-weight:700;"></div>
       <div id="powerSourcesGrid" style="display:flex;flex-direction:column;gap:18px;"></div>
@@ -912,7 +1019,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 2.0.2</div>
+      <div class="brand-version">Ver 2.0.6</div>
     </div>
   </footer>
 </div>
@@ -934,6 +1041,26 @@
         <tbody id="logTableBody"></tbody>
       </table>
       <div class="log-empty" id="logEmpty" data-i18n="noDataLabel">لا توجد بيانات مسجلة بعد</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== System Log Modal (سجل تاريخي عام لمنظومات الحريق/الغاز/الحركة/الطاقة) ===== -->
+<div class="modal-overlay" id="sysLogModal">
+  <div class="modal-box" style="max-width:820px;">
+    <div class="modal-head"><h3 id="sysLogModalTitle">📜 السجل</h3><button class="modal-close" onclick="closeSysLog()">✕</button></div>
+    <div class="modal-controls">
+      <label class="log-date-filter"><span data-i18n="logFromLabel">من</span> <input type="datetime-local" id="sysLogFromInput" onchange="renderSysLogTable()"></label>
+      <label class="log-date-filter"><span data-i18n="logToLabel">إلى</span> <input type="datetime-local" id="sysLogToInput" onchange="renderSysLogTable()"></label>
+      <button class="export-btn" onclick="clearSysLogDateFilter()" data-i18n="clearFilterLabel">✕ مسح الفلترة</button>
+      <button class="export-btn" onclick="exportSysLogExcel()" data-i18n="exportLabel">⬇ تصدير Excel</button>
+    </div>
+    <div class="modal-table-wrap">
+      <table class="log-table">
+        <thead id="sysLogTableHead"></thead>
+        <tbody id="sysLogTableBody"></tbody>
+      </table>
+      <div class="log-empty" id="sysLogEmpty" data-i18n="noDataLabel">لا توجد بيانات مسجلة بعد</div>
     </div>
   </div>
 </div>
@@ -1281,6 +1408,12 @@ const I18N = {
     noDataLabel:'لا توجد بيانات مسجلة بعد', alertModalTitle:'تفاصيل التنبيهات النشطة', noActiveAlerts:'لا توجد تنبيهات نشطة حالياً',
     colWarehouse:'المخزن', colSince:'منذ (ثانية)',
     adminAuthTitle:'🔒 دخول الإدارة', adminAuthIntro:'أدخل كلمة المرور للوصول إلى إعدادات النظام', adminAuthError:'كلمة المرور غير صحيحة', adminAuthSubmit:'دخول',
+    adminHomeTitle:'لوحة تحكم الإدارة', adminHomeSubtitle:'من هنا تقدر تعدّل كل تفاصيل النظام — اليوزرات، الرينجات، الخرائط، ومنظومات الحريق', adminHomeBack:'رجوع للوحة الرئيسية',
+    adminCardUsersTitle:'المستخدمين والصلاحيات', adminCardUsersDesc:'إنشاء وتعديل حسابات المستخدمين، تحديد الصفحات المسموحة لكل واحد، تفعيل/تعطيل الحسابات ومنح صلاحية الأدمن الكاملة.', adminCardOpenUsers:'👥 فتح إدارة المستخدمين',
+    adminCardRangesTitle:'الرينجات والحدود المسموحة', adminCardRangesDesc:'حدود الحرارة والرطوبة المسموحة لكل مخزن، وحدود الفولتية والتردد لجميع مصادر الطاقة الكهربائية.', adminCardOpenRanges:'🎚️ فتح إعدادات الرينجات',
+    adminCardMapsTitle:'الخرائط وتفاصيلها', adminCardMapsDesc:'رفع مخططات الموقع وتحديد أماكن المتحسسات على الخريطة لكل منظومة على حدة.',
+    adminCardOpenFireMap:'🔥 خريطة منظومة الحريق', adminCardOpenGasMap:'🛢️ خريطة منظومة الغاز', adminCardOpenMotionMap:'🚶 خريطة منظومة الحركة',
+    adminCardFireSysTitle:'منظومات الحريق', adminCardFireSysDesc:'إضافة أو تعديل أو حذف منظومات الحريق المستقلة (لكل منظومة زوناتها وحساساتها الخاصة).', adminCardOpenFireSys:'🔥 فتح إدارة منظومات الحريق',
     adminTitle:'⚙️ إعدادات النظام (الرينج المسموح)',
     adminIntro:'حدد المدى الطبيعي للحرارة والرطوبة لكل مخزن — خارج هذا المدى تتغير الحالة تلقائياً لصاعدة أو نازلة.',
     tempRangeLabel:'الحرارة °م', humRangeLabel:'الرطوبة %', minLabel:'من', maxLabel:'إلى', adminSave:'💾 حفظ الإعدادات',
@@ -1323,7 +1456,8 @@ const I18N = {
     userNoPerms:'اختر تبويب واحد على الأقل أو فعّل صلاحية الأدمن الكامل', userSaveError:'تعذر حفظ التغييرات', userCreateError:'تعذر إنشاء المستخدم',
     userEmailInUse:'هذا البريد الإلكتروني مستخدم مسبقاً',
     fireStatusNormal:'طبيعي', fireStatusAlarm:'حريق!', fireStatusFault:'عطل', fireStatusDisabled:'معطّل', fireStatusOffline:'⛔ غير متصل', fireStatusNoCircuit:'لا يوجد دائرة مرتبطة بهذا الزون',
-    btnSilence:'🔇 كتم', btnReset:'🔁 إعادة تعيين', btnTest:'🧪 اختبار',
+    btnSilence:'🔇 كتم', btnReset:'🔁 إعادة تعيين', btnTest:'🧪 اختبار', btnLog:'السجل',
+    colZone:'الزون', colPpm:'PPM', colSource:'المصدر', colFreq:'التردد Hz',
     fireMapAdminBtn:'إدارة خريطة منظومة الحريق', fireMapAdminTitle:'🗺️ خريطة منظومة الحريق',
     fireMapNote:'ارفع صورة أو ملف PDF لمخطط الموقع، وحدد مكان كل متحسس بالضغط على الخريطة. ملفات الأوتوكاد (DWG/DXF) غير مدعومة مباشرة — صدّرها كـ PDF أو صورة من برنامج الأوتوكاد أولاً.',
     fireMapUpload:'⬆ رفع خريطة (صورة / PDF)', fireMapAddPin:'إضافة متحسس', fireMapClear:'مسح الخريطة',
@@ -1373,6 +1507,12 @@ const I18N = {
     noDataLabel:'No data logged yet', alertModalTitle:'Active Alert Details', noActiveAlerts:'No active alerts',
     colWarehouse:'Warehouse', colSince:'Since (sec)',
     adminAuthTitle:'🔒 Admin Login', adminAuthIntro:'Enter the password to access system settings', adminAuthError:'Incorrect password', adminAuthSubmit:'Enter',
+    adminHomeTitle:'Admin Console', adminHomeSubtitle:'Edit every detail of the system from here — users, ranges, maps, and fire systems', adminHomeBack:'Back to dashboard',
+    adminCardUsersTitle:'Users & Permissions', adminCardUsersDesc:'Create and edit user accounts, choose which pages each one can access, enable/disable accounts, and grant full admin rights.', adminCardOpenUsers:'👥 Open user management',
+    adminCardRangesTitle:'Ranges & Allowed Limits', adminCardRangesDesc:'Allowed temperature/humidity ranges per warehouse, and voltage/frequency limits for all power sources.', adminCardOpenRanges:'🎚️ Open range settings',
+    adminCardMapsTitle:'Maps & Details', adminCardMapsDesc:'Upload site layouts and place each sensor on the map, per system.',
+    adminCardOpenFireMap:'🔥 Fire system map', adminCardOpenGasMap:'🛢️ Gas system map', adminCardOpenMotionMap:'🚶 Motion system map',
+    adminCardFireSysTitle:'Fire Systems', adminCardFireSysDesc:'Add, edit, or delete independent fire systems (each with its own zones and sensors).', adminCardOpenFireSys:'🔥 Open fire systems management',
     adminTitle:'⚙️ System Settings (Allowed Range)',
     adminIntro:'Set the normal temperature/humidity range per warehouse — outside this range status switches to rising or falling automatically.',
     tempRangeLabel:'Temp °C', humRangeLabel:'Humidity %', minLabel:'Min', maxLabel:'Max', adminSave:'💾 Save Settings',
@@ -1415,7 +1555,8 @@ const I18N = {
     userNoPerms:'Select at least one tab or enable full admin access', userSaveError:'Could not save changes', userCreateError:'Could not create user',
     userEmailInUse:'This email is already in use',
     fireStatusNormal:'Normal', fireStatusAlarm:'Fire!', fireStatusFault:'Fault', fireStatusDisabled:'Disabled', fireStatusOffline:'⛔ Offline', fireStatusNoCircuit:'No circuit connected to this zone',
-    btnSilence:'🔇 Silence', btnReset:'🔁 Reset', btnTest:'🧪 Test',
+    btnSilence:'🔇 Silence', btnReset:'🔁 Reset', btnTest:'🧪 Test', btnLog:'Log',
+    colZone:'Zone', colPpm:'PPM', colSource:'Source', colFreq:'Freq Hz',
     fireMapAdminBtn:'Manage Fire System Map', fireMapAdminTitle:'🗺️ Fire System Site Map',
     fireMapNote:'Upload an image or PDF site plan, then click the map to place each sensor. AutoCAD files (DWG/DXF) are not supported directly — export as PDF or image from AutoCAD first.',
     fireMapUpload:'⬆ Upload Map (Image / PDF)', fireMapAddPin:'Add Sensor', fireMapClear:'Clear Map',
@@ -1903,6 +2044,142 @@ window.exportLogExcel = async function(){
   XLSX.writeFile(wb, `log_${whName(idx)}_${Date.now()}.xlsx`);
 };
 
+/* ---------- سجل تاريخي عام لمنظومات الحريق/الغاز/الحركة/الطاقة (زر LOG بكل تبويب) ----------
+   كل قراءة حية توصل من فايربيس تُكتب فوراً إلى logs/{sysKey}/{itemId}/{timestamp} حتى تبقى
+   محفوظة بشكل دائم بقاعدة البيانات (مو بس بذاكرة المتصفح) - نفس مبدأ سجل المخازن تماماً.
+   ملاحظة: التسجيل هذا يشتغل طول ما الداشبورد مفتوح ومتصل بالإنترنت (شاشة كشك دائمة التشغيل) -
+   لتسجيل مستمر 24/7 حتى بدون فتح الداشبورد أبداً، لازم الفيرموير نفسه يكتب لنفس المسار مستقبلاً. */
+let currentSysLogKey = null;
+let sysLogRowsCache = [];
+
+function pushSystemLogEntry(sysKey, itemId, payload){
+  if(!fbDb || !fbRef || !fbSet) return;
+  const ts = Date.now();
+  fbSet(fbRef(fbDb, 'logs/'+sysKey+'/'+itemId+'/'+ts), payload).catch(e=>console.warn('system log write failed', sysKey, itemId, e));
+}
+
+function pushPowerLogSnapshot(srcId){
+  const d = powerData[srcId]; if(!d) return;
+  pushSystemLogEntry('power', srcId, { L1V:d.L1.voltage, L1Hz:d.L1.freq, L2V:d.L2.voltage, L2Hz:d.L2.freq, L3V:d.L3.voltage, L3Hz:d.L3.freq });
+}
+
+function sysLogItemIds(sysKey){
+  if(sysKey==='fire'){ const sys=currentFireSystem(); return (sys.zones||[]).map(zd=>({ id: sys.id+'_'+zd.id, label: zd.name || (t('zoneWord')+' '+zd.id) })); }
+  if(sysKey==='gas'){ return gasZones.map(z=>({ id:String(z.id), label: t('zoneWord')+' '+z.id })); }
+  if(sysKey==='motion'){ return motionZones.map(z=>({ id:String(z.id), label: t('zoneWord')+' '+z.id })); }
+  if(sysKey==='power'){ return POWER_SOURCES.map(s=>({ id:s.id, label: (s.nameKey?t(s.nameKey):s.id) })); }
+  return [];
+}
+
+function sysStatusLabel(sysKey, status){
+  const maps = {
+    fire:{offline:'fireStatusOffline',normal:'fireStatusNormal',alarm:'fireStatusAlarm',fault:'fireStatusFault',disabled:'fireStatusDisabled'},
+    gas:{offline:'gasStatusOffline',safe:'gasStatusSafe',warning:'gasStatusWarning',danger:'gasStatusDanger',fault:'gasStatusFault'},
+    motion:{offline:'motionStatusOffline',normal:'motionStatusNormal',alarm:'motionStatusAlarm',fault:'motionStatusFault'}
+  };
+  const m = maps[sysKey];
+  return (m && m[status]) ? t(m[status]) : (status || '--');
+}
+
+function buildSysLogTableHead(sysKey){
+  const head = document.getElementById('sysLogTableHead');
+  if(sysKey==='gas'){
+    head.innerHTML = `<tr><th>${t('colDate')}</th><th>${t('colZone')}</th><th>${t('colPpm')}</th><th>${t('colStatus')}</th></tr>`;
+  } else if(sysKey==='power'){
+    head.innerHTML = `<tr><th>${t('colDate')}</th><th>${t('colSource')}</th><th>L1 (V)</th><th>L2 (V)</th><th>L3 (V)</th><th>${t('colFreq')}</th></tr>`;
+  } else {
+    head.innerHTML = `<tr><th>${t('colDate')}</th><th>${t('colZone')}</th><th>${t('colStatus')}</th></tr>`;
+  }
+}
+
+async function fetchSystemLogRows(sysKey){
+  if(!fbDb || !fbRef || !fbQuery) return [];
+  const items = sysLogItemIds(sysKey);
+  const fromVal = document.getElementById('sysLogFromInput').value;
+  const toVal = document.getElementById('sysLogToInput').value;
+  let rows = [];
+  for(const it of items){
+    const logRef = fbRef(fbDb, 'logs/'+sysKey+'/'+it.id);
+    let q;
+    if(fromVal || toVal){
+      const fromTs = fromVal ? new Date(fromVal).getTime() : 0;
+      const toTs = toVal ? new Date(toVal).getTime() : Date.now();
+      q = fbQuery(logRef, fbOrderByKey(), fbStartAt(String(fromTs)), fbEndAt(String(toTs)));
+    } else {
+      q = fbQuery(logRef, fbOrderByKey(), fbLimitToLast(150));
+    }
+    try{
+      const snap = await fbGet(q);
+      const val = snap.val();
+      if(!val) continue;
+      Object.keys(val).forEach(k=>{ rows.push(Object.assign({ ts:Number(k), itemId: it.id, itemLabel: it.label }, val[k])); });
+    }catch(e){ console.warn('fetchSystemLogRows failed', sysKey, it.id, e); }
+  }
+  return rows;
+}
+
+window.openSystemLog = async function(sysKey){
+  currentSysLogKey = sysKey;
+  const titleKeys = { fire:'navFire', gas:'navGas', motion:'navMotion', power:'navPower' };
+  document.getElementById('sysLogModalTitle').textContent = t('logTitlePrefix') + t(titleKeys[sysKey]);
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7*24*60*60*1000);
+  document.getElementById('sysLogFromInput').value = toDatetimeLocalValue(weekAgo);
+  document.getElementById('sysLogToInput').value = toDatetimeLocalValue(now);
+  buildSysLogTableHead(sysKey);
+  document.getElementById('sysLogModal').classList.add('show');
+  await window.renderSysLogTable();
+};
+window.closeSysLog = function(){ document.getElementById('sysLogModal').classList.remove('show'); currentSysLogKey=null; };
+window.clearSysLogDateFilter = async function(){
+  document.getElementById('sysLogFromInput').value=''; document.getElementById('sysLogToInput').value='';
+  await window.renderSysLogTable();
+};
+window.renderSysLogTable = async function(){
+  if(!currentSysLogKey) return;
+  const tbody = document.getElementById('sysLogTableBody'); const empty = document.getElementById('sysLogEmpty');
+  tbody.innerHTML=''; empty.style.display='block'; empty.textContent = t('loadingLabel');
+  sysLogRowsCache = await fetchSystemLogRows(currentSysLogKey);
+  sysLogRowsCache.sort((a,b)=>b.ts-a.ts);
+  renderSysLogTableFromCache();
+};
+function renderSysLogTableFromCache(){
+  const sysKey = currentSysLogKey;
+  const tbody = document.getElementById('sysLogTableBody'); const empty = document.getElementById('sysLogEmpty');
+  const rows = sysLogRowsCache.slice(0,500);
+  tbody.innerHTML='';
+  if(rows.length===0){ empty.textContent = t('noDataLabel'); empty.style.display='block'; return; }
+  empty.style.display='none';
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    if(sysKey==='gas'){
+      tr.innerHTML = `<td>${fmtDate(r.ts)} ${fmtTime(r.ts)}</td><td>${r.itemLabel}</td><td>${r.ppm!=null?Number(r.ppm).toFixed(0):'--'}</td><td>${sysStatusLabel('gas', r.status)}</td>`;
+    } else if(sysKey==='power'){
+      tr.innerHTML = `<td>${fmtDate(r.ts)} ${fmtTime(r.ts)}</td><td>${r.itemLabel}</td><td>${num(r.L1V)}</td><td>${num(r.L2V)}</td><td>${num(r.L3V)}</td><td>${num(r.L1Hz)}</td>`;
+    } else {
+      tr.innerHTML = `<td>${fmtDate(r.ts)} ${fmtTime(r.ts)}</td><td>${r.itemLabel}</td><td>${sysStatusLabel(sysKey, r.status)}</td>`;
+    }
+    tbody.appendChild(tr);
+  });
+}
+window.exportSysLogExcel = async function(){
+  if(!currentSysLogKey) return;
+  const sysKey = currentSysLogKey;
+  const rows = sysLogRowsCache;
+  if(typeof XLSX==='undefined'){ alert('Export library unavailable'); return; }
+  let data;
+  if(sysKey==='gas'){
+    data = rows.map(r=>({ [t('colDate')]:fmtDate(r.ts)+' '+fmtTime(r.ts), [t('colZone')]:r.itemLabel, [t('colPpm')]:r.ppm, [t('colStatus')]:sysStatusLabel('gas', r.status) }));
+  } else if(sysKey==='power'){
+    data = rows.map(r=>({ [t('colDate')]:fmtDate(r.ts)+' '+fmtTime(r.ts), [t('colSource')]:r.itemLabel, 'L1 (V)':r.L1V, 'L2 (V)':r.L2V, 'L3 (V)':r.L3V, [t('colFreq')]:r.L1Hz }));
+  } else {
+    data = rows.map(r=>({ [t('colDate')]:fmtDate(r.ts)+' '+fmtTime(r.ts), [t('colZone')]:r.itemLabel, [t('colStatus')]:sysStatusLabel(sysKey, r.status) }));
+  }
+  const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sysKey);
+  XLSX.writeFile(wb, `log_${sysKey}_${Date.now()}.xlsx`);
+};
+
 /* ---------- تنبيهات نشطة ---------- */
 window.openAlertsModal = function(){
   const tbody = document.getElementById('alertTableBody'); const empty = document.getElementById('alertEmpty');
@@ -2072,7 +2349,7 @@ function applyPermissionsToUI(){
     tabEl.style.display = ok ? '' : 'none';
     if(ok && !firstAllowed) firstAllowed = tabEl.dataset.view;
   });
-  ['adminBtn','usersAdminBtn'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display = isAdmin ? '' : 'none'; });
+  ['adminBtn'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display = isAdmin ? '' : 'none'; });
   const fireGear = document.getElementById('fireSysAdminBtn'); if(fireGear) fireGear.style.display = isAdmin ? '' : 'none';
   const userLabel = document.getElementById('currentUserLabel');
   if(userLabel) userLabel.textContent = currentUserProfile.displayName || currentUserProfile.email || '';
@@ -2221,6 +2498,13 @@ window.adminCreateUser = async function(){
 };
 
 /* ---------- الإدارة (Admin) ---------- */
+window.openAdminHome = function(){
+  if(!(currentUserProfile && currentUserProfile.isAdmin)) return;
+  document.getElementById('adminHomeScreen').classList.add('show');
+};
+window.closeAdminHome = function(){
+  document.getElementById('adminHomeScreen').classList.remove('show');
+};
 window.openAdmin = function(){
   if(!(currentUserProfile && currentUserProfile.isAdmin)) return;
   const form = document.getElementById('adminForm');
@@ -4549,6 +4833,8 @@ function subscribeFireSystemZones(sys){
       const fresh = (Date.now() - ts) <= OFFLINE_THRESHOLD_MS;
       const zoneState = (fireZoneLive[sys.id]||[]).find(z=>z.id===zoneDef.id);
       if(zoneState) zoneState.status = fresh ? (val.status || 'normal') : 'offline';
+      // ملاحظة: فيرموير منظومة الحريق (fire-system-1.ino) صار يكتب مباشرة لمسار logs/fire/...
+      // من الجهاز نفسه (مستقل عن المتصفح تماماً)، فما عاد نكتب من هنا حتى نتجنب تكرار الصفوف بالسجل
       if(sys.id === currentFireSystemId) renderFireZones(); else updateGlobalFireSirenAndBadge();
     });
   });
@@ -4612,6 +4898,7 @@ async function tryConnectFirebase(){
         } else {
           z.status = 'offline'; z.ppm = null;
         }
+        if(fresh) pushSystemLogEntry('gas', String(z.id), { ppm: z.ppm, status: z.status });
         renderGasZones();
       });
     });
@@ -4622,6 +4909,7 @@ async function tryConnectFirebase(){
         lastSeenMotion[z.id] = ts;
         const fresh = (Date.now() - ts) <= OFFLINE_THRESHOLD_MS;
         z.status = fresh ? (val.status || 'normal') : 'offline';
+        if(fresh) pushSystemLogEntry('motion', String(z.id), { status: z.status });
         renderMotionZones();
       });
     });
@@ -4643,6 +4931,7 @@ async function tryConnectFirebase(){
         } else {
           d.voltage=null; d.current=null; d.freq=null; d.power=null;
         }
+        if(fresh) pushPowerLogSnapshot(src.id);
         renderPowerAll();
       });
     }));
