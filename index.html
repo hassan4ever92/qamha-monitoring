@@ -274,6 +274,12 @@
   .login-field label{ display:block; font-size:11px; color:var(--text-1); margin-bottom:5px; font-weight:700; }
   .login-field input{ width:100%; padding:11px 12px; border-radius:9px; background:rgba(255,255,255,.05); border:1px solid var(--card-border); color:var(--text-0); font-size:14px; box-sizing:border-box; }
   .login-error{ color:var(--danger); font-size:12px; margin:-4px 0 12px; display:none; text-align:start; }
+  .login-info{ color:var(--ok); font-size:12px; margin:-4px 0 12px; display:none; text-align:start; line-height:1.6; }
+  .login-remember-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:14px; text-align:start; }
+  .login-remember-row label{ display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-1); font-weight:600; margin:0; cursor:pointer; }
+  .login-remember-row input[type="checkbox"]{ width:auto; accent-color:var(--wheat); }
+  .login-forgot-link{ font-size:11px; color:var(--accent-2); text-decoration:none; cursor:pointer; background:none; border:none; padding:0; }
+  .login-forgot-link:hover{ text-decoration:underline; }
   .login-submit{ width:100%; padding:11px; }
   .login-loading{ font-size:12px; color:var(--text-2); margin-top:14px; display:none; }
   #currentUserLabel{ font-size:11px; color:var(--text-2); align-self:center; margin-inline-end:2px; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -542,7 +548,12 @@
       <label data-i18n="loginPasswordLabel">كلمة المرور</label>
       <input type="password" id="loginPassword" autocomplete="current-password" onkeydown="if(event.key==='Enter'){ doLogin(); }">
     </div>
+    <div class="login-remember-row">
+      <label><input type="checkbox" id="loginRemember"> <span data-i18n="loginRememberLabel">تذكرني</span></label>
+      <button type="button" class="login-forgot-link" onclick="doForgotPassword()" data-i18n="loginForgotLink">نسيت كلمة المرور؟</button>
+    </div>
     <div class="login-error" id="loginError"></div>
+    <div class="login-info" id="loginInfo"></div>
     <button class="export-btn login-submit" onclick="doLogin()" id="loginSubmitBtn" data-i18n="loginSubmit">دخول</button>
     <div class="login-loading" id="loginLoading" data-i18n="loginChecking">جارٍ التحقق...</div>
   </div>
@@ -572,7 +583,7 @@
         <span id="currentUserLabel"></span>
         <button class="icon-btn" id="usersAdminBtn" onclick="openUsersAdmin()" title="Users" style="display:none;">👥</button>
         <button class="icon-btn" id="adminBtn" onclick="openAdmin()" title="Admin" style="display:none;">⚙️</button>
-        <button class="icon-btn" id="logoutBtn" onclick="doLogout()" title="Logout">🚪</button>
+        <button class="icon-btn" id="logoutBtn" onclick="doLogout()" title="Logout" style="width:auto;display:inline-flex;align-items:center;gap:4px;padding:0 10px;">🚪 <span data-i18n="logoutBtnLabel">خروج</span></button>
         <select class="mini-select" id="themeSelect" onchange="setTheme(this.value)">
           <option value="dark" data-i18n="optDark">🌙 داكن</option>
           <option value="light" data-i18n="optLight">☀️ فاتح</option>
@@ -722,7 +733,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 1.9.1</div>
+      <div class="brand-version">Ver 1.9.3</div>
     </div>
   </footer>
 </div>
@@ -1119,6 +1130,9 @@ const I18N = {
     loginBadCreds:'البريد الإلكتروني أو كلمة المرور غير صحيحة', loginBadEmail:'صيغة البريد الإلكتروني غير صحيحة',
     loginTooMany:'محاولات كثيرة متتالية - حاول بعد قليل', loginFailed:'تعذر تسجيل الدخول', loginConnError:'تعذر الاتصال بخدمة الدخول',
     loginDisabled:'هذا الحساب معطل - تواصل مع الإدارة', loginNoProfile:'لا توجد صلاحيات مسجلة لهذا الحساب - تواصل مع الإدارة',
+    loginRememberLabel:'تذكرني', loginForgotLink:'نسيت كلمة المرور؟', loginForgotNeedEmail:'أدخل بريدك الإلكتروني أولاً بالحقل فوق',
+    logoutBtnLabel:'خروج',
+    loginForgotSent:'إذا كان البريد مسجل لدينا، تم إرسال رابط إعادة تعيين كلمة المرور إليه - تحقق من بريدك (وصندوق الرسائل غير المرغوبة)',
     noAccessTitle:'لا توجد صلاحيات مسجلة لحسابك', noAccessMsg:'تواصل مع مسؤول النظام لتفعيل الصلاحيات المناسبة لحسابك',
     usersAdminTitle:'👥 إدارة المستخدمين والصلاحيات', usersLoading:'جارٍ التحميل...', usersLoadError:'تعذر تحميل قائمة المستخدمين',
     usersEmpty:'لا يوجد مستخدمون بعد', addUserTitle:'➕ إضافة مستخدم جديد', userEmailLabel:'البريد الإلكتروني',
@@ -1207,6 +1221,9 @@ const I18N = {
     loginBadCreds:'Incorrect email or password', loginBadEmail:'Invalid email format',
     loginTooMany:'Too many attempts - try again shortly', loginFailed:'Sign in failed', loginConnError:'Could not connect to the login service',
     loginDisabled:'This account is disabled - contact your administrator', loginNoProfile:'No permissions found for this account - contact your administrator',
+    loginRememberLabel:'Remember me', loginForgotLink:'Forgot password?', loginForgotNeedEmail:'Enter your email in the field above first',
+    logoutBtnLabel:'Logout',
+    loginForgotSent:'If that email is registered, a password reset link has been sent - check your inbox (and spam folder)',
     noAccessTitle:'No permissions assigned to your account', noAccessMsg:'Contact your system administrator to enable the right permissions',
     usersAdminTitle:'👥 Users & Permissions', usersLoading:'Loading...', usersLoadError:'Could not load users list',
     usersEmpty:'No users yet', addUserTitle:'➕ Add New User', userEmailLabel:'Email',
@@ -1745,6 +1762,7 @@ const PERMISSION_VIEWS = [
   { id:'power',      labelKey:'navPower' }
 ];
 let fbAuth = null, fbSignInFn = null, fbSignOutFn = null;
+let fbSetPersistenceFn = null, fbLocalPersistence = null, fbSessionPersistence = null, fbSendPasswordResetFn = null;
 let currentAuthUser = null;    // كائن المستخدم من Firebase Auth
 let currentUserProfile = null; // { email, displayName, allowedViews:[], isAdmin, disabled }
 let dashboardStarted = false;  // يمنع استدعاء init() أكثر من مرة
@@ -1757,10 +1775,11 @@ async function initAuthGate(){
   }
   try{
     const { initializeApp, getApps } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
-    const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+    const { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence, browserSessionPersistence, sendPasswordResetEmail } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
     const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
     const auth = getAuth(app);
     fbAuth = auth; fbSignInFn = signInWithEmailAndPassword; fbSignOutFn = signOut;
+    fbSetPersistenceFn = setPersistence; fbLocalPersistence = browserLocalPersistence; fbSessionPersistence = browserSessionPersistence; fbSendPasswordResetFn = sendPasswordResetEmail;
     onAuthStateChanged(auth, handleAuthChange);
   }catch(e){
     console.error('Auth init failed', e);
@@ -1813,13 +1832,20 @@ async function handleAuthChange(user){
 window.doLogin = async function(){
   const email = document.getElementById('loginEmail').value.trim();
   const pass = document.getElementById('loginPassword').value;
+  const remember = document.getElementById('loginRemember').checked;
   const err = document.getElementById('loginError');
-  err.style.display='none';
+  const info = document.getElementById('loginInfo');
+  err.style.display='none'; info.style.display='none';
   if(!email || !pass){ err.textContent = t('loginMissingFields'); err.style.display='block'; return; }
   if(!fbAuth || !fbSignInFn){ err.textContent = t('loginConnError'); err.style.display='block'; return; }
   document.getElementById('loginSubmitBtn').disabled=true;
   document.getElementById('loginLoading').style.display='block';
   try{
+    // "تذكرني" = يبقى الدخول محفوظ بهذا الجهاز حتى بعد إغلاق المتصفح (browserLocalPersistence)،
+    // وإلا تسجيل الدخول يبقى بس لمدة الجلسة الحالية (يروح لما يسكر التبويب/المتصفح)
+    if(fbSetPersistenceFn && fbLocalPersistence && fbSessionPersistence){
+      try{ await fbSetPersistenceFn(fbAuth, remember ? fbLocalPersistence : fbSessionPersistence); }catch(e0){ console.warn('setPersistence failed', e0); }
+    }
     await fbSignInFn(fbAuth, email, pass);
   }catch(e){
     document.getElementById('loginLoading').style.display='none';
@@ -1830,6 +1856,23 @@ window.doLogin = async function(){
     else if(code==='auth/too-many-requests') msg = t('loginTooMany');
     else if(code==='auth/invalid-email') msg = t('loginBadEmail');
     err.textContent = msg; err.style.display='block';
+  }
+};
+window.doForgotPassword = async function(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const err = document.getElementById('loginError');
+  const info = document.getElementById('loginInfo');
+  err.style.display='none'; info.style.display='none';
+  if(!email){ err.textContent = t('loginForgotNeedEmail'); err.style.display='block'; return; }
+  if(!fbAuth || !fbSendPasswordResetFn){ err.textContent = t('loginConnError'); err.style.display='block'; return; }
+  try{
+    await fbSendPasswordResetFn(fbAuth, email);
+    info.textContent = t('loginForgotSent'); info.style.display='block';
+  }catch(e){
+    const code = e && e.code;
+    // ما نفصح إذا البريد موجود أو لا (تجنب استكشاف الحسابات) - إلا بحالة صيغة بريد غير صحيحة فعلاً
+    if(code==='auth/invalid-email'){ err.textContent = t('loginBadEmail'); err.style.display='block'; }
+    else { info.textContent = t('loginForgotSent'); info.style.display='block'; }
   }
 };
 window.doLogout = function(){
