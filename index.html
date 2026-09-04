@@ -201,8 +201,8 @@
   .master-status.danger.silenced{ animation:none; }
   .master-status.offline{ color:#9aa0ac; border-color:rgba(154,160,172,.4); background:rgba(140,140,150,.1); }
   /* مربعا الحالة العامة (إنذار عام AUX + عطل عام FAULT) - قراءة مباشرة من طرفي اللوحة، مستقلة عن حالة أي زون فردي */
-  .fire-general-row{ display:flex; gap:10px; flex-wrap:wrap; direction:ltr; justify-content:flex-start; margin:4px 0 14px; }
-  .fire-general-box{ direction:rtl; min-width:150px; flex:0 0 auto; padding:10px 14px; border-radius:14px; border:1px solid rgba(154,160,172,.35); background:rgba(140,140,150,.08); text-align:center; }
+  .fire-general-col{ display:flex; flex-direction:column; gap:10px; width:180px; margin:4px auto 14px 0; }
+  .fire-general-box{ direction:rtl; padding:10px 14px; border-radius:14px; border:1px solid rgba(154,160,172,.35); background:rgba(140,140,150,.08); text-align:center; }
   .fire-general-box .fgb-label{ font-size:11px; color:var(--text-2); font-weight:700; margin-bottom:4px; }
   .fire-general-box .fgb-value{ font-size:14px; font-weight:900; color:#9aa0ac; }
   .fire-general-box.ok{ border-color:rgba(46,230,166,.4); background:rgba(46,230,166,.08); }
@@ -943,14 +943,18 @@
           <div class="master-status ok" id="fireMasterStatus">--</div>
         </div>
       </div>
-      <div class="fire-general-row">
-        <div class="fire-general-box" id="fireGeneralAlarmBox">
-          <div class="fgb-label">🚨 <span data-i18n="fireGeneralAlarmLabel">الإنذار العام (AUX)</span></div>
-          <div class="fgb-value" id="fireGeneralAlarmValue">--</div>
+      <div class="fire-general-col">
+        <div class="fire-general-box" id="fireGeneralConnBox">
+          <div class="fgb-label">🔌 <span data-i18n="fireGeneralConnLabel">الاتصال بجهاز السيطرة</span></div>
+          <div class="fgb-value" id="fireGeneralConnValue">--</div>
         </div>
         <div class="fire-general-box" id="fireGeneralFaultBox">
           <div class="fgb-label">⚠️ <span data-i18n="fireGeneralFaultLabel">العطل العام (FAULT)</span></div>
           <div class="fgb-value" id="fireGeneralFaultValue">--</div>
+        </div>
+        <div class="fire-general-box" id="fireGeneralAlarmBox">
+          <div class="fgb-label">🚨 <span data-i18n="fireGeneralAlarmLabel">الإنذار العام (AUX)</span></div>
+          <div class="fgb-value" id="fireGeneralAlarmValue">--</div>
         </div>
       </div>
       <div class="panel-toolbar">
@@ -1048,7 +1052,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 2.1.0</div>
+      <div class="brand-version">Ver 2.1.1</div>
     </div>
   </footer>
 </div>
@@ -1449,8 +1453,9 @@ const I18N = {
     sensorPendingShort:'⛔ غير متصل', sensorPendingBadge:'غير متصل — بانتظار وصول قراءة', diffPendingLabel:'—',
     silenceThresholdBtn:'🔇 كتم تنبيه الحرارة',
     fireTitle:'منظومة إنذار الحريق 1', zoneWord:'المنطقة', fireMasterOk:'✅ النظام سليم', fireMasterAlarm:'🚨 إنذار نشط', fireMasterFault:'⚠ يوجد عطل', fireMasterGeneralFault:'⚠ جنرال فولت باللوحة', fireMasterOffline:'⛔ لا توجد أجهزة متصلة',
-    fireGeneralAlarmLabel:'الإنذار العام (AUX)', fireGeneralFaultLabel:'العطل العام (FAULT)',
-    fireGeneralAlarmActive:'🚨 نشط', fireGeneralAlarmNormal:'✅ طبيعي', fireGeneralFaultActive:'⚠ يوجد عطل', fireGeneralFaultNormal:'✅ سليم', fireGeneralUnknown:'-- بانتظار بيانات',
+    fireGeneralAlarmLabel:'الإنذار العام (AUX)', fireGeneralFaultLabel:'العطل العام (FAULT)', fireGeneralConnLabel:'الاتصال بجهاز السيطرة',
+    fireGeneralAlarmActive:'🚨 نشط', fireGeneralAlarmNormal:'✅ طبيعي', fireGeneralFaultActive:'⚠ يوجد عطل', fireGeneralFaultNormal:'✅ سليم',
+    fireGeneralConnConnected:'✅ متصل', fireGeneralConnDisconnected:'⛔ غير متصل', fireGeneralUnknown:'-- بانتظار بيانات',
     fireSysAdminTitle:'🏢 إدارة منظومات الحريق',
     fireSysAdminIntro:'أنشئ منظومة حريق مستقلة لكل مبنى/موقع (مثلاً: معمل المعجنات، الإدارة، السكن والمطعم)، وحدد عدد الزونات بداخلها. تكدر تعدل الاسم أو تضيف/تحذف/تسمي الزونات بأي وقت بعدها.',
     fireSysAddNew:'➕ إضافة منظومة جديدة', fireSysNamePh:'اسم المنظومة (مثال: منظومة حريق الإدارة)', fireSysCreate:'➕ إنشاء',
@@ -1550,8 +1555,9 @@ const I18N = {
     sensorPendingShort:'⛔ Offline', sensorPendingBadge:'Offline — waiting for a reading', diffPendingLabel:'—',
     silenceThresholdBtn:'🔇 Silence Temp Alert',
     fireTitle:'Fire Alarm System 1', zoneWord:'Zone', fireMasterOk:'✅ System Normal', fireMasterAlarm:'🚨 Active Alarm', fireMasterFault:'⚠ Fault Present', fireMasterGeneralFault:'⚠ Panel General Fault', fireMasterOffline:'⛔ No Devices Connected',
-    fireGeneralAlarmLabel:'General Alarm (AUX)', fireGeneralFaultLabel:'General Fault (FAULT)',
-    fireGeneralAlarmActive:'🚨 Active', fireGeneralAlarmNormal:'✅ Normal', fireGeneralFaultActive:'⚠ Fault Present', fireGeneralFaultNormal:'✅ OK', fireGeneralUnknown:'-- waiting for data',
+    fireGeneralAlarmLabel:'General Alarm (AUX)', fireGeneralFaultLabel:'General Fault (FAULT)', fireGeneralConnLabel:'Control Device Connection',
+    fireGeneralAlarmActive:'🚨 Active', fireGeneralAlarmNormal:'✅ Normal', fireGeneralFaultActive:'⚠ Fault Present', fireGeneralFaultNormal:'✅ OK',
+    fireGeneralConnConnected:'✅ Connected', fireGeneralConnDisconnected:'⛔ Disconnected', fireGeneralUnknown:'-- waiting for data',
     fireSysAdminTitle:'🏢 Manage Fire Systems',
     fireSysAdminIntro:'Create an independent fire system for each building/site (e.g. Pastry Factory, Administration, Housing & Restaurant), and set how many zones it has. You can rename it or add/remove/rename zones anytime afterward.',
     fireSysAddNew:'➕ Add New System', fireSysNamePh:'System name (e.g. Administration Fire System)', fireSysCreate:'➕ Create',
@@ -1697,11 +1703,15 @@ let fireMapsBySystem = {}; // {[systemId]: [{id, name, imageUrl, pins:[{xPct,yPc
 // (مو مطبّق على حالة كل زون كأنه "عطل" فردي)، حتى تبين الزونات حالتها الحقيقية دائماً
 let fireSysFaultLive = {}; // {[systemId]: bool} - قراءة مباشرة من طرف FAULT
 let fireAuxLive = {};      // {[systemId]: bool} - قراءة مباشرة من طرف AUX (الإنذار العام)
+let fireDeviceLastSeen = {}; // {[systemId]: epochMs} - آخر مرة وصلت أي بيانات من الجهاز (زون أو auxFire أو sysFault)
+let fireDeviceOnlineLive = {}; // {[systemId]: bool} - نتيجة مقارنة fireDeviceLastSeen بـ OFFLINE_THRESHOLD_MS
 function ensureFireSystemStorage(sys){
   if(!fireZoneLive[sys.id]) fireZoneLive[sys.id] = sys.zones.map(z=>({id:z.id, status:'offline'}));
   if(!lastSeenFireZone[sys.id]) lastSeenFireZone[sys.id] = {};
   if(fireSysFaultLive[sys.id]===undefined) fireSysFaultLive[sys.id] = null;
   if(fireAuxLive[sys.id]===undefined) fireAuxLive[sys.id] = null;
+  if(fireDeviceLastSeen[sys.id]===undefined) fireDeviceLastSeen[sys.id] = 0;
+  if(fireDeviceOnlineLive[sys.id]===undefined) fireDeviceOnlineLive[sys.id] = null;
   if(!fireMapsBySystem[sys.id] || !Array.isArray(fireMapsBySystem[sys.id]) || !fireMapsBySystem[sys.id].length){
     fireMapsBySystem[sys.id] = [ defaultFireMap() ];
   }
@@ -3131,9 +3141,7 @@ function renderFireZones(){
     if(z.status==='fault') faultCount++;
   });
   const master = document.getElementById('fireMasterStatus');
-  const sysFaultNow = !!fireSysFaultLive[currentFireSystemId];
   if(alarmCount>0){ master.className='master-status '+(fireSilenced?'danger silenced':'danger'); master.textContent = t('fireMasterAlarm')+' ('+alarmCount+')'; }
-  else if(sysFaultNow){ master.className='master-status warn'; master.textContent = t('fireMasterGeneralFault'); }
   else if(faultCount>0){ master.className='master-status warn'; master.textContent = t('fireMasterFault'); }
   else if(connectedCount===0){ master.className='master-status offline'; master.textContent = t('fireMasterOffline'); }
   else{ master.className='master-status ok'; master.textContent = t('fireMasterOk'); }
@@ -3141,29 +3149,44 @@ function renderFireZones(){
   updateGlobalFireSirenAndBadge();
   renderFireMapMain();
 }
-// مربعا الحالة العامة (الإنذار العام AUX + العطل العام FAULT) - قراءة مباشرة من
-// طرفي اللوحة نفسها (مسارين منفصلين تماماً بفايربيس)، مستقلة عن حالة أي زون فردي
+// ثلاثة مربعات الحالة العامة، بالترتيب من فوق لتحت: الاتصال بجهاز السيطرة (بغض
+// النظر عن السبب - نت أو كهرباء مقطوعة)، ثم العطل العام (FAULT)، ثم الإنذار
+// العام (AUX) - الاثنين الأخيرين قراءة مباشرة من طرفي اللوحة، مستقلة تماماً عن
+// حالة أي زون فردي
 function renderFireGeneralBoxes(){
+  const connBox = document.getElementById('fireGeneralConnBox');
+  const connVal = document.getElementById('fireGeneralConnValue');
   const alarmBox = document.getElementById('fireGeneralAlarmBox');
   const alarmVal = document.getElementById('fireGeneralAlarmValue');
   const faultBox = document.getElementById('fireGeneralFaultBox');
   const faultVal = document.getElementById('fireGeneralFaultValue');
-  if(!alarmBox || !faultBox) return;
-  const auxNow = fireAuxLive[currentFireSystemId];
-  const faultNow = fireSysFaultLive[currentFireSystemId];
-  if(auxNow===null || auxNow===undefined){
-    alarmBox.className = 'fire-general-box'; alarmVal.textContent = t('fireGeneralUnknown');
-  } else if(auxNow){
-    alarmBox.className = 'fire-general-box '+(fireSilenced?'danger silenced':'danger'); alarmVal.textContent = t('fireGeneralAlarmActive');
+  if(!connBox || !alarmBox || !faultBox) return;
+
+  const onlineNow = fireDeviceOnlineLive[currentFireSystemId];
+  if(onlineNow===null || onlineNow===undefined){
+    connBox.className = 'fire-general-box'; connVal.textContent = t('fireGeneralUnknown');
+  } else if(onlineNow){
+    connBox.className = 'fire-general-box ok'; connVal.textContent = t('fireGeneralConnConnected');
   } else {
-    alarmBox.className = 'fire-general-box ok'; alarmVal.textContent = t('fireGeneralAlarmNormal');
+    connBox.className = 'fire-general-box danger'; connVal.textContent = t('fireGeneralConnDisconnected');
   }
+
+  const faultNow = fireSysFaultLive[currentFireSystemId];
   if(faultNow===null || faultNow===undefined){
     faultBox.className = 'fire-general-box'; faultVal.textContent = t('fireGeneralUnknown');
   } else if(faultNow){
     faultBox.className = 'fire-general-box warn'; faultVal.textContent = t('fireGeneralFaultActive');
   } else {
     faultBox.className = 'fire-general-box ok'; faultVal.textContent = t('fireGeneralFaultNormal');
+  }
+
+  const auxNow = fireAuxLive[currentFireSystemId];
+  if(auxNow===null || auxNow===undefined){
+    alarmBox.className = 'fire-general-box'; alarmVal.textContent = t('fireGeneralUnknown');
+  } else if(auxNow){
+    alarmBox.className = 'fire-general-box '+(fireSilenced?'danger silenced':'danger'); alarmVal.textContent = t('fireGeneralAlarmActive');
+  } else {
+    alarmBox.className = 'fire-general-box ok'; alarmVal.textContent = t('fireGeneralAlarmNormal');
   }
 }
 /* ---------- الانتقال بين منظومات الحريق (من القائمة المنسدلة أو من الضغط على تنبيه) ----------
@@ -3383,13 +3406,22 @@ function checkAllFireSystemsOffline(){
   let currentChanged = false;
   fireSystems.forEach(sys=>{
     const zones = fireZoneLive[sys.id]; const seenMap = lastSeenFireZone[sys.id];
-    if(!zones || !seenMap) return;
-    zones.forEach(z=>{
-      const seen = seenMap[z.id];
-      if(!seen) return; // لسا ما وصلت أي بيانات من هذا الزون أصلاً
-      const stale = (Date.now() - seen) > OFFLINE_THRESHOLD_MS;
-      if(stale && z.status!=='offline'){ z.status='offline'; if(sys.id===currentFireSystemId) currentChanged=true; }
-    });
+    if(zones && seenMap){
+      zones.forEach(z=>{
+        const seen = seenMap[z.id];
+        if(!seen) return; // لسا ما وصلت أي بيانات من هذا الزون أصلاً
+        const stale = (Date.now() - seen) > OFFLINE_THRESHOLD_MS;
+        if(stale && z.status!=='offline'){ z.status='offline'; if(sys.id===currentFireSystemId) currentChanged=true; }
+      });
+    }
+    // حالة الاتصال بجهاز السيطرة نفسه (بغض النظر عن السبب - نت مقطوع، كهرباء مقطوعة..)
+    // - آخر مرة وصلت أي بيانات منه إطلاقاً (زون أو auxFire أو sysFault)
+    const lastSeen = fireDeviceLastSeen[sys.id] || 0;
+    const online = lastSeen > 0 && (Date.now() - lastSeen) <= OFFLINE_THRESHOLD_MS;
+    if(fireDeviceOnlineLive[sys.id] !== online){
+      fireDeviceOnlineLive[sys.id] = online;
+      if(sys.id===currentFireSystemId) currentChanged = true;
+    }
   });
   if(currentChanged) renderFireZones(); else updateGlobalFireSirenAndBadge();
 }
@@ -4916,6 +4948,8 @@ function subscribeFireSystemZones(sys){
       const ts = (val.timestamp && Number(val.timestamp) > NTP_EPOCH_SANITY_MS_ZONES) ? Number(val.timestamp) : Date.now();
       if(!lastSeenFireZone[sys.id]) lastSeenFireZone[sys.id] = {};
       lastSeenFireZone[sys.id][zoneDef.id] = ts;
+      fireDeviceLastSeen[sys.id] = Math.max(fireDeviceLastSeen[sys.id]||0, ts);
+      fireDeviceOnlineLive[sys.id] = true;
       const fresh = (Date.now() - ts) <= OFFLINE_THRESHOLD_MS;
       const zoneState = (fireZoneLive[sys.id]||[]).find(z=>z.id===zoneDef.id);
       if(zoneState) zoneState.status = fresh ? (val.status || 'normal') : 'offline';
@@ -4931,6 +4965,7 @@ function subscribeFireSystemZones(sys){
     fbOnValue(fbRef(fbDb, 'fireZones/'+sys.id+'/sysFault'), (snap)=>{
       const val = snap.val();
       fireSysFaultLive[sys.id] = !!(val && val.fault);
+      if(val && val.timestamp){ fireDeviceLastSeen[sys.id] = Math.max(fireDeviceLastSeen[sys.id]||0, Number(val.timestamp)); fireDeviceOnlineLive[sys.id] = true; }
       if(sys.id === currentFireSystemId) renderFireZones();
     });
   }
@@ -4940,6 +4975,7 @@ function subscribeFireSystemZones(sys){
     fbOnValue(fbRef(fbDb, 'fireZones/'+sys.id+'/auxFire'), (snap)=>{
       const val = snap.val();
       fireAuxLive[sys.id] = !!(val && val.active);
+      if(val && val.timestamp){ fireDeviceLastSeen[sys.id] = Math.max(fireDeviceLastSeen[sys.id]||0, Number(val.timestamp)); fireDeviceOnlineLive[sys.id] = true; }
       if(sys.id === currentFireSystemId) renderFireZones();
     });
   }
