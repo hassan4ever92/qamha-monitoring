@@ -201,7 +201,9 @@
   .master-status.danger.silenced{ animation:none; }
   .master-status.offline{ color:#9aa0ac; border-color:rgba(154,160,172,.4); background:rgba(140,140,150,.1); }
   /* مربعا الحالة العامة (إنذار عام AUX + عطل عام FAULT) - قراءة مباشرة من طرفي اللوحة، مستقلة عن حالة أي زون فردي */
-  .fire-general-col{ display:flex; flex-direction:column; gap:10px; width:180px; margin:4px auto 14px 0; }
+  .fire-body-row{ display:flex; gap:14px; align-items:flex-start; }
+  .fire-body-row .zones-grid{ flex:1 1 0; min-width:0; }
+  .fire-general-col{ display:flex; flex-direction:column; gap:10px; width:180px; flex:0 0 180px; }
   .fire-general-box{ direction:rtl; padding:10px 14px; border-radius:14px; border:1px solid rgba(154,160,172,.35); background:rgba(140,140,150,.08); text-align:center; }
   .fire-general-box .fgb-label{ font-size:11px; color:var(--text-2); font-weight:700; margin-bottom:4px; }
   .fire-general-box .fgb-value{ font-size:14px; font-weight:900; color:#9aa0ac; }
@@ -668,6 +670,7 @@
   body.fs-mode .zone-tile .zstatus{ font-size:6px; }
   body.fs-mode .zone-tile .zval{ font-size:6px; margin-top:1px; }
   body.fs-mode #section-fire .zones-grid, body.fs-mode #section-gas .zones-grid, body.fs-mode #section-motion .zones-grid{ display:none; }
+  body.fs-mode .fire-general-col{ display:none; }
   body.fs-mode .fire-map-block{ display:flex; flex-direction:column; flex:1 1 0; min-height:0; margin-top:6px; }
   body.fs-mode .fire-map-block > .zone-title{ display:none; }
   /* وضع الكشك (fullscreen) يعرض الخريطة الحية المدمجة مباشرة بدل بطاقات الأيقونات - أوضح لشاشة عرض ثابتة، بنفس الطريقة لكل من الحريق والغاز والحركة */
@@ -943,27 +946,29 @@
           <div class="master-status ok" id="fireMasterStatus">--</div>
         </div>
       </div>
-      <div class="fire-general-col">
-        <div class="fire-general-box" id="fireGeneralConnBox">
-          <div class="fgb-label">🔌 <span data-i18n="fireGeneralConnLabel">الاتصال بجهاز السيطرة</span></div>
-          <div class="fgb-value" id="fireGeneralConnValue">--</div>
-        </div>
-        <div class="fire-general-box" id="fireGeneralFaultBox">
-          <div class="fgb-label">⚠️ <span data-i18n="fireGeneralFaultLabel">العطل العام (FAULT)</span></div>
-          <div class="fgb-value" id="fireGeneralFaultValue">--</div>
-        </div>
-        <div class="fire-general-box" id="fireGeneralAlarmBox">
-          <div class="fgb-label">🚨 <span data-i18n="fireGeneralAlarmLabel">الإنذار العام (AUX)</span></div>
-          <div class="fgb-value" id="fireGeneralAlarmValue">--</div>
-        </div>
-      </div>
       <div class="panel-toolbar">
         <button class="ctrl-btn" onclick="fireSilence()">🔇 <span data-i18n="btnSilence">كتم</span></button>
         <button class="ctrl-btn" onclick="fireReset()">🔁 <span data-i18n="btnReset">إعادة تعيين</span></button>
         <button class="ctrl-btn" onclick="fireTest()">🧪 <span data-i18n="btnTest">اختبار</span></button>
         <button class="ctrl-btn" onclick="openSystemLog('fire')">📜 <span data-i18n="btnLog">السجل</span></button>
       </div>
-      <div class="zones-grid" id="fireZonesGrid"></div>
+      <div class="fire-body-row">
+        <div class="zones-grid" id="fireZonesGrid"></div>
+        <div class="fire-general-col">
+          <div class="fire-general-box" id="fireGeneralConnBox">
+            <div class="fgb-label">🔌 <span data-i18n="fireGeneralConnLabel">الاتصال بجهاز السيطرة</span></div>
+            <div class="fgb-value" id="fireGeneralConnValue">--</div>
+          </div>
+          <div class="fire-general-box" id="fireGeneralFaultBox">
+            <div class="fgb-label">⚠️ <span data-i18n="fireGeneralFaultLabel">العطل العام (FAULT)</span></div>
+            <div class="fgb-value" id="fireGeneralFaultValue">--</div>
+          </div>
+          <div class="fire-general-box" id="fireGeneralAlarmBox">
+            <div class="fgb-label">🚨 <span data-i18n="fireGeneralAlarmLabel">الإنذار العام (AUX)</span></div>
+            <div class="fgb-value" id="fireGeneralAlarmValue">--</div>
+          </div>
+        </div>
+      </div>
       <div class="fire-map-block" style="margin-top:18px;">
         <div class="zone-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
           <span>🗺️ <span data-i18n="fireMapSectionTitle">خريطة الموقع</span></span>
@@ -1052,7 +1057,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 2.1.1</div>
+      <div class="brand-version">Ver 2.1.2</div>
     </div>
   </footer>
 </div>
