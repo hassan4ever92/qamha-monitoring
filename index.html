@@ -209,6 +209,9 @@
   .fire-general-box .fgb-label{ font-size:11px; color:var(--text-2); font-weight:700; margin-bottom:4px; }
   .fire-general-box .fgb-value{ font-size:14px; font-weight:900; color:#9aa0ac; }
   .fire-general-box .fgb-age{ font-size:10px; color:var(--text-2); margin-top:4px; opacity:.8; }
+  /* سطر "آخر تحديث" حي لكل تبويب (غاز/حركة/طاقة) - قبل كم ثانية/دقيقة/ساعة وصلت آخر بيانات فعلية لهذا التبويب بالذات */
+  .sys-last-update{ font-size:11px; color:var(--text-2); opacity:.85; margin:2px 0 12px; }
+  .sys-last-update:empty{ display:none; }
   .fire-general-box.ok{ border-color:rgba(46,230,166,.4); background:rgba(46,230,166,.08); }
   .fire-general-box.ok .fgb-value{ color:var(--ok); }
   .fire-general-box.warn{ border-color:rgba(255,176,32,.4); background:rgba(255,176,32,.1); }
@@ -989,6 +992,7 @@
         <div class="panel-title">🛢️ <span data-i18n="gasTitle">منظومة مراقبة تسرب الغاز</span></div>
         <div class="master-status ok" id="gasMasterStatus">--</div>
       </div>
+      <div class="sys-last-update" id="gasLastUpdateLine"></div>
       <div class="panel-toolbar">
         <button class="ctrl-btn" onclick="gasSilence()">🔇 <span data-i18n="btnSilence">كتم</span></button>
         <button class="ctrl-btn" onclick="gasReset()">🔁 <span data-i18n="btnReset">إعادة تعيين</span></button>
@@ -1015,6 +1019,7 @@
         <div class="panel-title">🚶 <span data-i18n="motionTitle">منظومة الحركة (السياج الليزري)</span></div>
         <div class="master-status ok" id="motionMasterStatus">--</div>
       </div>
+      <div class="sys-last-update" id="motionLastUpdateLine"></div>
       <div class="panel-toolbar">
         <button class="ctrl-btn" onclick="motionSilence()">🔇 <span data-i18n="btnSilence">كتم</span></button>
         <button class="ctrl-btn" onclick="motionReset()">🔁 <span data-i18n="btnReset">إعادة تعيين</span></button>
@@ -1041,6 +1046,7 @@
         <div class="panel-title">⚡ <span data-i18n="powerTitle">مراقبة الطاقة الكهربائية</span></div>
         <div class="master-status ok" id="powerMasterStatus">--</div>
       </div>
+      <div class="sys-last-update" id="powerLastUpdateLine"></div>
       <div class="panel-toolbar">
         <button class="ctrl-btn" onclick="powerSilence()">🔇 <span data-i18n="btnSilence">كتم</span></button>
         <button class="ctrl-btn" onclick="powerReset()">🔁 <span data-i18n="btnReset">إعادة تعيين</span></button>
@@ -1058,7 +1064,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 2.1.5</div>
+      <div class="brand-version">Ver 2.1.6</div>
     </div>
   </footer>
 </div>
@@ -2820,7 +2826,18 @@ function checkOfflineStations(){
 }
 function tickStationAges(){ WAREHOUSES.forEach(w=>updateStationAge(w.id)); checkOfflineStations(); checkAllFireSystemsOffline(); checkGasZonesOffline(); checkMotionZonesOffline(); checkPowerOffline(); fitWarehouseCards(); updateThresholdSiren(); }
 setInterval(tickStationAges, 15000); // نحدثها كل 15 ثانية - يكفي لعداد دقائق وكشف الانقطاع
-setInterval(()=>{ if(typeof renderFireGeneralBoxes === 'function') renderFireGeneralBoxes(); }, 1000); // عداد "آخر تحديث" الحي بمربع اتصال الحريق - كل ثانية حتى يبين بالثواني
+/* ---------- سطر "آخر تحديث" الحي بأعلى تبويبات الغاز والحركة والطاقة (نفس مبدأ مربع اتصال الحريق) ---------- */
+function renderSysLastUpdateLine(elId, lastSeenAny){
+  const el = document.getElementById(elId); if(!el) return;
+  el.textContent = lastSeenAny ? (t('labelLastUpdate') + ': ' + formatAgoText(lastSeenAny)) : '';
+}
+function tickAllSysLastUpdateLines(){
+  if(typeof renderFireGeneralBoxes === 'function') renderFireGeneralBoxes();
+  renderSysLastUpdateLine('gasLastUpdateLine', gasLastSeenAny);
+  renderSysLastUpdateLine('motionLastUpdateLine', motionLastSeenAny);
+  renderSysLastUpdateLine('powerLastUpdateLine', powerLastSeenAny);
+}
+setInterval(tickAllSysLastUpdateLines, 1000); // عداد "آخر تحديث" الحي بكل تبويب - كل ثانية حتى يبين بالثواني
 // فحص فوري بأول تحميل بدل ما نستنى أول دورة (15 ثا) حتى نكتشف الانقطاع بأسرع وقت - نأجله بـ setTimeout(…,0)
 // لأن tickStationAges صار يعتمد على fireZones/gasZones (متغيرات let معرّفة لاحقاً بالملف)، ولو
 // ناديناها مباشرة هنا بمنتصف الملف نطيح بخطأ "Cannot access before initialization" ويوقف كل السكربت
@@ -4660,6 +4677,7 @@ function initSimpleMapResizeObserver(){
    ========================================================== */
 let gasZones = Array.from({length:GAS_ZONE_COUNT}, (_,i)=>({id:i+1, status:'offline', ppm:null}));
 let lastSeenGas = {};
+let gasLastSeenAny = 0; // آخر لحظة وصلت فيها أي بيانات لأي زون غاز - لعداد "آخر تحديث" الحي بأعلى التبويب
 let gasSilenced = false;
 function buildGasZones(){
   const grid = document.getElementById('gasZonesGrid'); grid.innerHTML='';
@@ -4716,6 +4734,7 @@ window.gasTest = function(){ const z = gasZones[Math.floor(Math.random()*gasZone
    ========================================================== */
 let motionZones = Array.from({length:MOTION_ZONE_COUNT}, (_,i)=>({id:i+1, status:'offline'}));
 let lastSeenMotion = {};
+let motionLastSeenAny = 0; // آخر لحظة وصلت فيها أي بيانات لأي زون حركة
 let motionSilenced = false;
 function buildMotionZones(){
   const grid = document.getElementById('motionZonesGrid'); if(!grid) return; grid.innerHTML='';
@@ -4794,6 +4813,7 @@ POWER_SOURCES.forEach(s=>{
   POWER_LL_PAIRS.forEach(pair=> powerData[s.id].ll[pair.id] = { voltage:null, status:'offline' });
 });
 let lastSeenPower = {};
+let powerLastSeenAny = 0; // آخر لحظة وصلت فيها أي قراءة من أي مصدر/فيز طاقة
 let powerSilenced = false;
 let powerThresholds = { vMin:200, vMax:240, hzMin:47, hzMax:53, vllMin:380, vllMax:415 };
 function loadPowerThresholds(){
@@ -5063,6 +5083,7 @@ async function tryConnectFirebase(){
         const val = snap.val(); if(!val) return;
         const ts = (val.timestamp && Number(val.timestamp) > NTP_EPOCH_SANITY_MS_ZONES) ? Number(val.timestamp) : Date.now();
         lastSeenGas[z.id] = ts;
+        gasLastSeenAny = Math.max(gasLastSeenAny, ts);
         const fresh = (Date.now() - ts) <= OFFLINE_THRESHOLD_MS;
         if(fresh){
           z.ppm = (val.ppm!==undefined && val.ppm!==null && !isNaN(val.ppm)) ? Number(val.ppm) : null;
@@ -5079,6 +5100,7 @@ async function tryConnectFirebase(){
         const val = snap.val(); if(!val) return;
         const ts = (val.timestamp && Number(val.timestamp) > NTP_EPOCH_SANITY_MS_ZONES) ? Number(val.timestamp) : Date.now();
         lastSeenMotion[z.id] = ts;
+        motionLastSeenAny = Math.max(motionLastSeenAny, ts);
         const fresh = (Date.now() - ts) <= OFFLINE_THRESHOLD_MS;
         z.status = fresh ? (val.status || 'normal') : 'offline';
         if(fresh) pushSystemLogEntry('motion', String(z.id), { status: z.status });
@@ -5091,6 +5113,7 @@ async function tryConnectFirebase(){
         const ts = (val.timestamp && Number(val.timestamp) > NTP_EPOCH_SANITY_MS_ZONES) ? Number(val.timestamp) : Date.now();
         const key = src.id+'|'+ph;
         lastSeenPower[key] = ts;
+        powerLastSeenAny = Math.max(powerLastSeenAny, ts);
         const fresh = (Date.now() - ts) <= OFFLINE_THRESHOLD_MS;
         const d = powerData[src.id][ph];
         if(fresh){
@@ -5113,6 +5136,7 @@ async function tryConnectFirebase(){
         const ts = (val && val.timestamp && Number(val.timestamp) > NTP_EPOCH_SANITY_MS_ZONES) ? Number(val.timestamp) : Date.now();
         const key = src.id+'|LL|'+pair.id;
         lastSeenPower[key] = ts;
+        powerLastSeenAny = Math.max(powerLastSeenAny, ts);
         const fresh = (Date.now() - ts) <= OFFLINE_THRESHOLD_MS;
         const d = powerData[src.id].ll[pair.id];
         const rawV = (val && typeof val === 'object') ? val.voltage : val;
