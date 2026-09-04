@@ -292,6 +292,13 @@
     display:flex; flex-direction:row; align-items:stretch; justify-content:stretch; padding:0;
     background:var(--bg-0); overflow:hidden;
   }
+  /* حالة "جارٍ التحقق من الجلسة" - أول ما تفتح/ترفرش الصفحة، قبل ما فايربيس يقرر انت مسجل
+     دخول لو لا: نعرض بس جانب الرادار/المتحسسات (login-hero) بعرض كامل كشاشة تحميل هادئة،
+     ونخفي الموصل ومربع الدخول بالكامل - يمنع "ومضة" شاشة الدخول الكاملة كل ما تسوي رفرش
+     وانت أصلاً مسجل دخول. لو تبين فعلاً مو مسجل دخول، نشيل هذا الكلاس ونظهر الشاشة كاملة */
+  .login-screen.auth-checking .login-connector,
+  .login-screen.auth-checking .login-form-panel{ display:none; }
+  .login-screen.auth-checking .login-hero{ flex:1 1 100%; }
   .login-hero{
     position:relative; flex:1 1 55%; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
     background:
@@ -697,7 +704,7 @@
 </head>
 <body>
 <!-- ===== شاشة تسجيل الدخول - تصميم SCADA صناعي عملاق ===== -->
-<div class="login-screen" id="loginScreen">
+<div class="login-screen auth-checking" id="loginScreen">
   <div class="login-hero">
     <div class="login-hero-grid"></div>
     <div class="login-hero-scan"></div>
@@ -1019,7 +1026,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 2.0.6</div>
+      <div class="brand-version">Ver 2.0.7</div>
     </div>
   </footer>
 </div>
@@ -2256,6 +2263,9 @@ async function handleAuthChange(user){
     // نعمل تحديث كامل للصفحة بدل إعادة تشغيل init() بنفس الصفحة، حتى ما تتراكم اشتراكات فايربيس (onValue) القديمة
     if(dashboardStarted){ location.reload(); return; }
     currentAuthUser=null; currentUserProfile=null; dashboardStarted=false;
+    // تأكدنا الحين ان المستخدم فعلاً مو مسجل دخول - نشيل وضعية "التحقق" ونظهر شاشة
+    // الدخول كاملة (الرادار + الموصل + مربع البريد وكلمة المرور) حتى يقدر يسجل دخول
+    loginScreen.classList.remove('auth-checking');
     loginScreen.style.display='flex'; wrapEl.style.display='none';
     return;
   }
@@ -2349,6 +2359,12 @@ function applyPermissionsToUI(){
     tabEl.style.display = ok ? '' : 'none';
     if(ok && !firstAllowed) firstAllowed = tabEl.dataset.view;
   });
+  // إذا كان عند المستخدم تبويب اخر آخر مرة (محفوظ محلياً) وما زال مسموح له بيه، نرجعه
+  // لنفس التبويب هذا بدل أول تبويب افتراضياً - هذا يحل مشكلة رجوعه دايماً "لنظرة عامة"
+  // بعد كل رفرش حتى لو كان شغال بتبويب ثاني
+  let lastView = null;
+  try{ lastView = localStorage.getItem('qamha_last_view'); }catch(e){}
+  const targetView = (lastView && allowed.has(lastView)) ? lastView : firstAllowed;
   ['adminBtn'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display = isAdmin ? '' : 'none'; });
   const fireGear = document.getElementById('fireSysAdminBtn'); if(fireGear) fireGear.style.display = isAdmin ? '' : 'none';
   const userLabel = document.getElementById('currentUserLabel');
@@ -2357,7 +2373,7 @@ function applyPermissionsToUI(){
   if(firstAllowed){
     if(noAccess) noAccess.style.display='none';
     document.getElementById('summaryStrip').style.display='';
-    if(typeof selectView === 'function') selectView(firstAllowed);
+    if(typeof selectView === 'function') selectView(targetView);
   } else {
     document.querySelectorAll('nav').forEach(n=> n.style.display='none');
     document.getElementById('summaryStrip').style.display='none';
@@ -2786,6 +2802,9 @@ setInterval(tickClock, 1000); tickClock();
 
 /* ---------- التبويبات ---------- */
 function selectView(view){
+  // نحفظ آخر تبويب فتحه المستخدم، حتى لو سوى رفرش للصفحة نرجعه لنفس التبويب بدل
+  // ما نرجعه دايماً لأول تبويب مسموح له بيه (نظرة عامة عادةً)
+  try{ localStorage.setItem('qamha_last_view', view); }catch(e){}
   document.querySelectorAll('.tab').forEach(t2=>t2.classList.toggle('active', t2.dataset.view===view));
   document.body.setAttribute('data-fsview', view);
   const summaryStrip = document.getElementById('summaryStrip');
