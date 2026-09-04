@@ -1089,7 +1089,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 2.4.1</div>
+      <div class="brand-version">Ver 2.4.2</div>
     </div>
   </footer>
 </div>
@@ -3161,8 +3161,9 @@ window.enableNotifications = async function(){
     }
   }catch(e){
     console.warn('enableNotifications failed:', e);
+    const errDetail = (e && (e.code || e.name)) ? (e.code || e.name) + (e.message ? (': ' + e.message) : '') : String(e && e.message || e);
     showInfoModal(currentLang==='ar' ? '⚠️ صار خطأ' : '⚠️ Something went wrong',
-      currentLang==='ar' ? 'ما كدرت أفعّل الإشعارات. تأكد إعدادات Firebase صحيحة وجرب مرة ثانية.' : 'Could not enable notifications. Check the Firebase settings and try again.');
+      (currentLang==='ar' ? 'ما كدرت أفعّل الإشعارات.\nتفاصيل الخطأ (صوّرها وأرسلها):\n' : 'Could not enable notifications.\nError details (screenshot this and send it):\n') + errDetail);
   }
 };
 
