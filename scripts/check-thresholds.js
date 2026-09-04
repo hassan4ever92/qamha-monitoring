@@ -27,44 +27,35 @@ const WAREHOUSE_NAMES = {
 };
 
 // ==========================================================
-// تنظيف سجل الأحداث القديم (/logs/{warehouse}) - نحتفظ بس بآخر LOG_RETENTION_DAYS يوم،
-// حتى ما تكبر قاعدة البيانات بلا حدود. نشغلها بس مرة كل 24 ساعة (مو كل تشغيل للسكربت
-// كل 5 دقايق) عن طريق علامة زمنية نخزنها بمسار /meta/lastLogCleanup
+// مسح سجل الأحداث بالكامل (/logs) مرة وحدة كل سنة - بدل الاحتفاظ المتجدد
+// بفترة معينة، هنا نصفر كل شي دفعة وحدة (كل الأنظمة: مخازن + حريق + غاز +
+// حركة + طاقة) بمجرد ما تمر سنة كاملة من آخر مسح، حتى ما تكبر قاعدة البيانات
+// بلا حدود (خطة Spark المجانية سقفها 1GB تخزين).
+// نتحقق كل تشغيل للسكربت (كل 5 دقايق) من علامة زمنية بمسار /meta/lastLogWipe،
+// وما نمسح شي إلا إذا مرت سنة كاملة منها.
 // ==========================================================
-const LOG_RETENTION_DAYS = 60;
-const CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000; // مرة كل يوم
+const LOG_WIPE_INTERVAL_MS = 365 * 24 * 60 * 60 * 1000; // مرة كل سنة
 
-async function pruneOldLogs(db) {
-  const metaSnap = await db.ref("meta/lastLogCleanup").get();
-  const lastCleanup = metaSnap.val() || 0;
+async function wipeLogsYearly(db) {
+  const metaSnap = await db.ref("meta/lastLogWipe").get();
+  const lastWipe = metaSnap.val() || 0;
   const now = Date.now();
-  if (now - lastCleanup < CLEANUP_INTERVAL_MS) {
-    return; // ماكو داعي ننظف - آخر تنظيف كان أقل من 24 ساعة
+
+  if (lastWipe === 0) {
+    // أول تشغيل لهذا الفحص على الإطلاق - نسجل نقطة البداية بس، من دون ما نمسح
+    // شي (البيانات لسا جديدة أصلاً وما فيه داعي نصفرها أول يوم)
+    await db.ref("meta/lastLogWipe").set(now);
+    console.log("مسح السجل السنوي: أول تشغيل - سجّلنا نقطة البداية، ما مسحنا شي.");
+    return;
   }
 
-  const cutoff = now - LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000;
-  const logsSnap = await db.ref("logs").get();
-  const logsObj = logsSnap.val() || {};
-  let deletedCount = 0;
-
-  for (const warehouseId of Object.keys(logsObj)) {
-    const oldEntriesSnap = await db
-      .ref(`logs/${warehouseId}`)
-      .orderByKey()
-      .endAt(String(cutoff))
-      .get();
-    const oldEntries = oldEntriesSnap.val() || {};
-    const keys = Object.keys(oldEntries);
-    if (keys.length === 0) continue;
-
-    const updates = {};
-    keys.forEach((k) => { updates[`logs/${warehouseId}/${k}`] = null; });
-    await db.ref().update(updates);
-    deletedCount += keys.length;
+  if (now - lastWipe < LOG_WIPE_INTERVAL_MS) {
+    return; // لسا ما مرت سنة كاملة من آخر مسح
   }
 
-  await db.ref("meta/lastLogCleanup").set(now);
-  console.log(`تنظيف السجل: حذفنا ${deletedCount} قراءة أقدم من ${LOG_RETENTION_DAYS} يوم.`);
+  await db.ref("logs").remove();
+  await db.ref("meta/lastLogWipe").set(now);
+  console.log("مسح السجل السنوي: مرت سنة كاملة - تم تصفير /logs بالكامل (كل الأنظمة).");
 }
 
 // ==========================================================
@@ -121,10 +112,173 @@ async function checkConnectivity(db, warehouses) {
   return connMessages;
 }
 
+// ==========================================================
+// إشعارات push حقيقية لمنظومات الحريق/الغاز/الحركة/الطاقة - هذا يشتغل من السيرفر
+// (GitHub Actions) بغض النظر تماماً عن كون التطبيق أو المتصفح بالموبايل مفتوح أو
+// مسكر، لأن FCM يوصل الإشعار عبر نظام التشغيل نفسه. الصفارة داخل الداشبورد تبقى
+// تشتغل بس والصفحة مفتوحة - هذا الجزء يعوض عنها بإشعار حقيقي بكل الأحوال.
+// نرسل بس عند "إنذار جديد" (rising edge) - نتتبع آخر حالة معروفة بمسار
+// /alertsSent/{fire|gas|motion|power}/{مفتاح} حتى ما نكرر نفس الإشعار كل 5 دقايق.
+// ==========================================================
+
+async function checkFireAlarms(db) {
+  const messages = [];
+  const [sysConfigSnap, zonesSnap, alertStateSnap] = await Promise.all([
+    db.ref("fireSystemsConfig").get(),
+    db.ref("fireZones").get(),
+    db.ref("alertsSent/fire").get(),
+  ]);
+  const systems = sysConfigSnap.val() || [];
+  const zonesObj = zonesSnap.val() || {};
+  const alertState = alertStateSnap.val() || {};
+  const newAlertState = {};
+
+  for (const sys of systems) {
+    const sysData = zonesObj[sys.id] || {};
+
+    for (const zoneDef of sys.zones || []) {
+      if (zoneDef.enabled === false) continue;
+      const zData = sysData[zoneDef.id];
+      const key = `${sys.id}_${zoneDef.id}`;
+      const isAlarm = !!(zData && zData.status === "alarm");
+      if (isAlarm && !alertState[key]) {
+        messages.push({
+          title: `🔥 حريق! — ${sys.name}`,
+          body: `${zoneDef.name || "منطقة " + zoneDef.id}: تم رصد حريق`,
+        });
+      }
+      newAlertState[key] = isAlarm;
+    }
+
+    const auxKey = `${sys.id}_aux`;
+    const isAux = !!(sysData.auxFire && sysData.auxFire.active);
+    if (isAux && !alertState[auxKey]) {
+      messages.push({ title: `🚨 إنذار عام — ${sys.name}`, body: "تأكيد حريق من طرف لوحة السيطرة (AUX)." });
+    }
+    newAlertState[auxKey] = isAux;
+
+    const faultKey = `${sys.id}_fault`;
+    const isFault = !!(sysData.sysFault && sysData.sysFault.fault);
+    if (isFault && !alertState[faultKey]) {
+      messages.push({ title: `⚠️ عطل عام باللوحة — ${sys.name}`, body: "افحص اللوحة (مثلاً بطاريات احتياط ناقصة)." });
+    }
+    newAlertState[faultKey] = isFault;
+  }
+
+  if (Object.keys(newAlertState).length) await db.ref("alertsSent/fire").update(newAlertState);
+  return messages;
+}
+
+async function checkGasAlarms(db) {
+  const messages = [];
+  const [zonesSnap, alertStateSnap] = await Promise.all([
+    db.ref("gasZones").get(),
+    db.ref("alertsSent/gas").get(),
+  ]);
+  const zonesObj = zonesSnap.val() || {};
+  const alertState = alertStateSnap.val() || {};
+  const newAlertState = {};
+
+  for (const zoneId of Object.keys(zonesObj)) {
+    const z = zonesObj[zoneId] || {};
+    const isDanger = z.status === "danger";
+    if (isDanger && !alertState[zoneId]) {
+      const ppmTxt = z.ppm != null ? ` (${Math.round(z.ppm)} ppm)` : "";
+      messages.push({ title: "🧪 تسرب غاز!", body: `منطقة ${zoneId}: تجاوز حد الأمان${ppmTxt}` });
+    }
+    newAlertState[zoneId] = isDanger;
+  }
+
+  if (Object.keys(newAlertState).length) await db.ref("alertsSent/gas").update(newAlertState);
+  return messages;
+}
+
+async function checkMotionAlarms(db) {
+  const messages = [];
+  const [zonesSnap, alertStateSnap] = await Promise.all([
+    db.ref("motionZones").get(),
+    db.ref("alertsSent/motion").get(),
+  ]);
+  const zonesObj = zonesSnap.val() || {};
+  const alertState = alertStateSnap.val() || {};
+  const newAlertState = {};
+
+  for (const zoneId of Object.keys(zonesObj)) {
+    const z = zonesObj[zoneId] || {};
+    const isAlarm = z.status === "alarm";
+    if (isAlarm && !alertState[zoneId]) {
+      messages.push({ title: "🚶 اختراق محيط!", body: `زوج المتحسسات ${zoneId}: تم رصد حركة/اختراق` });
+    }
+    newAlertState[zoneId] = isAlarm;
+  }
+
+  if (Object.keys(newAlertState).length) await db.ref("alertsSent/motion").update(newAlertState);
+  return messages;
+}
+
+// ⚠️ لازم تطابق نفس القيم الافتراضية والمصادر الموجودة بملف index.html (POWER_SOURCES/POWER_PHASES/POWER_LL_PAIRS/powerThresholds)
+const POWER_SOURCES_META = [
+  { id: "grid", ar: "الكهرباء الوطنية" },
+  { id: "gen", ar: "المولد" },
+  { id: "solar", ar: "الطاقة الشمسية" },
+];
+const POWER_PHASES = ["L1", "L2", "L3"];
+const POWER_LL_PAIRS = [
+  { id: "L1L2", label: "L1-L2" },
+  { id: "L2L3", label: "L2-L3" },
+  { id: "L3L1", label: "L3-L1" },
+];
+const DEFAULT_POWER_THRESHOLDS = { vMin: 200, vMax: 240, hzMin: 47, hzMax: 53, vllMin: 380, vllMax: 415 };
+
+async function checkPowerAlarms(db) {
+  const messages = [];
+  const [readingsSnap, thresholdsSnap, alertStateSnap] = await Promise.all([
+    db.ref("powerReadings").get(),
+    db.ref("powerThresholdsConfig").get(),
+    db.ref("alertsSent/power").get(),
+  ]);
+  const readings = readingsSnap.val() || {};
+  const th = Object.assign({}, DEFAULT_POWER_THRESHOLDS, thresholdsSnap.val() || {});
+  const alertState = alertStateSnap.val() || {};
+  const newAlertState = {};
+
+  for (const src of POWER_SOURCES_META) {
+    const srcData = readings[src.id] || {};
+
+    for (const ph of POWER_PHASES) {
+      const d = srcData[ph];
+      const key = `${src.id}_${ph}`;
+      let isAlarm = false;
+      if (d && d.voltage != null) {
+        isAlarm = d.voltage < th.vMin || d.voltage > th.vMax || (d.freq != null && (d.freq < th.hzMin || d.freq > th.hzMax));
+      }
+      if (isAlarm && !alertState[key]) {
+        messages.push({ title: `⚡ انحراف كهربائي — ${src.ar}`, body: `الطور ${ph}: خارج الحدود المسموحة` });
+      }
+      newAlertState[key] = isAlarm;
+    }
+
+    const llData = srcData.LL || {};
+    for (const pair of POWER_LL_PAIRS) {
+      const raw = llData[pair.id];
+      const v = raw && typeof raw === "object" ? raw.voltage : raw;
+      const key = `${src.id}_LL_${pair.id}`;
+      const isAlarm = v != null && (v < th.vllMin || v > th.vllMax);
+      if (isAlarm && !alertState[key]) {
+        messages.push({ title: `⚡ انحراف كهربائي — ${src.ar}`, body: `فولتية خط-خط ${pair.label}: خارج الحدود المسموحة` });
+      }
+      newAlertState[key] = isAlarm;
+    }
+  }
+
+  if (Object.keys(newAlertState).length) await db.ref("alertsSent/power").update(newAlertState);
+  return messages;
+}
+
 async function main() {
   const db = admin.database();
 
-  await pruneOldLogs(db).catch((e) => console.error("فشل تنظيف السجل القديم:", e));
+  await wipeLogsYearly(db).catch((e) => console.error("فشل المسح السنوي للسجل:", e));
 
   const [warehousesSnap, adminSettingsSnap, alertStateSnap, tokensSnap] = await Promise.all([
     db.ref("warehouses").get(),
@@ -148,6 +302,16 @@ async function main() {
   });
   messages.push(...connMessages);
 
+  // إشعارات push حقيقية لمنظومات الحريق/الغاز/الحركة/الطاقة - توصل حتى لو التطبيق
+  // أو المتصفح مسكر بالكامل بالموبايل، بعكس صفارة الداشبورد اللي تحتاج الصفحة مفتوحة
+  const [fireMessages, gasMessages, motionMessages, powerMessages] = await Promise.all([
+    checkFireAlarms(db).catch((e) => { console.error("فشل فحص إنذارات الحريق:", e); return []; }),
+    checkGasAlarms(db).catch((e) => { console.error("فشل فحص إنذارات الغاز:", e); return []; }),
+    checkMotionAlarms(db).catch((e) => { console.error("فشل فحص إنذارات الحركة:", e); return []; }),
+    checkPowerAlarms(db).catch((e) => { console.error("فشل فحص إنذارات الطاقة:", e); return []; }),
+  ]);
+  messages.push(...fireMessages, ...gasMessages, ...motionMessages, ...powerMessages);
+
   for (const warehouseId of Object.keys(warehouses)) {
     const data = warehouses[warehouseId];
     const cfg = adminSettings[warehouseId];
@@ -157,19 +321,19 @@ async function main() {
     const alertState = alertStateAll[warehouseId] || {};
     const newAlertState = Object.assign({}, alertState);
 
-    // لو المتحسس الثاني لسا ما انتصب بهذا المخزن (adminSettings.sensor2Installed=false)، نتجاهل قراءته
-    // كلياً حتى ما يرسل تنبيهات push كاذبة بسبب رقم عشوائي/خطأ من شريحة غير موصولة
+    // الجهاز يرسل -999 كعلامة "متحسس مو مركّب / RTD مقطوع" بدل رقم حرارة حقيقي - نتجاهل أي قراءة
+    // أوطأ من -500° تلقائياً (حساس 1 أو حساس 2، مو بس الثاني) حتى ما نرسل تنبيه كاذب على متحسس لسا
+    // ما تركب. بمجرد ما يوصل رقم حقيقي فوق -500° يدخل تلقائياً بالفحص من دون أي إعداد يدوي
     const checks = [
       { key: "sensor1", label: "حساس 1", value: data.sensor1, min: cfg.tempMin, max: cfg.tempMax, unit: "°C" },
+      { key: "sensor2", label: "حساس 2", value: data.sensor2, min: cfg.tempMin, max: cfg.tempMax, unit: "°C" },
       { key: "humidity", label: "الرطوبة", value: data.humidity, min: cfg.humMin, max: cfg.humMax, unit: "%" },
     ];
-    if (cfg.sensor2Installed) {
-      checks.push({ key: "sensor2", label: "حساس 2", value: data.sensor2, min: cfg.tempMin, max: cfg.tempMax, unit: "°C" });
-    }
 
     const lines = [];
     for (const c of checks) {
       if (c.value === undefined || c.value === null || isNaN(c.value)) continue;
+      if (c.key !== "humidity" && Number(c.value) <= -500) continue; // متحسس مو مركّب لهسة
       const breach = c.value < c.min || c.value > c.max;
       const wasBreach = !!alertState[c.key];
       // نرسل بس أول لحظة تجاوز (rising edge) - مو كل مرة يشتغل السكربت وهي لسا خارج الرينج
