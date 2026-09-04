@@ -84,6 +84,7 @@
   .dot{ width:8px; height:8px; border-radius:50%; background:currentColor; box-shadow:0 0 8px currentColor; animation: blink 1.6s ease-in-out infinite; }
   @keyframes blink{ 0%,100%{opacity:1} 50%{opacity:.35} }
   .mini-select{ background: rgba(255,255,255,0.05); border:1px solid var(--card-border); color:var(--text-0); font-size:12px; padding:7px 10px; border-radius:10px; cursor:pointer; }
+  .mini-select option{ color:#111; background:#fff; } /* قائمة الاختيار المنسدلة تفتح بخلفية بيضاء من المتصفح، فنثبت لون الكتابة غامق حتى تنكتب واضحة */
   .icon-btn{ background: rgba(227,168,60,0.1); border:1px solid rgba(227,168,60,0.4); color:var(--wheat-2); width:36px; height:36px; border-radius:10px; cursor:pointer; font-size:16px; }
   .icon-btn:hover{ background: rgba(227,168,60,0.22); }
   .alerts-clickable{ cursor:pointer; transition: transform .2s; }
@@ -948,8 +949,6 @@
       </div>
       <div class="panel-toolbar">
         <button class="ctrl-btn" onclick="fireSilence()">🔇 <span data-i18n="btnSilence">كتم</span></button>
-        <button class="ctrl-btn" onclick="fireReset()">🔁 <span data-i18n="btnReset">إعادة تعيين</span></button>
-        <button class="ctrl-btn" onclick="fireTest()">🧪 <span data-i18n="btnTest">اختبار</span></button>
         <button class="ctrl-btn" onclick="openSystemLog('fire')">📜 <span data-i18n="btnLog">السجل</span></button>
       </div>
       <div class="fire-body-row">
@@ -1057,7 +1056,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 2.1.2</div>
+      <div class="brand-version">Ver 2.1.4</div>
     </div>
   </footer>
 </div>
@@ -3176,7 +3175,9 @@ function renderFireGeneralBoxes(){
     connBox.className = 'fire-general-box danger'; connVal.textContent = t('fireGeneralConnDisconnected');
   }
 
-  const faultNow = fireSysFaultLive[currentFireSystemId];
+  // إذا الجهاز نفسه غير متصل حالياً، ما نعرض آخر قراءة معروفة للعطل/الإنذار
+  // على إنها الوضع الحالي (ممكن تكون قديمة/غير موثوقة) - نعرض "بانتظار بيانات" بدلها
+  const faultNow = onlineNow ? fireSysFaultLive[currentFireSystemId] : null;
   if(faultNow===null || faultNow===undefined){
     faultBox.className = 'fire-general-box'; faultVal.textContent = t('fireGeneralUnknown');
   } else if(faultNow){
@@ -3185,7 +3186,7 @@ function renderFireGeneralBoxes(){
     faultBox.className = 'fire-general-box ok'; faultVal.textContent = t('fireGeneralFaultNormal');
   }
 
-  const auxNow = fireAuxLive[currentFireSystemId];
+  const auxNow = onlineNow ? fireAuxLive[currentFireSystemId] : null;
   if(auxNow===null || auxNow===undefined){
     alarmBox.className = 'fire-general-box'; alarmVal.textContent = t('fireGeneralUnknown');
   } else if(auxNow){
@@ -4969,7 +4970,9 @@ function subscribeFireSystemZones(sys){
     fireSysFaultSubsSet.add(sys.id);
     fbOnValue(fbRef(fbDb, 'fireZones/'+sys.id+'/sysFault'), (snap)=>{
       const val = snap.val();
-      fireSysFaultLive[sys.id] = !!(val && val.fault);
+      // val=null يعني المسار ما وصلته أي بيانات إطلاقاً (الجهاز ما ربط ولا مرة) -
+      // نخليها null (= "بانتظار بيانات") بدل false، حتى ما نبين "سليم" كذباً
+      fireSysFaultLive[sys.id] = val ? !!val.fault : null;
       if(val && val.timestamp){ fireDeviceLastSeen[sys.id] = Math.max(fireDeviceLastSeen[sys.id]||0, Number(val.timestamp)); fireDeviceOnlineLive[sys.id] = true; }
       if(sys.id === currentFireSystemId) renderFireZones();
     });
@@ -4979,7 +4982,7 @@ function subscribeFireSystemZones(sys){
     fireAuxSubsSet.add(sys.id);
     fbOnValue(fbRef(fbDb, 'fireZones/'+sys.id+'/auxFire'), (snap)=>{
       const val = snap.val();
-      fireAuxLive[sys.id] = !!(val && val.active);
+      fireAuxLive[sys.id] = val ? !!val.active : null;
       if(val && val.timestamp){ fireDeviceLastSeen[sys.id] = Math.max(fireDeviceLastSeen[sys.id]||0, Number(val.timestamp)); fireDeviceOnlineLive[sys.id] = true; }
       if(sys.id === currentFireSystemId) renderFireZones();
     });
