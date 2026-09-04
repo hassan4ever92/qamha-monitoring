@@ -1064,7 +1064,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 2.1.7</div>
+      <div class="brand-version">Ver 2.1.9</div>
     </div>
   </footer>
 </div>
@@ -1097,6 +1097,8 @@
     <div class="modal-controls">
       <label class="log-date-filter"><span data-i18n="logFromLabel">من</span> <input type="datetime-local" id="sysLogFromInput" onchange="renderSysLogTable()"></label>
       <label class="log-date-filter"><span data-i18n="logToLabel">إلى</span> <input type="datetime-local" id="sysLogToInput" onchange="renderSysLogTable()"></label>
+      <label class="log-date-filter"><span data-i18n="logZoneFilterLabel">الزون</span> <select class="mini-select" id="sysLogZoneFilter" onchange="renderSysLogTableFromCache()"></select></label>
+      <label class="log-date-filter" id="sysLogStatusFilterWrap"><span data-i18n="logStatusFilterLabel">الحالة</span> <select class="mini-select" id="sysLogStatusFilter" onchange="renderSysLogTableFromCache()"></select></label>
       <button class="export-btn" onclick="clearSysLogDateFilter()" data-i18n="clearFilterLabel">✕ مسح الفلترة</button>
       <button class="export-btn" onclick="exportSysLogExcel()" data-i18n="exportLabel">⬇ تصدير Excel</button>
     </div>
@@ -1449,6 +1451,7 @@ const I18N = {
     offlineBannerTitle:'⛔ تم قطع الاتصال مع منظومة متحسسات المنطقة', offlineBannerSince:'منذ', labelOffline:'مخازن غير متصلة',
     logTitlePrefix:'سجل الأحداث — ', alertsOnlyLabel:'عرض التنبيهات فقط', exportLabel:'⬇ تصدير Excel',
     logFromLabel:'من', logToLabel:'إلى', clearFilterLabel:'✕ مسح الفلترة', loadingLabel:'جاري التحميل...',
+    logZoneFilterLabel:'الزون', logStatusFilterLabel:'الحالة', logAllLabel:'الكل',
     colDate:'التاريخ والوقت', colS1:'حساس 1', colS2:'حساس 2', colAvg:'المعدل', colDiff:'الفرق', colStatus:'الحالة',
     noDataLabel:'لا توجد بيانات مسجلة بعد', alertModalTitle:'تفاصيل التنبيهات النشطة', noActiveAlerts:'لا توجد تنبيهات نشطة حالياً',
     colWarehouse:'المخزن', colSince:'منذ (ثانية)',
@@ -1551,6 +1554,7 @@ const I18N = {
     offlineBannerTitle:'⛔ Connection lost with the sensor system for this zone', offlineBannerSince:'since', labelOffline:'Offline Warehouses',
     logTitlePrefix:'Event Log — ', alertsOnlyLabel:'Alerts only', exportLabel:'⬇ Export Excel',
     logFromLabel:'From', logToLabel:'To', clearFilterLabel:'✕ Clear filter', loadingLabel:'Loading...',
+    logZoneFilterLabel:'Zone', logStatusFilterLabel:'Status', logAllLabel:'All',
     colDate:'Date & Time', colS1:'Sensor 1', colS2:'Sensor 2', colAvg:'Average', colDiff:'Diff', colStatus:'Status',
     noDataLabel:'No data logged yet', alertModalTitle:'Active Alert Details', noActiveAlerts:'No active alerts',
     colWarehouse:'Warehouse', colSince:'Since (sec)',
@@ -2173,27 +2177,70 @@ async function fetchSystemLogRows(sysKey){
       const snap = await fbGet(q);
       const val = snap.val();
       if(!val) continue;
-      Object.keys(val).forEach(k=>{ rows.push(Object.assign({ ts:Number(k), itemId: it.id, itemLabel: it.label }, val[k])); });
+      Object.keys(val).forEach(k=>{
+        const row = Object.assign({ ts:Number(k), itemId: it.id, itemLabel: it.label }, val[k]);
+        // الفيرموير يسجل زونات الحريق بحقل alarm (true/false) مو status - نحوّلها لنفس تسميات الحالة
+        // المستخدمة بباقي الأنظمة حتى تشتغل الفلترة والعرض بشكل صحيح
+        if(sysKey==='fire' && row.status===undefined && row.alarm!==undefined){
+          row.status = row.alarm ? 'alarm' : 'normal';
+        }
+        rows.push(row);
+      });
     }catch(e){ console.warn('fetchSystemLogRows failed', sysKey, it.id, e); }
   }
   return rows;
 }
 
+function buildSysLogFilters(sysKey){
+  const items = sysLogItemIds(sysKey);
+  const zoneSel = document.getElementById('sysLogZoneFilter');
+  zoneSel.innerHTML = `<option value="">${t('logAllLabel')}</option>` + items.map(it=>`<option value="${it.id}">${it.label}</option>`).join('');
+  zoneSel.value = '';
+
+  const statusSel = document.getElementById('sysLogStatusFilter');
+  const statusWrap = document.getElementById('sysLogStatusFilterWrap');
+  const statusOptionsBySys = {
+    fire:['offline','normal','alarm','fault','disabled'],
+    gas:['offline','safe','warning','danger','fault'],
+    motion:['offline','normal','alarm','fault']
+  };
+  const statuses = statusOptionsBySys[sysKey];
+  if(statuses){
+    statusWrap.style.display = '';
+    statusSel.innerHTML = `<option value="">${t('logAllLabel')}</option>` + statuses.map(s=>`<option value="${s}">${sysStatusLabel(sysKey, s)}</option>`).join('');
+    statusSel.value = '';
+  } else {
+    statusWrap.style.display = 'none';
+    statusSel.innerHTML = '';
+  }
+}
+function getSysLogFilteredRows(){
+  const zoneVal = document.getElementById('sysLogZoneFilter').value;
+  const statusVal = document.getElementById('sysLogStatusFilter').value;
+  let rows = sysLogRowsCache;
+  if(zoneVal) rows = rows.filter(r=>r.itemId===zoneVal);
+  if(statusVal) rows = rows.filter(r=>r.status===statusVal);
+  return rows;
+}
 window.openSystemLog = async function(sysKey){
   currentSysLogKey = sysKey;
   const titleKeys = { fire:'navFire', gas:'navGas', motion:'navMotion', power:'navPower' };
-  document.getElementById('sysLogModalTitle').textContent = t('logTitlePrefix') + t(titleKeys[sysKey]);
+  let sysLabel = t(titleKeys[sysKey]);
+  if(sysKey==='fire'){ const sys = currentFireSystem(); if(sys && sys.name) sysLabel += ' — ' + sys.name; }
+  document.getElementById('sysLogModalTitle').textContent = t('logTitlePrefix') + sysLabel;
   const now = new Date();
   const weekAgo = new Date(now.getTime() - 7*24*60*60*1000);
   document.getElementById('sysLogFromInput').value = toDatetimeLocalValue(weekAgo);
   document.getElementById('sysLogToInput').value = toDatetimeLocalValue(now);
   buildSysLogTableHead(sysKey);
+  buildSysLogFilters(sysKey);
   document.getElementById('sysLogModal').classList.add('show');
   await window.renderSysLogTable();
 };
 window.closeSysLog = function(){ document.getElementById('sysLogModal').classList.remove('show'); currentSysLogKey=null; };
 window.clearSysLogDateFilter = async function(){
   document.getElementById('sysLogFromInput').value=''; document.getElementById('sysLogToInput').value='';
+  document.getElementById('sysLogZoneFilter').value=''; document.getElementById('sysLogStatusFilter').value='';
   await window.renderSysLogTable();
 };
 window.renderSysLogTable = async function(){
@@ -2207,7 +2254,7 @@ window.renderSysLogTable = async function(){
 function renderSysLogTableFromCache(){
   const sysKey = currentSysLogKey;
   const tbody = document.getElementById('sysLogTableBody'); const empty = document.getElementById('sysLogEmpty');
-  const rows = sysLogRowsCache.slice(0,500);
+  const rows = getSysLogFilteredRows().slice(0,500);
   tbody.innerHTML='';
   if(rows.length===0){ empty.textContent = t('noDataLabel'); empty.style.display='block'; return; }
   empty.style.display='none';
@@ -2226,7 +2273,7 @@ function renderSysLogTableFromCache(){
 window.exportSysLogExcel = async function(){
   if(!currentSysLogKey) return;
   const sysKey = currentSysLogKey;
-  const rows = sysLogRowsCache;
+  const rows = getSysLogFilteredRows();
   if(typeof XLSX==='undefined'){ alert('Export library unavailable'); return; }
   let data;
   if(sysKey==='gas'){
