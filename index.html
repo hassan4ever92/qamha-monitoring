@@ -1026,7 +1026,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 2.0.8</div>
+      <div class="brand-version">Ver 2.0.9</div>
     </div>
   </footer>
 </div>
@@ -1426,7 +1426,7 @@ const I18N = {
     tempRangeLabel:'الحرارة °م', humRangeLabel:'الرطوبة %', minLabel:'من', maxLabel:'إلى', adminSave:'💾 حفظ الإعدادات',
     sensorPendingShort:'⛔ غير متصل', sensorPendingBadge:'غير متصل — بانتظار وصول قراءة', diffPendingLabel:'—',
     silenceThresholdBtn:'🔇 كتم تنبيه الحرارة',
-    fireTitle:'منظومة إنذار الحريق 1', zoneWord:'المنطقة', fireMasterOk:'✅ النظام سليم', fireMasterAlarm:'🚨 إنذار نشط', fireMasterFault:'⚠ يوجد عطل', fireMasterOffline:'⛔ لا توجد أجهزة متصلة',
+    fireTitle:'منظومة إنذار الحريق 1', zoneWord:'المنطقة', fireMasterOk:'✅ النظام سليم', fireMasterAlarm:'🚨 إنذار نشط', fireMasterFault:'⚠ يوجد عطل', fireMasterGeneralFault:'⚠ جنرال فولت باللوحة', fireMasterOffline:'⛔ لا توجد أجهزة متصلة',
     fireSysAdminTitle:'🏢 إدارة منظومات الحريق',
     fireSysAdminIntro:'أنشئ منظومة حريق مستقلة لكل مبنى/موقع (مثلاً: معمل المعجنات، الإدارة، السكن والمطعم)، وحدد عدد الزونات بداخلها. تكدر تعدل الاسم أو تضيف/تحذف/تسمي الزونات بأي وقت بعدها.',
     fireSysAddNew:'➕ إضافة منظومة جديدة', fireSysNamePh:'اسم المنظومة (مثال: منظومة حريق الإدارة)', fireSysCreate:'➕ إنشاء',
@@ -1525,7 +1525,7 @@ const I18N = {
     tempRangeLabel:'Temp °C', humRangeLabel:'Humidity %', minLabel:'Min', maxLabel:'Max', adminSave:'💾 Save Settings',
     sensorPendingShort:'⛔ Offline', sensorPendingBadge:'Offline — waiting for a reading', diffPendingLabel:'—',
     silenceThresholdBtn:'🔇 Silence Temp Alert',
-    fireTitle:'Fire Alarm System 1', zoneWord:'Zone', fireMasterOk:'✅ System Normal', fireMasterAlarm:'🚨 Active Alarm', fireMasterFault:'⚠ Fault Present', fireMasterOffline:'⛔ No Devices Connected',
+    fireTitle:'Fire Alarm System 1', zoneWord:'Zone', fireMasterOk:'✅ System Normal', fireMasterAlarm:'🚨 Active Alarm', fireMasterFault:'⚠ Fault Present', fireMasterGeneralFault:'⚠ Panel General Fault', fireMasterOffline:'⛔ No Devices Connected',
     fireSysAdminTitle:'🏢 Manage Fire Systems',
     fireSysAdminIntro:'Create an independent fire system for each building/site (e.g. Pastry Factory, Administration, Housing & Restaurant), and set how many zones it has. You can rename it or add/remove/rename zones anytime afterward.',
     fireSysAddNew:'➕ Add New System', fireSysNamePh:'System name (e.g. Administration Fire System)', fireSysCreate:'➕ Create',
@@ -1667,9 +1667,13 @@ loadFireSystemsLocal();
 let fireZoneLive = {};     // {[systemId]: [{id, status}, ...]}
 let lastSeenFireZone = {}; // {[systemId]: {[zoneId]: epochMs}}
 let fireMapsBySystem = {}; // {[systemId]: [{id, name, imageUrl, pins:[{xPct,yPct,zoneId,type}]}, ...]} - كل منظومة تكدر تحتوي عدة خرائط (طوابق/مواقع مختلفة)
+// عطل عام باللوحة (مثلاً فقدان بطارية الاحتياط) - يوصل من الفيرموير كإشارة منفصلة عن كل زون
+// (مو مطبّق على حالة كل زون كأنه "عطل" فردي)، حتى تبين الزونات حالتها الحقيقية دائماً
+let fireSysFaultLive = {}; // {[systemId]: bool}
 function ensureFireSystemStorage(sys){
   if(!fireZoneLive[sys.id]) fireZoneLive[sys.id] = sys.zones.map(z=>({id:z.id, status:'offline'}));
   if(!lastSeenFireZone[sys.id]) lastSeenFireZone[sys.id] = {};
+  if(fireSysFaultLive[sys.id]===undefined) fireSysFaultLive[sys.id] = false;
   if(!fireMapsBySystem[sys.id] || !Array.isArray(fireMapsBySystem[sys.id]) || !fireMapsBySystem[sys.id].length){
     fireMapsBySystem[sys.id] = [ defaultFireMap() ];
   }
@@ -3094,7 +3098,9 @@ function renderFireZones(){
     if(z.status==='fault') faultCount++;
   });
   const master = document.getElementById('fireMasterStatus');
+  const sysFaultNow = !!fireSysFaultLive[currentFireSystemId];
   if(alarmCount>0){ master.className='master-status '+(fireSilenced?'danger silenced':'danger'); master.textContent = t('fireMasterAlarm')+' ('+alarmCount+')'; }
+  else if(sysFaultNow){ master.className='master-status warn'; master.textContent = t('fireMasterGeneralFault'); }
   else if(faultCount>0){ master.className='master-status warn'; master.textContent = t('fireMasterFault'); }
   else if(connectedCount===0){ master.className='master-status offline'; master.textContent = t('fireMasterOffline'); }
   else{ master.className='master-status ok'; master.textContent = t('fireMasterOk'); }
@@ -4833,6 +4839,7 @@ const NTP_EPOCH_SANITY_MS_ZONES = 1700000000000;
    fireZoneSubsSet يمنع الاشتراك المكرر بنفس الزون أكثر من مرة، بس يسمح بزونات جديدة تنضاف لاحقاً */
 let fireZoneSubsSet = new Set();
 let fireMapSubsSet = new Set();
+let fireSysFaultSubsSet = new Set();
 function subscribeFireSystemZones(sys){
   if(!fbDb || !fbOnValue || !fbRef) return;
   ensureFireSystemStorage(sys);
@@ -4857,6 +4864,16 @@ function subscribeFireSystemZones(sys){
       if(sys.id === currentFireSystemId) renderFireZones(); else updateGlobalFireSirenAndBadge();
     });
   });
+  // عطل عام باللوحة (مثلاً فقدان بطارية الاحتياط) - مسار منفصل عن الزونات
+  // (fireZones/{sysId}/sysFault)، حتى ما يأثر على حالة أي زون فردي
+  if(!fireSysFaultSubsSet.has(sys.id)){
+    fireSysFaultSubsSet.add(sys.id);
+    fbOnValue(fbRef(fbDb, 'fireZones/'+sys.id+'/sysFault'), (snap)=>{
+      const val = snap.val();
+      fireSysFaultLive[sys.id] = !!(val && val.fault);
+      if(sys.id === currentFireSystemId) renderFireZones();
+    });
+  }
   if(!fireMapSubsSet.has(sys.id)){
     fireMapSubsSet.add(sys.id);
     fbOnValue(fbRef(fbDb, 'fireMapConfig/'+sys.id), (snap)=>{
