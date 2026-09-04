@@ -208,6 +208,7 @@
   .fire-general-box{ direction:rtl; padding:10px 14px; border-radius:14px; border:1px solid rgba(154,160,172,.35); background:rgba(140,140,150,.08); text-align:center; }
   .fire-general-box .fgb-label{ font-size:11px; color:var(--text-2); font-weight:700; margin-bottom:4px; }
   .fire-general-box .fgb-value{ font-size:14px; font-weight:900; color:#9aa0ac; }
+  .fire-general-box .fgb-age{ font-size:10px; color:var(--text-2); margin-top:4px; opacity:.8; }
   .fire-general-box.ok{ border-color:rgba(46,230,166,.4); background:rgba(46,230,166,.08); }
   .fire-general-box.ok .fgb-value{ color:var(--ok); }
   .fire-general-box.warn{ border-color:rgba(255,176,32,.4); background:rgba(255,176,32,.1); }
@@ -957,6 +958,7 @@
           <div class="fire-general-box" id="fireGeneralConnBox">
             <div class="fgb-label">🔌 <span data-i18n="fireGeneralConnLabel">الاتصال بجهاز السيطرة</span></div>
             <div class="fgb-value" id="fireGeneralConnValue">--</div>
+            <div class="fgb-age" id="fireGeneralConnAge"></div>
           </div>
           <div class="fire-general-box" id="fireGeneralFaultBox">
             <div class="fgb-label">⚠️ <span data-i18n="fireGeneralFaultLabel">العطل العام (FAULT)</span></div>
@@ -1056,7 +1058,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 2.1.4</div>
+      <div class="brand-version">Ver 2.1.5</div>
     </div>
   </footer>
 </div>
@@ -2750,6 +2752,19 @@ function renderStation(w, data){
   lastGlobalUpdate = Date.now();
 }
 function secondsAgo(ts){ if(!ts) return 0; return Math.max(0, Math.round((Date.now()-ts)/1000)); }
+/* ---------- نص "قبل كم ثانية/دقيقة/ساعة" عام - يستخدم لعرض آخر تحديث حي لأي عنصر (زي جهاز الحريق) ---------- */
+function formatAgoText(ts){
+  if(!ts) return '';
+  const secs = secondsAgo(ts);
+  const ar = currentLang==='ar';
+  if(secs < 60) return ar ? ('قبل '+secs+' ثانية') : (secs+'s ago');
+  const mins = Math.round(secs/60);
+  if(mins < 60) return ar ? ('قبل '+mins+' دقيقة') : (mins+'m ago');
+  const hours = Math.round(mins/60);
+  if(hours < 24) return ar ? ('قبل '+hours+' ساعة') : (hours+'h ago');
+  const days = Math.round(hours/24);
+  return ar ? ('قبل '+days+' يوم') : (days+'d ago');
+}
 
 /* ---------- عداد "آخر تحديث" لكل مخزن، بالدقائق، حي حتى بين تحديثات البيانات ---------- */
 function updateStationAge(wId){
@@ -2805,6 +2820,7 @@ function checkOfflineStations(){
 }
 function tickStationAges(){ WAREHOUSES.forEach(w=>updateStationAge(w.id)); checkOfflineStations(); checkAllFireSystemsOffline(); checkGasZonesOffline(); checkMotionZonesOffline(); checkPowerOffline(); fitWarehouseCards(); updateThresholdSiren(); }
 setInterval(tickStationAges, 15000); // نحدثها كل 15 ثانية - يكفي لعداد دقائق وكشف الانقطاع
+setInterval(()=>{ if(typeof renderFireGeneralBoxes === 'function') renderFireGeneralBoxes(); }, 1000); // عداد "آخر تحديث" الحي بمربع اتصال الحريق - كل ثانية حتى يبين بالثواني
 // فحص فوري بأول تحميل بدل ما نستنى أول دورة (15 ثا) حتى نكتشف الانقطاع بأسرع وقت - نأجله بـ setTimeout(…,0)
 // لأن tickStationAges صار يعتمد على fireZones/gasZones (متغيرات let معرّفة لاحقاً بالملف)، ولو
 // ناديناها مباشرة هنا بمنتصف الملف نطيح بخطأ "Cannot access before initialization" ويوقف كل السكربت
@@ -3160,11 +3176,18 @@ function renderFireZones(){
 function renderFireGeneralBoxes(){
   const connBox = document.getElementById('fireGeneralConnBox');
   const connVal = document.getElementById('fireGeneralConnValue');
+  const connAge = document.getElementById('fireGeneralConnAge');
   const alarmBox = document.getElementById('fireGeneralAlarmBox');
   const alarmVal = document.getElementById('fireGeneralAlarmValue');
   const faultBox = document.getElementById('fireGeneralFaultBox');
   const faultVal = document.getElementById('fireGeneralFaultValue');
   if(!connBox || !alarmBox || !faultBox) return;
+
+  // آخر لحظة وصلت فيها أي بيانات من هذا الجهاز - عداد حي "قبل كم ثانية/دقيقة/ساعة"
+  if(connAge){
+    const lastSeen = fireDeviceLastSeen[currentFireSystemId];
+    connAge.textContent = lastSeen ? formatAgoText(lastSeen) : '';
+  }
 
   const onlineNow = fireDeviceOnlineLive[currentFireSystemId];
   if(onlineNow===null || onlineNow===undefined){
