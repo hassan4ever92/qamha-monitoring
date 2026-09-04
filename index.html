@@ -1026,7 +1026,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 2.0.7</div>
+      <div class="brand-version">Ver 2.0.8</div>
     </div>
   </footer>
 </div>
@@ -1432,7 +1432,7 @@ const I18N = {
     fireSysAddNew:'➕ إضافة منظومة جديدة', fireSysNamePh:'اسم المنظومة (مثال: منظومة حريق الإدارة)', fireSysCreate:'➕ إنشاء',
     fireSysEdit:'تعديل', fireSysZonesLabel:'الزونات:', fireSysAddZone:'إضافة زون', fireSysSave:'حفظ', fireSysCancel:'إلغاء',
     fireSysZoneEnabledLabel:'مربوطة بدائرة', fireSysNameRequired:'اكتب اسم المنظومة أولاً', fireSysDeleteConfirm:'حذف هذي المنظومة نهائياً؟ (كل زوناتها وخريطتها بينحذفون)',
-    fireAlertsPanelTitle:'🚨 التنبيهات النشطة', fireAlertsNone:'ماكو أي تنبيهات نشطة حالياً', fireAlertsSince:'منذ', minsShort:'د', secsShort:'ث',
+    fireAlertsPanelTitle:'🚨 التنبيهات النشطة', fireAlertsNone:'لا يوجد تنبيهات نشطة', fireAlertsSince:'منذ', minsShort:'د', secsShort:'ث',
     gasAlertLabel:'تسرب غاز', gasZoneWord:'الزون',
     motionAlertLabel:'تجاوز محيط', motionStatusOffline:'غير متصل', motionStatusNormal:'سليم', motionStatusAlarm:'تجاوز مكتشف', motionStatusFault:'عطل',
     motionMasterOk:'✅ المحيط سليم', motionMasterAlarm:'🚨 تجاوز نشط', motionMasterFault:'⚠ يوجد عطل', motionMasterOffline:'⛔ لا توجد أجهزة متصلة',
@@ -3827,7 +3827,7 @@ window.closeFireAlertsPanel = function(){
 };
 function renderFireAlertsPanelList(alarms){
   const wrap = document.getElementById('fireAlertsList'); if(!wrap) return;
-  if(!alarms || alarms.length===0){ wrap.innerHTML = `<div class="fire-alerts-empty">✅ ${t('fireAlertsNone')}</div>`; return; }
+  if(!alarms || alarms.length===0){ wrap.innerHTML = `<div class="fire-alerts-empty">${t('fireAlertsNone')}</div>`; return; }
   wrap.innerHTML = alarms.map(a=>{
     const since = Math.max(0, Math.round((Date.now()-a.since)/1000));
     const mins = Math.floor(since/60), secs = since%60;
