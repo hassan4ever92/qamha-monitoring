@@ -209,6 +209,8 @@
   .fire-general-box .fgb-label{ font-size:11px; color:var(--text-2); font-weight:700; margin-bottom:4px; }
   .fire-general-box .fgb-value{ font-size:14px; font-weight:900; color:#9aa0ac; }
   .fire-general-box .fgb-age{ font-size:10px; color:var(--text-2); margin-top:4px; opacity:.8; }
+  .fire-general-box .fgb-fw{ font-family:'Consolas','Courier New',monospace; font-size:9.5px; color:var(--text-2); margin-top:6px; opacity:.7; }
+  .fire-general-box .fgb-fw:empty{ display:none; }
   /* سطر "آخر تحديث" حي لكل تبويب (غاز/حركة/طاقة) - قبل كم ثانية/دقيقة/ساعة وصلت آخر بيانات فعلية لهذا التبويب بالذات */
   .sys-last-update{ font-size:11px; color:var(--text-2); opacity:.85; margin:2px 0 12px; }
   .sys-last-update:empty{ display:none; }
@@ -962,6 +964,7 @@
             <div class="fgb-label">🔌 <span data-i18n="fireGeneralConnLabel">الاتصال بجهاز السيطرة</span></div>
             <div class="fgb-value" id="fireGeneralConnValue">--</div>
             <div class="fgb-age" id="fireGeneralConnAge"></div>
+            <div class="fgb-fw" id="fireGeneralConnFw"></div>
           </div>
           <div class="fire-general-box" id="fireGeneralFaultBox">
             <div class="fgb-label">⚠️ <span data-i18n="fireGeneralFaultLabel">العطل العام (FAULT)</span></div>
@@ -1064,7 +1067,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 2.2.0</div>
+      <div class="brand-version">Ver 2.2.1</div>
     </div>
   </footer>
 </div>
@@ -1721,6 +1724,7 @@ let fireSysFaultLive = {}; // {[systemId]: bool} - قراءة مباشرة من 
 let fireAuxLive = {};      // {[systemId]: bool} - قراءة مباشرة من طرف AUX (الإنذار العام)
 let fireDeviceLastSeen = {}; // {[systemId]: epochMs} - آخر مرة وصلت أي بيانات من الجهاز (زون أو auxFire أو sysFault)
 let fireDeviceOnlineLive = {}; // {[systemId]: bool} - نتيجة مقارنة fireDeviceLastSeen بـ OFFLINE_THRESHOLD_MS
+let fireFwLive = {}; // {[systemId]: string|null} - رقم نسخة الفيرموير الحالي مثل ما يبعثه الجهاز مع بيانات الزونات
 function ensureFireSystemStorage(sys){
   if(!fireZoneLive[sys.id]) fireZoneLive[sys.id] = sys.zones.map(z=>({id:z.id, status:'offline'}));
   if(!lastSeenFireZone[sys.id]) lastSeenFireZone[sys.id] = {};
@@ -1728,6 +1732,7 @@ function ensureFireSystemStorage(sys){
   if(fireAuxLive[sys.id]===undefined) fireAuxLive[sys.id] = null;
   if(fireDeviceLastSeen[sys.id]===undefined) fireDeviceLastSeen[sys.id] = 0;
   if(fireDeviceOnlineLive[sys.id]===undefined) fireDeviceOnlineLive[sys.id] = null;
+  if(fireFwLive[sys.id]===undefined) fireFwLive[sys.id] = null;
   if(!fireMapsBySystem[sys.id] || !Array.isArray(fireMapsBySystem[sys.id]) || !fireMapsBySystem[sys.id].length){
     fireMapsBySystem[sys.id] = [ defaultFireMap() ];
   }
@@ -3253,6 +3258,12 @@ function renderFireGeneralBoxes(){
   if(connAge){
     const lastSeen = fireDeviceLastSeen[currentFireSystemId];
     connAge.textContent = lastSeen ? formatAgoText(lastSeen) : '';
+  }
+  // رقم نسخة الفيرموير الحالي كما يبعثه الجهاز - يفيد للتأكد إذا نجح تحديث الـ OTA
+  const connFw = document.getElementById('fireGeneralConnFw');
+  if(connFw){
+    const fw = fireFwLive[currentFireSystemId];
+    connFw.textContent = fw ? ('FW ' + fw) : '';
   }
 
   const onlineNow = fireDeviceOnlineLive[currentFireSystemId];
@@ -5052,6 +5063,7 @@ function subscribeFireSystemZones(sys){
       lastSeenFireZone[sys.id][zoneDef.id] = ts;
       fireDeviceLastSeen[sys.id] = Math.max(fireDeviceLastSeen[sys.id]||0, ts);
       fireDeviceOnlineLive[sys.id] = true;
+      if(val.fw) fireFwLive[sys.id] = val.fw;
       const fresh = (Date.now() - ts) <= OFFLINE_THRESHOLD_MS;
       const zoneState = (fireZoneLive[sys.id]||[]).find(z=>z.id===zoneDef.id);
       if(zoneState) zoneState.status = fresh ? (val.status || 'normal') : 'offline';
