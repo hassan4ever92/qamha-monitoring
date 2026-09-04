@@ -1064,7 +1064,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 2.1.6</div>
+      <div class="brand-version">Ver 2.1.7</div>
     </div>
   </footer>
 </div>
@@ -3445,7 +3445,11 @@ function updateGlobalFireSirenAndBadge(){
   // إنذار حقيقي جديد (حريق أو غاز) - نفتح لوحة التنبيهات تلقائياً فوراً بدون ما ننتظر المستخدم يضغط 🔔
   if(hasNewAlarm && alarms.length>0) window.openFireAlertsPanel();
   const panel = document.getElementById('fireAlertsPanel');
-  if(panel && panel.classList.contains('show')) renderFireAlertsPanelList(alarms);
+  if(panel && panel.classList.contains('show')){
+    // القائمة صارت فارغة (كل التنبيهات انحلّت) وهي مفتوحة - نسكرها تلقائياً بدل ما تبقى فاضية
+    if(alarms.length===0) window.closeFireAlertsPanel();
+    else renderFireAlertsPanelList(alarms);
+  }
 }
 /* ---------- كشف انقطاع الاتصال لكل زون بكل منظومات الحريق (مو بس المعروضة حالياً) ---------- */
 function checkAllFireSystemsOffline(){
