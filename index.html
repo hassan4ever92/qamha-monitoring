@@ -1064,7 +1064,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 2.1.9</div>
+      <div class="brand-version">Ver 2.2.0</div>
     </div>
   </footer>
 </div>
@@ -2138,7 +2138,7 @@ function sysLogItemIds(sysKey){
 
 function sysStatusLabel(sysKey, status){
   const maps = {
-    fire:{offline:'fireStatusOffline',normal:'fireStatusNormal',alarm:'fireStatusAlarm',fault:'fireStatusFault',disabled:'fireStatusDisabled'},
+    fire:{offline:'fireStatusOffline',disconnected:'fireStatusOffline',normal:'fireStatusNormal',alarm:'fireStatusAlarm',fault:'fireStatusFault',disabled:'fireStatusDisabled'},
     gas:{offline:'gasStatusOffline',safe:'gasStatusSafe',warning:'gasStatusWarning',danger:'gasStatusDanger',fault:'gasStatusFault'},
     motion:{offline:'motionStatusOffline',normal:'motionStatusNormal',alarm:'motionStatusAlarm',fault:'motionStatusFault'}
   };
@@ -2179,10 +2179,12 @@ async function fetchSystemLogRows(sysKey){
       if(!val) continue;
       Object.keys(val).forEach(k=>{
         const row = Object.assign({ ts:Number(k), itemId: it.id, itemLabel: it.label }, val[k]);
-        // الفيرموير يسجل زونات الحريق بحقل alarm (true/false) مو status - نحوّلها لنفس تسميات الحالة
-        // المستخدمة بباقي الأنظمة حتى تشتغل الفلترة والعرض بشكل صحيح
-        if(sysKey==='fire' && row.status===undefined && row.alarm!==undefined){
-          row.status = row.alarm ? 'alarm' : 'normal';
+        // الفيرموير يسجل زونات الحريق بحقل alarm/present (true/false) مو status - نحوّلها لنفس تسميات
+        // الحالة المستخدمة بباقي الأنظمة حتى تشتغل الفلترة والعرض بشكل صحيح: present=false يعني
+        // الزون غير موصول أصلاً (نتجاهل alarm بهالحالة لأنه دايماً false على زون غير موصول)
+        if(sysKey==='fire' && row.status===undefined){
+          if(row.present===false) row.status = 'disconnected';
+          else if(row.alarm!==undefined) row.status = row.alarm ? 'alarm' : 'normal';
         }
         rows.push(row);
       });
@@ -2200,7 +2202,7 @@ function buildSysLogFilters(sysKey){
   const statusSel = document.getElementById('sysLogStatusFilter');
   const statusWrap = document.getElementById('sysLogStatusFilterWrap');
   const statusOptionsBySys = {
-    fire:['offline','normal','alarm','fault','disabled'],
+    fire:['normal','alarm','disconnected'],
     gas:['offline','safe','warning','danger','fault'],
     motion:['offline','normal','alarm','fault']
   };
