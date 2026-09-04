@@ -1089,7 +1089,7 @@
     <div data-i18n="footerLine1">منصة داخلية لمراقبة المخازن ومنظومات الحريق والغاز</div>
     <div class="brand-footer">
       <div class="brand-owner">Designed and Implemented by Creativity Linkers Co.</div>
-      <div class="brand-version">Ver 2.4.2</div>
+      <div class="brand-version">Ver 2.4.3</div>
     </div>
   </footer>
 </div>
@@ -5409,7 +5409,10 @@ function init(){
   }
   // نبين شريط "فعّل الصوت" فوراً من فتح الصفحة (قبل أي إنذار) - أفضل لشاشة كشك
   // دائمة التشغيل إنه المشغّل ينتبه ويضغط مرة وحدة بدري، بدل ما يكتشف بس وقت حريق حقيقي
-  ensureAudioCtx();
+  // استثناء: إذا المتصفح مسموح له مسبقاً بتشغيل صوت لهذا الموقع (إعداد "Allow" بخانة
+  // Sound بإعدادات الموقع بكروم)، الصوت يشتغل تلقائياً من هذا السطر بدون أي ضغطة،
+  // وبهاي الحالة نخفي الشريط فوراً لأنه غير مطلوب.
+  { const _c = ensureAudioCtx(); if(_c && _c.state==='running'){ audioUnlocked = true; } }
   updateAudioUnlockBanner();
 }
 document.documentElement.lang = currentLang;
